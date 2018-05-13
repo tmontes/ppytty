@@ -13,17 +13,23 @@ Wishlist
 
 * Support "slides"-like *and* "REPL"-like interfaces.
 * Slides will be built out of "things" like:
+
   * Text blocks.
   * Code blocks (like text blocks, but with auto line numbers + syntax).
   * List blocks (like text blocks, but with bullet per "item").
   * Terminals (via pseudo tty and subproceses with terminal emulation).
+
 * General text blocks will have:
+
   * Width and height (not-necessarily fixed but constraint based)
   * Background, foreground and other default text attributes like bold/reverse.
   * Support double width/heigth characters.
+
 * Things can be animated:
+
   * Faded in/out.
   * Moved.
+
 * Things, like terminals, gain/loose keyboard focus.
 * Scripts are build out of slides.
 
