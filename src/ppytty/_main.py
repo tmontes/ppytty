@@ -5,33 +5,22 @@
 # See LICENSE for deatils.
 # ----------------------------------------------------------------------------
 
-"""
-ppytty
-"""
+import sys
 
-from __future__ import absolute_import
+import ppytty
 
 
+def main():
 
-__version__ = '1.0.0a0'
-
-__title__ = 'ppytty'
-__description__ = 'ppytty'
-
-__license__ = 'MIT'
-__uri__ = 'https://github.com/tmontes/ppytty/'
-
-__author__ = 'Tiago Montes'
-__email__ = 'tiago.montes@gmail.com'
-
-
-from . _player import Player
-from . _main import main
-
-__all__ = [
-    'Player',
-    'main',
-]
-
+    print(f'{ppytty.__name__} {ppytty.__version__}')
+    print(f'sys.argv[1:]={sys.argv[1:]!r}')
+    script = [
+        'first script entry',
+        'last script entry',
+    ]
+    player = ppytty.Player(script)
+    player.run()
+    print('main is done')
+    return 42
 
 # ----------------------------------------------------------------------------

@@ -32,6 +32,7 @@ EXTRAS_REQUIRE = {
 #        "towncrier",
     ],
     "tests": [
+        "pylint",
 #        "coverage",
     ],
 }
@@ -91,4 +92,9 @@ if __name__ == "__main__":
         classifiers=CLASSIFIERS,
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRAS_REQUIRE,
+        entry_points={
+            'console_scripts': [
+                'ppytty=ppytty:main',
+            ],
+        },
     )
