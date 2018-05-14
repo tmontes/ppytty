@@ -24,6 +24,7 @@ CLASSIFIERS = [
     "Topic :: Terminals",
 ]
 INSTALL_REQUIRES = [
+    "blessings",
 ]
 EXTRAS_REQUIRE = {
     "docs": [
