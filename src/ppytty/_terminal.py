@@ -5,7 +5,6 @@
 # See LICENSE for deatils.
 # ----------------------------------------------------------------------------
 
-import os
 import sys
 import termios
 

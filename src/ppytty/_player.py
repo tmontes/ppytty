@@ -73,7 +73,7 @@ class Player(object):
             elif what == 'wait':
                 result = self._handle_input(prompt='what=wait', wait=True)
             else:
-                raise ValueError(f'unknown action {action!r}')
+                raise ValueError(f'unknown action {what!r}')
         result = self._handle_input(prompt='ISW', wait=True)
         return self.KEY_TO_ACTIONS.get(result, '')
 
