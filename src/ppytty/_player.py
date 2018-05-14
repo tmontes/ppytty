@@ -8,14 +8,16 @@
 from . _terminal import Terminal
 
 
-class Player(object):
+def run(script):
 
-    def __init__(self, script):
-        self._script = script
-
-    def run(self):
-        with Terminal() as terminal:
-            for entry in self._script:
-                terminal.print(entry)
+    with Terminal() as terminal:
+        for _when, action, *args in script:
+            if action == 'print':
+                terminal.print(*args)
+            elif action == 'wait':
+                input('WAIT...')
+            else:
+                raise ValueError(f'unknown action {action!r}')
+        input('PLAY: done')
 
 # ----------------------------------------------------------------------------
