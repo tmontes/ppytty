@@ -15,12 +15,10 @@ import blessings
 
 class Terminal(object):
 
-    def __init__(self, encoding='UTF-8'):
+    def __init__(self):
 
         self._fail_if_not_tty(sys.stdin)
         self._fail_if_not_tty(sys.stdout)
-
-        self._encoding = encoding
 
         self._term = blessings.Terminal()
         self._outfd = sys.stdout.fileno()
@@ -34,7 +32,7 @@ class Terminal(object):
 
     def _write(self, string):
 
-        os.write(self._outfd, string.encode(self._encoding))
+        self._term.stream.write(string)
 
 
     def _termios_settings(self, activate=True):
@@ -64,8 +62,29 @@ class Terminal(object):
         # TODO: Handle exceptions or let them through?
 
 
-    def print(self, *args, **kwargs):
+    @property
+    def width(self):
 
-        print('TERM:', *args, **kwargs)
+        return self._term.width
+
+
+    @property
+    def height(self):
+
+        return self._term.height
+
+
+    def print(self, string):
+
+        self._term.stream.write(string + '\n')
+        self._term.stream.flush()
+
+
+    def print_at(self, col, row, string):
+
+        with self._term.location(col, row):
+            self._term.stream.write(string)
+            self._term.stream.flush()
+
 
 # ----------------------------------------------------------------------------

@@ -25,11 +25,11 @@ __author__ = 'Tiago Montes'
 __email__ = 'tiago.montes@gmail.com'
 
 
-from . _player import run
+from . _player import Player
 from . _main import main
 
 __all__ = [
-    'run',
+    'Player',
     'main',
 ]
 

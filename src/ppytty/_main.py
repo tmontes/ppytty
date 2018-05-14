@@ -15,11 +15,21 @@ def main():
     print(f'{ppytty.__name__} {ppytty.__version__}')
     print(f'sys.argv[1:]={sys.argv[1:]!r}')
     script = [
-        (0, 'print', 'first \N{SMILING FACE WITH SMILING EYES}  script entry'),
-        (0, 'wait', None,),
-        (0, 'print', 'last script entry'),
+        [
+            (None, 0, 'print', '1 first script entry'),
+            (None, 0, 'print', '1 second script entry'),
+        ],
+        [
+            (None, 0, 'print', '2 third script entry'),
+            (None, 0, 'wait', None,),
+            (None, 0, 'print', '2 fourth script entry'),
+        ],
+        [
+            (None, 0, 'print', '3 last script entry'),
+        ],
     ]
-    ppytty.run(script)
+    player = ppytty.Player(script)
+    player.run()
     print('main is done')
     return 42
 
