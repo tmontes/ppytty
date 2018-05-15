@@ -14,59 +14,45 @@ from . _terminal import Terminal
 
 
 
+class _PlayerStop(Exception):
+    
+    pass
+
+
+
+_NO_FDS = []
+
+
 class Player(object):
 
     def __init__(self, script):
 
         self._script = script
-
         self._terminal = None
 
         self._fd_stdin = sys.stdin.fileno()
-        self._readables = [self._fd_stdin]
-        self._dont_care = []
+        self._rd_fds = [self._fd_stdin]
 
+        self._focus = None
 
-    _MOVEMENTS = {
-        'next': lambda s, i: i+1,
-        'prev': lambda s, i: i-1,
-        'first': lambda s, i: 0,
-        'last': lambda s, i: len(s)-1,
-        'redo': lambda s, i: i,
-    }
 
     def run(self):
 
-        step_index = 0
-        num_steps = len(self._script)
+        step = self._script.current_step()
 
         with Terminal() as terminal:
             self._terminal = terminal
-            while step_index < num_steps:
-                step = self._script[step_index]
-                where_to = self._run_step(step)
+            while step:
                 try:
-                    where_to_callable = self._MOVEMENTS[where_to]
-                except KeyError:
-                    if where_to == 'quit':
-                        break
-                else:
-                    step_index = where_to_callable(self._script, step_index)
-            while True:
-                keyboard_byte = self._handle_input(prompt='EXIT', wait=True)
-                if self.KEY_TO_ACTIONS.get(keyboard_byte) == 'quit':
-                    break
+                    self._run_step(step)
+                    step = self._next_step()
+                except _PlayerStop:
+                    step = None
 
-
-    KEY_TO_ACTIONS = {
-        b']': 'next',
-        b'[': 'prev',
-        b'r': 'redo',
-        b'q': 'quit',
-    }
 
     def _run_step(self, step):
 
+        self._terminal.clear()
         for who, when, what, *args in step:
             if what == 'print':
                 self._terminal.print(*args)
@@ -74,29 +60,77 @@ class Player(object):
                 result = self._handle_input(prompt='what=wait', wait=True)
             else:
                 raise ValueError(f'unknown action {what!r}')
-        result = self._handle_input(prompt='ISW', wait=True)
-        return self.KEY_TO_ACTIONS.get(result, '')
 
 
-    @contextlib.contextmanager
-    def _prompt(self, prompt):
+    KEY_TO_ACTIONS = {
+        b']': ('move', 'next_step', 'LAST!'),
+        b'[': ('move', 'prev_step', 'FIRST!'),
+        b'r': ('move', 'current_step', '<reload current failed>'),
+        b'1': ('move', 'first_step', '<go to first failed>'),
+        b'0': ('move', 'last_step', '<go to last failed>'),
+    }
 
-        col = self._terminal.width - len(prompt)
-        row = self._terminal.height - 1
-        self._terminal.print_at(col, row, prompt)
-        yield
-        self._terminal.print_at(col, row, ' '*len(prompt))
+    def _next_step(self):
+
+        fail_prompt = None
+
+        while True:
+            prompt = fail_prompt if fail_prompt else 'ISW'
+            keyboard_byte = self._handle_input(prompt=prompt, wait=True)
+            fail_prompt = None
+            try:
+                action, *args = self.KEY_TO_ACTIONS[keyboard_byte]
+            except KeyError:
+                continue
+            if action == 'move':
+                next_callable, fail_msg = args
+                try:
+                    return getattr(self._script, next_callable)()
+                except AttributeError:
+                    pass
+                except ValueError:
+                    fail_prompt = fail_msg
+
+
+    def _prompt_context(self, prompt):
+
+        @contextlib.contextmanager
+        def _prompt(prompt):
+            col = self._terminal.width - len(prompt)
+            row = self._terminal.height - 1
+            self._terminal.print_at(col, row, prompt)
+            yield
+            self._terminal.print_at(col, row, ' '*len(prompt))
+
+        @contextlib.contextmanager
+        def _no_prompt():
+            yield
+
+        return _prompt(prompt) if prompt else _no_prompt()
 
 
     def _handle_input(self, prompt=None, wait=False):
 
+        quit_in_progress = False
+
         timeout = None if wait else 0.02
-        cm = self._prompt(prompt) if prompt else contextlib.suppress()
-        with cm:
-            fds, _, _ = select(self._readables, self._dont_care, self._dont_care, timeout)
-        if self._fd_stdin in fds:
-            keyboard_byte = os.read(self._fd_stdin, 1)
-            return keyboard_byte
+        while True:
+            actual_prompt = 'QUIT?' if quit_in_progress else prompt
+            with self._prompt_context(actual_prompt):
+                fds, _, _ = select(self._rd_fds, _NO_FDS, _NO_FDS, timeout)
+            if self._fd_stdin in fds:
+                keyboard_byte = os.read(self._fd_stdin, 1)
+                if self._focus is None:
+                    if keyboard_byte == b'q':
+                        if quit_in_progress:
+                            raise _PlayerStop()
+                        else:
+                            quit_in_progress = True
+                        continue
+                    elif quit_in_progress:
+                        quit_in_progress = False
+                        continue
+                    return keyboard_byte
 
 
 # ----------------------------------------------------------------------------

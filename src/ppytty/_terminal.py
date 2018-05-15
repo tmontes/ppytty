@@ -58,6 +58,7 @@ class Terminal(object):
         self._termios_settings(activate=False)
         self._write(self._term.normal_cursor)
         self._write(self._term.exit_fullscreen)
+        # TODO: Reset colors?
         # TODO: Handle exceptions or let them through?
 
 
@@ -71,6 +72,11 @@ class Terminal(object):
     def height(self):
 
         return self._term.height
+
+
+    def clear(self):
+
+        self._term.stream.write(self._term.clear)
 
 
     def print(self, string):
