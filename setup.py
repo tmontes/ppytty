@@ -34,7 +34,7 @@ EXTRAS_REQUIRE = {
     ],
     "tests": [
         "pylint",
-#        "coverage",
+        "coverage",
     ],
 }
 EXTRAS_REQUIRE["dev"] = EXTRAS_REQUIRE["tests"] + EXTRAS_REQUIRE["docs"]

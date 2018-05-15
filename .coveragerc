@@ -1,0 +1,20 @@
+; ----------------------------------------------------------------------------
+; .coveragerc
+; ----------------------------------------------------------------------------
+
+[run]
+source = src/ppytty
+
+; ----------------------------------------------------------------------------
+; Purpose:
+; ----------------------------------------------------------------------------
+; - "Merge" real installed package paths actually covered during tests...
+; - ...with soucre paths in the repository.
+;
+; Thanks Hynek: https://hynek.me/articles/testing-packaging/
+; ----------------------------------------------------------------------------
+
+; [paths]
+; source =
+;     src/ppytty
+;     .tox/*/lib/python*/site-packages/ppytty
