@@ -25,12 +25,13 @@ __author__ = 'Tiago Montes'
 __email__ = 'tiago.montes@gmail.com'
 
 
-from . _script import Script
+from . _script import Script, ScriptLimit
 from . _player import Player
 from . _main import main
 
 __all__ = [
     'Script',
+    'ScriptLimit',
     'Player',
     'main',
 ]
