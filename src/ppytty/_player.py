@@ -53,19 +53,22 @@ class Player(object):
 
     def _run_step(self, step):
 
-        self._terminal.clear()
         for who, when, what, *args in step:
-            if what == 'print':
+            if what == 'clear':
+                self._terminal.clear()
+            elif what == 'print':
                 self._terminal.print(*args)
-            elif what == 'wait':
-                result = self._handle_input(prompt='what=wait', wait=True)
+            # elif what == 'wait':
+            #     result = self._handle_input(prompt='what=wait', wait=True)
             else:
                 raise ValueError(f'unknown action {what!r}')
 
 
     KEY_TO_ACTIONS = {
-        b']': ('move', 'next_sub_step', 'LAST!'),
-        b'[': ('move', 'prev_sub_step', 'FIRST!'),
+        b']': ('move', 'next_sub_step', 'last!'),
+        b'[': ('move', 'prev_sub_step', 'first!'),
+        b'}': ('move', 'next_step', 'LAST!'),
+        b'{': ('move', 'prev_step', 'FIRST!'),
         b'r': ('move', 'current_step', '<reload current failed>'),
         b'1': ('move', 'first_step', '<go to first failed>'),
         b'0': ('move', 'last_step', '<go to last failed>'),
