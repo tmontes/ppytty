@@ -33,18 +33,18 @@ class Script(object):
         return self._steps[self._current_step_index]
 
 
-    def first_step(self):
+    def first_sub_step(self):
 
         self._current_step_index = 0
         step = self._current_local_step()
-        return step.first_step() if isinstance(step, Script) else step
+        return step.first_sub_step() if isinstance(step, Script) else step
 
 
-    def last_step(self):
+    def last_sub_step(self):
 
         self._current_step_index = self._max_step_index
         step = self._current_local_step()
-        return step.last_step() if isinstance(step, Script) else step
+        return step.last_sub_step() if isinstance(step, Script) else step
 
 
     def current_step(self):
@@ -53,10 +53,10 @@ class Script(object):
         return step.current_step() if isinstance(step, Script) else step
 
 
-    def next_sub_step(self):
+    def next_sub_step(self, recurse=True):
 
         step = self._current_local_step()
-        if isinstance(step, Script):
+        if recurse and isinstance(step, Script):
             try:
                 return step.next_sub_step()
             except ScriptLimit:
@@ -67,13 +67,13 @@ class Script(object):
 
         self._current_step_index += 1
         step = self._current_local_step()
-        return step.first_step() if isinstance(step, Script) else step
+        return step.first_sub_step() if isinstance(step, Script) else step
 
 
-    def prev_sub_step(self):
+    def prev_sub_step(self, recurse=True):
 
         step = self._current_local_step()
-        if isinstance(step, Script):
+        if recurse and isinstance(step, Script):
             try:
                 return step.prev_sub_step()
             except ScriptLimit:
@@ -84,7 +84,29 @@ class Script(object):
 
         self._current_step_index -= 1
         step = self._current_local_step()
-        return step.last_step() if isinstance(step, Script) else step
+        return step.first_sub_step() if isinstance(step, Script) else step
+
+
+    def first_step(self):
+
+        return self.first_sub_step()
+
+
+    def last_step(self):
+
+        self._current_step_index = self._max_step_index
+        step = self._current_local_step()
+        return step.first_sub_step() if isinstance(step, Script) else step
+
+
+    def prev_step(self):
+
+        return self.prev_sub_step(recurse=False)
+
+
+    def next_step(self):
+
+        return self.next_sub_step(recurse=False)
 
 
 # ----------------------------------------------------------------------------
