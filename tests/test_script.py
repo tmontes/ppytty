@@ -49,36 +49,36 @@ class TestFlatScript(unittest.TestCase):
         self.assertEqual(result, '1')
 
     def test_next(self):
-        result = self.script.next_step()
+        result = self.script.next_sub_step()
         self.assertEqual(result, '2')
 
     def test_next_next(self):
-        _ = self.script.next_step()
-        result = self.script.next_step()
+        _ = self.script.next_sub_step()
+        result = self.script.next_sub_step()
         self.assertEqual(result, '3')
 
     def test_next_next_next(self):
-        _ = self.script.next_step()
-        _ = self.script.next_step()
+        _ = self.script.next_sub_step()
+        _ = self.script.next_sub_step()
         with self.assertRaises(ppytty.ScriptLimit):
-            _ = self.script.next_step()
+            _ = self.script.next_sub_step()
 
     def test_next_prev(self):
-        _ = self.script.next_step()
-        result = self.script.prev_step()
+        _ = self.script.next_sub_step()
+        result = self.script.prev_sub_step()
         self.assertEqual(result, '1')
 
     def test_prev(self):
         with self.assertRaises(ppytty.ScriptLimit):
-            _ = self.script.prev_step()
+            _ = self.script.prev_sub_step()
 
     def test_last(self):
         result = self.script.last_step()
         self.assertEqual(result, '3')
 
     def test_next_next_first(self):
-        _ = self.script.next_step()
-        _ = self.script.next_step()
+        _ = self.script.next_sub_step()
+        _ = self.script.next_sub_step()
         result = self.script.first_step()
         self.assertEqual(result, '1')
 
@@ -112,25 +112,24 @@ class TestNestedScript(unittest.TestCase):
         self.assertEqual(result, self.linear[0])
         for times, expected in enumerate(self.linear[1:], start=1):
             with self.subTest(times=times, expected=expected):
-                result = self.script.next_step()
+                result = self.script.next_sub_step()
                 self.assertEqual(result, expected)
         with self.assertRaises(ppytty.ScriptLimit):
-            _ = self.script.next_step()
+            _ = self.script.next_sub_step()
 
     def test_last(self):
         result = self.script.last_step()
         self.assertEqual(result, '3-2')
-
 
     def test_last_and_all_prevs(self):
         result = self.script.last_step()
         self.assertEqual(result, self.linear[-1])
         for times, expected in enumerate(reversed(self.linear[:-1]), start=1):
             with self.subTest(times=times, expected=expected):
-                result = self.script.prev_step()
+                result = self.script.prev_sub_step()
                 self.assertEqual(result, expected)
         with self.assertRaises(ppytty.ScriptLimit):
-            _ = self.script.prev_step()
+            _ = self.script.prev_sub_step()
 
 
 

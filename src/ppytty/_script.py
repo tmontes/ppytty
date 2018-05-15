@@ -53,12 +53,12 @@ class Script(object):
         return step.current_step() if isinstance(step, Script) else step
 
 
-    def next_step(self):
+    def next_sub_step(self):
 
         step = self._current_local_step()
         if isinstance(step, Script):
             try:
-                return step.next_step()
+                return step.next_sub_step()
             except ScriptLimit:
                 pass
 
@@ -70,12 +70,12 @@ class Script(object):
         return step.first_step() if isinstance(step, Script) else step
 
 
-    def prev_step(self):
+    def prev_sub_step(self):
 
         step = self._current_local_step()
         if isinstance(step, Script):
             try:
-                return step.prev_step()
+                return step.prev_sub_step()
             except ScriptLimit:
                 pass
 

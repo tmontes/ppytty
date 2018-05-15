@@ -64,8 +64,8 @@ class Player(object):
 
 
     KEY_TO_ACTIONS = {
-        b']': ('move', 'next_step', 'LAST!'),
-        b'[': ('move', 'prev_step', 'FIRST!'),
+        b']': ('move', 'next_sub_step', 'LAST!'),
+        b'[': ('move', 'prev_sub_step', 'FIRST!'),
         b'r': ('move', 'current_step', '<reload current failed>'),
         b'1': ('move', 'first_step', '<go to first failed>'),
         b'0': ('move', 'last_step', '<go to last failed>'),
