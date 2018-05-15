@@ -38,7 +38,7 @@ class Player(object):
 
     def run(self):
 
-        step = self._script.current_step()
+        step = self._script.start()
 
         with Terminal() as terminal:
             self._terminal = terminal

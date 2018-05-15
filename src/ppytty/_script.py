@@ -17,6 +17,12 @@ class Script(object):
         self._current_step_index = 0
 
 
+    def start(self):
+
+        self._current_step_index = 0
+        return self.current_step()
+
+
     def current_step(self):
 
         return self._steps[self._current_step_index]

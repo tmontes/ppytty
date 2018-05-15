@@ -30,6 +30,7 @@ from . _player import Player
 from . _main import main
 
 __all__ = [
+    'Script',
     'Player',
     'main',
 ]
