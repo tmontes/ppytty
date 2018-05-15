@@ -10,6 +10,7 @@ import os
 from select import select
 import sys
 
+from . _script import ScriptLimit
 from . _terminal import Terminal
 
 
@@ -38,7 +39,7 @@ class Player(object):
 
     def run(self):
 
-        step = self._script.start()
+        step = self._script.first_step()
 
         with Terminal() as terminal:
             self._terminal = terminal
@@ -88,7 +89,7 @@ class Player(object):
                     return getattr(self._script, next_callable)()
                 except AttributeError:
                     pass
-                except ValueError:
+                except ScriptLimit:
                     fail_prompt = fail_msg
 
 
