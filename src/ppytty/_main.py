@@ -31,8 +31,10 @@ def main():
 
     widget = ppytty.SlideDeck([
         ppytty.Slide([
-            ppytty.Label('Hello world!', name='l1'),
-            ppytty.Label('And more...', name='l2'),
+            ppytty.SlideDeck([
+                ppytty.Label('Hello world!', name='l1'),
+                ppytty.Label('And more...', name='l2'),
+            ], name='s1.d1'),
         ], name='s1'),
         ppytty.Slide([
             ppytty.Label('...nearly done', name='l3'),

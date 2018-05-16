@@ -62,9 +62,10 @@ class Player(object):
 
         terminated = []
 
-        waiting_on_child = collections.defaultdict(list)
-        childs_waited_on = {}
+        parent = {}
+        children = collections.defaultdict(list)
 
+        waiting_on_child = []
         waiting_on_key = collections.deque()
 
         responses = {}
@@ -82,21 +83,26 @@ class Player(object):
             widget = running.popleft()
             try:
                 response = responses.get(widget)
-                request = widget.running.send(response)
-                if response:
-                    del responses[widget]
-            except StopIteration as stop_request:
-                self._log.info('%r stopped with %r', widget, stop_request.value)
-                waiting_parent = childs_waited_on.get(widget)
-                if waiting_parent:
-                    waited_children = waiting_on_child[waiting_parent]
-                    waited_children.remove(widget)
-                    del childs_waited_on[widget]
-                    if not waited_children:
-                        del waiting_on_child[waiting_parent]
-                        running.append(waiting_parent)
-                elif widget is not self._widget:
-                    terminated.append(widget)
+                try:
+                    request = widget.running.send(response)
+                finally:
+                    if response:
+                        del responses[widget]
+            except StopIteration as return_:
+                self._log.info('%r stopped with %r', widget, return_.value)
+                candidate_parent = parent.get(widget)
+                if not candidate_parent:
+                    if widget is not self._widget:
+                        raise RuntimeError(f'{widget} stopped with no parent')
+                    continue
+                if candidate_parent in waiting_on_child:
+                    responses[candidate_parent] = (widget, return_.value)
+                    del parent[widget]
+                    children[candidate_parent].remove(widget)
+                    waiting_on_child.remove(candidate_parent)
+                    running.append(candidate_parent)
+                else:
+                    terminated.append((widget, return_.value))
             else:
                 what, *args = request
                 self._log.info('%r %r %r', widget, what, args)
@@ -111,19 +117,26 @@ class Player(object):
                     running.append(widget)
                 elif what == 'read-key':
                     waiting_on_key.append(widget)
-                elif what == 'run-widgets':
-                    for child_widget in args[0]:
-                        running.append(child_widget)
+                elif what == 'run-widget':
+                    child_widget = args[0]
+                    parent[child_widget] = widget
+                    children[widget].append(child_widget)
+                    running.append(child_widget)
                     running.append(widget)
-                elif what == 'wait-widgets':
-                    for child_widget in args[0]:
-                        if child_widget in terminated:
-                            terminated.remove(child_widget)
-                        else:
-                            waiting_on_child[widget].append(child_widget)
-                            if child_widget in childs_waited_on:
-                                raise RuntimeError(f'double-wait on child')
-                            childs_waited_on[child_widget] = widget
+                elif what == 'wait-widget':
+                    child = None
+                    for candidate, return_value in terminated:
+                        if parent[candidate] is widget:
+                            child = candidate
+                            break
+                    if child is not None:
+                        responses[widget] = (child, return_value)
+                        del parent[child]
+                        children[widget].remove(child)
+                        running.append(widget)
+                        terminated.remove((child, return_value))
+                    else:
+                        waiting_on_child.append(widget)
                 else:
                     raise ValueError(f'unhandled action {what!r}')
 

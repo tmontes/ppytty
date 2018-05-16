@@ -19,9 +19,18 @@ class Slide(widget.Widget):
 
     def run(self):
 
+        running_widgets = []
+
         yield ('clear',)
-        yield ('run-widgets', self._widgets)
-        yield ('wait-widgets', self._widgets)
+        for widget in self._widgets:
+            yield ('run-widget', widget)
+            running_widgets.append(widget)
+        while running_widgets:
+            widget, return_action = yield ('wait-widget',)
+            running_widgets.remove(widget)
+
+        if len(self._widgets) == 1:
+            return return_action
 
 
     def reset(self):
@@ -50,10 +59,13 @@ class SlideDeck(widget.Widget):
         while True:
             slide = self._slides[index]
             slide.reset()
-            yield ('run-widgets', [slide])
-            yield ('wait-widgets', [slide])
+            yield ('run-widget', slide)
+            _widget, return_action = yield ('wait-widget',)
             while True:
-                key = yield ('read-key',)
+                if return_action:
+                    key = keymap.get(return_action)
+                else:
+                    key = yield ('read-key',)
                 if key == keymap['next']:
                     if index < index_max:
                         index += 1
