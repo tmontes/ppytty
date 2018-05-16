@@ -40,12 +40,12 @@ class TestFlatScript(unittest.TestCase):
         self.assertEqual(result, '1')
 
     def test_current(self):
-        result = self.script.current_step()
+        result = self.script.current_sub_step()
         self.assertEqual(result, '1')
 
     def test_first_current(self):
         _ = self.script.first_sub_step()
-        result = self.script.current_step()
+        result = self.script.current_sub_step()
         self.assertEqual(result, '1')
 
     def test_nextsub(self):
@@ -139,7 +139,7 @@ class TestNestedScript(unittest.TestCase):
 
     def test_first_sub_current(self):
         _ = self.script.first_sub_step()
-        result = self.script.current_step()
+        result = self.script.current_sub_step()
         self.assertEqual(result, '1-1')
 
     def test_first_sub_and_all_next_subs(self):

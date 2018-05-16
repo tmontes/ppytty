@@ -47,10 +47,10 @@ class Script(object):
         return step.last_sub_step() if isinstance(step, Script) else step
 
 
-    def current_step(self):
+    def current_sub_step(self):
 
         step = self._current_local_step()
-        return step.current_step() if isinstance(step, Script) else step
+        return step.current_sub_step() if isinstance(step, Script) else step
 
 
     def next_sub_step(self, recurse=True):
