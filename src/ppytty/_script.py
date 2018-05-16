@@ -99,6 +99,12 @@ class Script(object):
         return step.first_sub_step() if isinstance(step, Script) else step
 
 
+    def current_step(self):
+
+        step = self._current_local_step()
+        return step.first_step() if isinstance(step, Script) else step
+
+
     def prev_step(self):
 
         return self.prev_sub_step(recurse=False)

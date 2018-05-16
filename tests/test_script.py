@@ -39,11 +39,11 @@ class TestFlatScript(unittest.TestCase):
         result = self.script.first_sub_step()
         self.assertEqual(result, '1')
 
-    def test_current(self):
+    def test_currentsub(self):
         result = self.script.current_sub_step()
         self.assertEqual(result, '1')
 
-    def test_first_current(self):
+    def test_first_currentsub(self):
         _ = self.script.first_sub_step()
         result = self.script.current_sub_step()
         self.assertEqual(result, '1')
@@ -129,7 +129,7 @@ class TestNestedScript(unittest.TestCase):
         ]
         self.linear_tops = ['1-1', '2-1', '3-1',]
 
-    def test_first_sub(self):
+    def test_firstsub(self):
         result = self.script.first_sub_step()
         self.assertEqual(result, '1-1')
 
@@ -137,12 +137,23 @@ class TestNestedScript(unittest.TestCase):
         result = self.script.first_step()
         self.assertEqual(result, '1-1')
 
-    def test_first_sub_current(self):
+    def test_firstsub_currentsub(self):
         _ = self.script.first_sub_step()
         result = self.script.current_sub_step()
         self.assertEqual(result, '1-1')
 
-    def test_first_sub_and_all_next_subs(self):
+    def test_firstsub_nextsub_current(self):
+        _ = self.script.first_sub_step()
+        _ = self.script.next_sub_step()
+        result = self.script.current_step()
+        self.assertEqual(result, '1-1')
+
+    def test_lastsub_current(self):
+        _ = self.script.last_sub_step()
+        result = self.script.current_step()
+        self.assertEqual(result, '3-1')
+
+    def test_firstsub_and_all_nextsubs(self):
         result = self.script.first_sub_step()
         self.assertEqual(result, self.linear_subs[0])
         for times, expected in enumerate(self.linear_subs[1:], start=1):
@@ -152,7 +163,7 @@ class TestNestedScript(unittest.TestCase):
         with self.assertRaises(ppytty.ScriptLimit):
             _ = self.script.next_sub_step()
 
-    def test_last_sub(self):
+    def test_lastsub(self):
         result = self.script.last_sub_step()
         self.assertEqual(result, '3-2')
 
@@ -160,7 +171,7 @@ class TestNestedScript(unittest.TestCase):
         result = self.script.last_step()
         self.assertEqual(result, '3-1')
 
-    def test_last_sub_and_all_prev_subs(self):
+    def test_lastsub_and_all_prevsubs(self):
         result = self.script.last_sub_step()
         self.assertEqual(result, self.linear_subs[-1])
         expecteds = ['3-1', '2-1', '1-1']
@@ -171,7 +182,7 @@ class TestNestedScript(unittest.TestCase):
         with self.assertRaises(ppytty.ScriptLimit):
             _ = self.script.prev_sub_step()
 
-    def test_first_sub_and_all_nexts(self):
+    def test_firstsub_and_all_nexts(self):
         result = self.script.first_sub_step()
         self.assertEqual(result, self.linear_tops[0])
         for times, expected in enumerate(self.linear_tops[1:], start=1):
@@ -181,7 +192,7 @@ class TestNestedScript(unittest.TestCase):
         with self.assertRaises(ppytty.ScriptLimit):
             _ = self.script.next_step()
 
-    def test_last_sub_and_all_prevs(self):
+    def test_lastsub_and_all_prevs(self):
         result = self.script.last_sub_step()
         self.assertEqual(result, self.linear_subs[-1])
         for times, expected in enumerate(reversed(self.linear_tops[:-1]), start=1):
