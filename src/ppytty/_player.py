@@ -38,6 +38,12 @@ class Player(object):
 
         self._log = logging.getLogger('player')
 
+        self.keymap = {
+            'prev': b'[',
+            'next': b']',
+            'reload': b'r',
+        }
+
 
     def run(self):
 
@@ -77,9 +83,10 @@ class Player(object):
             try:
                 response = responses.get(widget)
                 request = widget.running.send(response)
-                responses[widget] = None
-            except StopIteration:
-                self._log.info('%r stopped', widget)
+                if response:
+                    del responses[widget]
+            except StopIteration as stop_request:
+                self._log.info('%r stopped with %r', widget, stop_request.value)
                 waiting_parent = childs_waited_on.get(widget)
                 if waiting_parent:
                     waited_children = waiting_on_child[waiting_parent]
@@ -93,7 +100,10 @@ class Player(object):
             else:
                 what, *args = request
                 self._log.info('%r %r %r', widget, what, args)
-                if what == 'clear':
+                if what == 'get-keymap':
+                    responses[widget] = self.keymap
+                    running.append(widget)
+                elif what == 'clear':
                     self._terminal.clear()
                     running.append(widget)
                 elif what == 'print':
@@ -101,7 +111,7 @@ class Player(object):
                     running.append(widget)
                 elif what == 'read-key':
                     waiting_on_key.append(widget)
-                elif what == 'create-widgets':
+                elif what == 'run-widgets':
                     for child_widget in args[0]:
                         running.append(child_widget)
                     running.append(widget)
@@ -118,39 +128,6 @@ class Player(object):
                     raise ValueError(f'unhandled action {what!r}')
 
         self._handle_input(prompt='DONE', wait=True)
-
-
-
-    KEY_TO_ACTIONS = {
-        b']': ('move', 'next_sub_step', 'last!'),
-        b'[': ('move', 'prev_sub_step', 'first!'),
-        b'}': ('move', 'next_step', 'LAST!'),
-        b'{': ('move', 'prev_step', 'FIRST!'),
-        b'r': ('move', 'current_step', '<reload current failed>'),
-        b'1': ('move', 'first_step', '<go to first failed>'),
-        b'0': ('move', 'last_step', '<go to last failed>'),
-    }
-
-    def _next_step(self):
-
-        fail_prompt = None
-
-        while True:
-            prompt = fail_prompt if fail_prompt else 'ISW'
-            keyboard_byte = self._handle_input(prompt=prompt, wait=True)
-            fail_prompt = None
-            try:
-                action, *args = self.KEY_TO_ACTIONS[keyboard_byte]
-            except KeyError:
-                continue
-            if action == 'move':
-                next_callable, fail_msg = args
-                try:
-                    return getattr(self._script, next_callable)()
-                except AttributeError:
-                    pass
-                except ScriptLimit:
-                    fail_prompt = fail_msg
 
 
     def _prompt_context(self, prompt):

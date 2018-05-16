@@ -35,4 +35,9 @@ class Widget(object):
         raise NotImplementedError()
 
 
+    def reset(self):
+
+        self._running = None
+
+
 # ----------------------------------------------------------------------------

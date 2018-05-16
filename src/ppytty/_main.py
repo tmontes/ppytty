@@ -37,7 +37,7 @@ def main():
         ppytty.Slide([
             ppytty.Label('...nearly done', name='l3'),
         ], name='s2')
-    ])
+    ], name='deck')
     player = ppytty.Player(widget)
     player.run()
 
