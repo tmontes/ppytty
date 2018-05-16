@@ -5,6 +5,8 @@
 # See LICENSE for deatils.
 # ----------------------------------------------------------------------------
 
+import logging
+import os
 import sys
 
 import ppytty
@@ -14,33 +16,37 @@ def main():
 
     print(f'{ppytty.__name__} {ppytty.__version__}')
     print(f'sys.argv[1:]={sys.argv[1:]!r}')
-    script = ppytty.Script([
-        [
-            (None, 0, 'clear', None),
-            (None, 0, 'print', '1-1 first script entry'),
-            (None, 0, 'print', '1-2 second script entry'),
-        ],
-        ppytty.Script([
-            [
-                (None, 0, 'clear', None),
-                (None, 0, 'print', '2-1 third script entry'),
-            ], [
-                (None, 0, 'print', '2-2 fourth script entry'),
-                (None, 0, 'print', '2-3 fourth script entry'),
-            ],
-        ]),
-        ppytty.Script([
-            [
-                (None, 0, 'clear', None),
-                (None, 0, 'print', '3-1 penultimate script entry'),
-            ], [
-                (None, 0, 'print', '3-2 last script entry'),
-            ],
-        ])
+
+    log_filename = os.environ.get('PPYTTY')
+    if log_filename:
+        logging.basicConfig(
+            filename=log_filename,
+            format='%(asctime)s %(levelname).1s %(name)s %(message)s',
+            datefmt='%H:%M:%S',
+            level=logging.INFO,
+        )
+        
+    log = logging.getLogger('ppytty')
+    log.info('started')
+
+    widget = ppytty.SlideDeck([
+        ppytty.Slide([
+            ppytty.Label('Hello world!', name='l1'),
+            ppytty.Label('And more...', name='l2'),
+        ], name='s1'),
+        ppytty.Slide([
+            ppytty.Label('...nearly done', name='l3'),
+        ], name='s2')
     ])
-    player = ppytty.Player(script)
+    player = ppytty.Player(widget)
     player.run()
+
     print('main is done')
+    log.info('done')
     return 42
+
+
+if __name__ == '__main__':
+    main()
 
 # ----------------------------------------------------------------------------

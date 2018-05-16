@@ -25,13 +25,15 @@ __author__ = 'Tiago Montes'
 __email__ = 'tiago.montes@gmail.com'
 
 
-from . _script import Script, ScriptLimit
+from . widgets import Widget, Label, Slide, SlideDeck
 from . _player import Player
 from . _main import main
 
 __all__ = [
-    'Script',
-    'ScriptLimit',
+    'Widget',
+    'Label',
+    'Slide',
+    'SlideDeck',
     'Player',
     'main',
 ]
