@@ -7,7 +7,7 @@
 
 from . widget import Widget
 from . label import Label
-from . slides import Slide, SlideDeck
+from . slides import SlideDeck, Slide, SlideContentSequence
 from . utils import Serial, Parallel, Delay, KeyboardAction
 
 # ----------------------------------------------------------------------------
