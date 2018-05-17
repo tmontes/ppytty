@@ -7,10 +7,12 @@
 
 import collections
 import contextlib
+import heapq
 import logging
 import os
 from select import select
 import sys
+import time
 
 from . _terminal import Terminal
 
@@ -67,11 +69,13 @@ class Player(object):
 
         waiting_on_child = []
         waiting_on_key = collections.deque()
+        waiting_on_time = []
 
         responses = {}
 
 
-        while running or waiting_on_child or waiting_on_key or terminated:
+        while running or waiting_on_child or waiting_on_key or waiting_on_time or terminated:
+            now = time.time()
             if not running:
                 keyboard_byte = self._handle_input(prompt='?')
                 if keyboard_byte and waiting_on_key:
@@ -79,6 +83,10 @@ class Player(object):
                     responses[key_waiter] = keyboard_byte
                     running.append(key_waiter)
                     self._log.info('%r getting key %r', key_waiter, keyboard_byte)
+                if waiting_on_time and waiting_on_time[0][0] < now:
+                    _, time_waiter = heapq.heappop(waiting_on_time)
+                    running.append(time_waiter)
+                    self._log.info('%r waking up', time_waiter)
                 continue
             widget = running.popleft()
             try:
@@ -93,7 +101,7 @@ class Player(object):
                 candidate_parent = parent.get(widget)
                 if not candidate_parent:
                     if widget is not self._widget:
-                        raise RuntimeError(f'{widget} stopped with no parent')
+                        self._log.error('%r stopped with no parent', widget)
                     continue
                 if candidate_parent in waiting_on_child:
                     responses[candidate_parent] = (widget, return_.value)
@@ -115,6 +123,9 @@ class Player(object):
                 elif what == 'print':
                     self._terminal.print(*args)
                     running.append(widget)
+                elif what == 'sleep':
+                    wake_at = now + args[0]
+                    heapq.heappush(waiting_on_time, (wake_at, widget))
                 elif what == 'read-key':
                     waiting_on_key.append(widget)
                 elif what == 'run-widget':
@@ -138,7 +149,8 @@ class Player(object):
                     else:
                         waiting_on_child.append(widget)
                 else:
-                    raise ValueError(f'unhandled action {what!r}')
+                    self._log.error('%r invalid request: %r', widget, what)
+                    # TODO: terminate widget somewhat like StopIteration
 
         self._handle_input(prompt='DONE', wait=True)
 
