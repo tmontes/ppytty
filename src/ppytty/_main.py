@@ -29,17 +29,22 @@ def main():
     log = logging.getLogger('ppytty')
     log.info('started')
 
+    keyboard_widget = ppytty.KeyboardAction(keymap={
+        b'[': 'prev',
+        b']': 'next',
+    })
+
     widget = ppytty.SlideDeck([
         ppytty.Slide([
-            ppytty.SlideDeck([
+            ppytty.Serial([
                 ppytty.Label('Hello world!', name='l1'),
                 ppytty.Label('And more...', name='l2'),
-            ], name='s1.d1'),
+            ], name='s1.d1', post_widget=keyboard_widget),
         ], name='s1'),
         ppytty.Slide([
             ppytty.Label('...nearly done', name='l3'),
         ], name='s2')
-    ], name='deck')
+    ], name='deck', post_widget=keyboard_widget)
     player = ppytty.Player(widget)
     player.run()
 

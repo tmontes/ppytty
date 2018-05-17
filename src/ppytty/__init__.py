@@ -25,7 +25,7 @@ __author__ = 'Tiago Montes'
 __email__ = 'tiago.montes@gmail.com'
 
 
-from . widgets import Widget, Label, Slide, SlideDeck
+from . widgets import Widget, Label, Slide, SlideDeck, Serial, Parallel, Delay, KeyboardAction
 from . _player import Player
 from . _main import main
 
@@ -34,6 +34,10 @@ __all__ = [
     'Label',
     'Slide',
     'SlideDeck',
+    'Serial',
+    'Parallel',
+    'Delay',
+    'KeyboardAction',
     'Player',
     'main',
 ]
