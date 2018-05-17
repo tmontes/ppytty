@@ -90,7 +90,7 @@ class Serial(widget.Widget):
                         return action if self._give_nav_hints else None
                     else:
                         action = None
-                        break
+                        continue
                 elif action == 'prev':
                     if index > 0:
                         index -= 1
@@ -99,7 +99,7 @@ class Serial(widget.Widget):
                         return action if self._give_nav_hints else None
                     else:
                         action = None
-                        break
+                        continue
                 elif action == 'redo':
                     break
                 elif action and action.startswith('exit-') and self._give_nav_hints:
@@ -107,17 +107,19 @@ class Serial(widget.Widget):
 
 
 
-class Delay(widget.Widget):
+class DelayReturn(widget.Widget):
 
-    def __init__(self, seconds, **kw):
+    def __init__(self, *, seconds=0, return_value=None, **kw):
 
         super().__init__(**kw)
         self._seconds = seconds
+        self._return_value = return_value
 
 
     def run(self):
 
         yield ('sleep', self._seconds)
+        return self._return_value
 
 
 
