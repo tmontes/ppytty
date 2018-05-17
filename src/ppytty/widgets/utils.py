@@ -42,18 +42,19 @@ class Parallel(widget.Widget):
 
 class Serial(widget.Widget):
 
-    DEFAULT_ACTIONS = {
-        'next': 'next',
-        'prev': 'prev',
-        'redo': 'redo',
-    }
+    _ACTIONS = ['next', 'prev', 'redo', 'exit-next', 'exit-prev', 'exit-redo']
 
-    def __init__(self, widgets, post_widget=None, action_map=None, **kw):
+    def __init__(self, widgets, *, nav_widget=None,
+                 take_nav_hints=True, give_nav_hints=True,
+                 stop_over=True, stop_under=True, **kw):
 
         super().__init__(**kw)
         self._widgets = widgets
-        self._post_widget = post_widget
-        self._action_map = action_map if action_map else self.DEFAULT_ACTIONS
+        self._nav_widget = nav_widget
+        self._take_nav_hints = take_nav_hints
+        self._give_nav_hints = give_nav_hints
+        self._stop_over = stop_over
+        self._stop_under = stop_under
 
 
     def run(self):
@@ -65,28 +66,44 @@ class Serial(widget.Widget):
             widget = self._widgets[index]
             widget.reset()
             yield ('run-widget', widget)
-            return_widget, return_action = yield ('wait-widget',)
+            _, nav_hint = yield ('wait-widget',)
             action = 'next'
+            if self._take_nav_hints:
+                if nav_hint in self._ACTIONS:
+                    action = nav_hint
+                else:
+                    action = None
             while True:
-                if self._post_widget:
-                    self._post_widget.reset()
-                    yield ('run-widget', self._post_widget)
-                    post_widget, post_return = yield ('wait-widget',)
-                    action = self._action_map.get(post_return)
+                if self._nav_widget and action is None:
+                    self._nav_widget.reset()
+                    yield ('run-widget', self._nav_widget)
+                    _, action = yield ('wait-widget',)
+                    if action not in self._ACTIONS:
+                        self._log.warning('invalid nav_widget action %r', action)
+                        action = None
+                        continue
                 if action == 'next':
                     if index < index_max:
                         index += 1
                         break
+                    elif self._stop_over:
+                        return action if self._give_nav_hints else None
                     else:
-                        return action
+                        action = None
+                        break
                 elif action == 'prev':
                     if index > 0:
                         index -= 1
                         break
+                    elif self._stop_under:
+                        return action if self._give_nav_hints else None
                     else:
-                        return action
-                elif movement == 'reload':
-                    action
+                        action = None
+                        break
+                elif action == 'redo':
+                    break
+                elif action and action.startswith('exit-') and self._give_nav_hints:
+                    return action[5:]
 
 
 
@@ -106,16 +123,17 @@ class Delay(widget.Widget):
 
 class KeyboardAction(widget.Widget):
 
-    def __init__(self, keymap, default_action=None):
+    def __init__(self, keymap, default_action=None, **kw):
 
-        super().__init__()
+        super().__init__(**kw)
         self._keymap = keymap
         self._default_action = default_action
 
+
     def run(self):
 
-       key = yield ('read-key',)
-       return self._keymap.get(key, self._default_action)
+        key = yield ('read-key',)
+        return self._keymap.get(key, self._default_action)
 
 
 # ----------------------------------------------------------------------------

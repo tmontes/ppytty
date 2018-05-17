@@ -6,6 +6,9 @@
 # ----------------------------------------------------------------------------
 
 
+import logging
+
+
 
 class Widget(object):
 
@@ -13,6 +16,8 @@ class Widget(object):
 
         self._name = name
         self._running = None
+
+        self._log = logging.getLogger(f'widget.{self._name}')
 
 
     def __repr__(self):

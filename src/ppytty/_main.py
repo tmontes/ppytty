@@ -25,26 +25,38 @@ def main():
             datefmt='%H:%M:%S',
             level=logging.INFO,
         )
-        
+
     log = logging.getLogger('ppytty')
     log.info('started')
 
     keyboard_widget = ppytty.KeyboardAction(keymap={
+        b'{': 'prev',
+        b'}': 'next',
         b'[': 'prev',
         b']': 'next',
-    })
+        b'r': 'redo',
+    }, name='outer')
+
+    inner_keyboard_widget = ppytty.KeyboardAction(keymap={
+        b'{': 'exit-prev',
+        b'}': 'exit-next',
+        b'[': 'exit-redo',
+        b']': 'next',
+        b'r': 'exit-redo',
+    }, name='inner')
 
     widget = ppytty.SlideDeck([
         ppytty.Slide([
             ppytty.Serial([
                 ppytty.Label('Hello world!', name='l1'),
                 ppytty.Label('And more...', name='l2'),
-            ], name='s1.d1', post_widget=keyboard_widget),
+                ppytty.Label('Done with the first slide!', name='l3'),
+            ], name='s1.d1', nav_widget=inner_keyboard_widget),
         ], name='s1'),
         ppytty.Slide([
             ppytty.Label('...nearly done', name='l3'),
         ], name='s2')
-    ], name='deck', post_widget=keyboard_widget)
+    ], name='deck', nav_widget=keyboard_widget, stop_over=False, stop_under=False)
     player = ppytty.Player(widget)
     player.run()
 
