@@ -26,22 +26,28 @@ __email__ = 'tiago.montes@gmail.com'
 
 
 from . widgets import (
-    SlideDeck, Slide, SlideContentSequence,
+    SlideSequence, SlideSequenceKeyboard, SlideSequenceTimed,
+    Slide,
+    WidgetSequence, WidgetSequenceKeyboard, WidgetSequenceTimed,
     Label,
-    Widget, Serial, Parallel, Delay, KeyboardAction,
+    Widget, Serial, Parallel, DelayReturn, KeyboardAction,
 )
 from . _player import Player
 from . _main import main
 
 __all__ = [
-    'SlideDeck',
+    'SlideSequence',
+    'SlideSequenceKeyboard',
+    'SlideSequenceTimed',
     'Slide',
-    'SlideContentSequence',
+    'WidgetSequence',
+    'WidgetSequenceKeyboard',
+    'WidgetSequenceTimed',
     'Label',
     'Widget',
     'Serial',
     'Parallel',
-    'Delay',
+    'DelayReturn',
     'KeyboardAction',
     'Player',
     'main',
