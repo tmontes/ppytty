@@ -14,7 +14,7 @@ from select import select
 import sys
 import time
 
-from . _terminal import Terminal
+from . terminal import Terminal
 
 
 

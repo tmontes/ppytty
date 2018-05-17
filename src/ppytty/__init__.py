@@ -32,8 +32,8 @@ from . widgets import (
     Label,
     Widget, Serial, Parallel, DelayReturn, KeyboardAction,
 )
-from . _player import Player
-from . _main import main
+from . player import Player
+from . main import main
 
 __all__ = [
     'SlideSequence',
