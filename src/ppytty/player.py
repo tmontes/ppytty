@@ -29,7 +29,12 @@ _NO_FDS = []
 
 class Player(object):
 
-    def __init__(self, widget):
+    def __init__(self, widget, wait_when_done=True):
+
+        # TODO: default to disable logging so as not to require callers to
+        #       do that themselves if they don't care; this avoids spurious
+        #       sys.stderr output resulting from messages >= warning from the
+        #       default standard library's logging module.
 
         self._widget = widget
         self._terminal = None
