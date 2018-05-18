@@ -13,6 +13,7 @@ import os
 import select
 import sys
 import time
+import types
 
 from . terminal import Terminal
 
@@ -29,6 +30,8 @@ _log = logging.getLogger('player')
 _STDIN_FD = sys.stdin.fileno()
 _RD_FDS = [_STDIN_FD]
 _NO_FDS = []
+
+_tasks = types.SimpleNamespace()
 
 
 
@@ -51,92 +54,93 @@ def run(task, post_prompt='[COMPLETED]'):
 
 def _run(top_task, terminal):
 
-    running = collections.deque()
-    running.append(top_task)
+    _tasks.running = collections.deque()
+    _tasks.running.append(top_task)
 
-    terminated = []
+    _tasks.terminated = []
 
-    parent = {}
-    children = collections.defaultdict(list)
+    _tasks.parent = {}
+    _tasks.children = collections.defaultdict(list)
 
-    waiting_on_child = []
-    waiting_on_key = collections.deque()
-    waiting_on_time = []
+    _tasks.waiting_on_child = []
+    _tasks.waiting_on_key = collections.deque()
+    _tasks.waiting_on_time = []
 
-    responses = {}
+    _tasks.responses = {}
 
 
-    while running or waiting_on_child or waiting_on_key or waiting_on_time or terminated:
+    while (_tasks.running or _tasks.waiting_on_child or _tasks.waiting_on_key or
+           _tasks.waiting_on_time or _tasks.terminated):
         now = time.time()
-        if not running:
+        if not _tasks.running:
             keyboard_byte = _handle_input(terminal, prompt='?')
-            if keyboard_byte and waiting_on_key:
-                key_waiter = waiting_on_key.popleft()
-                responses[key_waiter] = keyboard_byte
-                running.append(key_waiter)
+            if keyboard_byte and _tasks.waiting_on_key:
+                key_waiter = _tasks.waiting_on_key.popleft()
+                _tasks.responses[key_waiter] = keyboard_byte
+                _tasks.running.append(key_waiter)
                 _log.info('%r getting key %r', key_waiter, keyboard_byte)
-            if waiting_on_time and waiting_on_time[0][0] < now:
-                _, time_waiter = heapq.heappop(waiting_on_time)
-                running.append(time_waiter)
+            if _tasks.waiting_on_time and _tasks.waiting_on_time[0][0] < now:
+                _, time_waiter = heapq.heappop(_tasks.waiting_on_time)
+                _tasks.running.append(time_waiter)
                 _log.info('%r waking up', time_waiter)
             continue
-        task = running.popleft()
+        task = _tasks.running.popleft()
         try:
-            response = responses.get(task)
+            response = _tasks.responses.get(task)
             try:
                 request = task.running.send(response)
             finally:
                 if response:
-                    del responses[task]
+                    del _tasks.responses[task]
         except StopIteration as return_:
             _log.info('%r stopped with %r', task, return_.value)
-            candidate_parent = parent.get(task)
+            candidate_parent = _tasks.parent.get(task)
             if not candidate_parent:
                 if task is not top_task:
                     _log.error('%r stopped with no parent', task)
                 continue
-            if candidate_parent in waiting_on_child:
-                responses[candidate_parent] = (task, return_.value)
-                del parent[task]
-                children[candidate_parent].remove(task)
-                waiting_on_child.remove(candidate_parent)
-                running.append(candidate_parent)
+            if candidate_parent in _tasks.waiting_on_child:
+                _tasks.responses[candidate_parent] = (task, return_.value)
+                del _tasks.parent[task]
+                _tasks.children[candidate_parent].remove(task)
+                _tasks.waiting_on_child.remove(candidate_parent)
+                _tasks.running.append(candidate_parent)
             else:
-                terminated.append((task, return_.value))
+                _tasks.terminated.append((task, return_.value))
         else:
             what, *args = request
             _log.info('%r %r %r', task, what, args)
             if what == 'clear':
                 terminal.clear()
-                running.append(task)
+                _tasks.running.append(task)
             elif what == 'print':
                 terminal.print(*args)
-                running.append(task)
+                _tasks.running.append(task)
             elif what == 'sleep':
                 wake_at = now + args[0]
-                heapq.heappush(waiting_on_time, (wake_at, task))
+                heapq.heappush(_tasks.waiting_on_time, (wake_at, task))
             elif what == 'read-key':
-                waiting_on_key.append(task)
+                _tasks.waiting_on_key.append(task)
             elif what == 'run-task':
                 child_task = args[0]
-                parent[child_task] = task
-                children[task].append(child_task)
-                running.append(child_task)
-                running.append(task)
+                _tasks.parent[child_task] = task
+                _tasks.children[task].append(child_task)
+                _tasks.running.append(child_task)
+                _tasks.running.append(task)
             elif what == 'wait-task':
                 child = None
-                for candidate, return_value in terminated:
-                    if parent[candidate] is task:
+                for candidate, return_value in _tasks.terminated:
+                    if _tasks.parent[candidate] is task:
                         child = candidate
                         break
                 if child is not None:
-                    responses[task] = (child, return_value)
-                    del parent[child]
-                    children[task].remove(child)
-                    running.append(task)
-                    terminated.remove((child, return_value))
+                    _tasks.responses[task] = (child, return_value)
+                    del _tasks.parent[child]
+                    _tasks.children[task].remove(child)
+                    _tasks.running.append(task)
+                    _tasks.terminated.remove((child, return_value))
                 else:
-                    waiting_on_child.append(task)
+                    _tasks.waiting_on_child.append(task)
             else:
                 _log.error('%r invalid request: %r', task, what)
                 # TODO: terminate task somewhat like StopIteration
