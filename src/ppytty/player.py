@@ -29,14 +29,14 @@ _NO_FDS = []
 
 class Player(object):
 
-    def __init__(self, widget, post_prompt='[COMPLETED]'):
+    def __init__(self, task, post_prompt='[COMPLETED]'):
 
         # TODO: default to disable logging so as not to require callers to
         #       do that themselves if they don't care; this avoids spurious
         #       sys.stderr output resulting from messages >= warning from the
         #       default standard library's logging module.
 
-        self._widget = widget
+        self._task = task
         self._post_prompt = post_prompt
 
         self._terminal = None
@@ -60,7 +60,7 @@ class Player(object):
     def _run(self):
 
         running = collections.deque()
-        running.append(self._widget)
+        running.append(self._task)
 
         terminated = []
 
@@ -88,66 +88,66 @@ class Player(object):
                     running.append(time_waiter)
                     self._log.info('%r waking up', time_waiter)
                 continue
-            widget = running.popleft()
+            task = running.popleft()
             try:
-                response = responses.get(widget)
+                response = responses.get(task)
                 try:
-                    request = widget.running.send(response)
+                    request = task.running.send(response)
                 finally:
                     if response:
-                        del responses[widget]
+                        del responses[task]
             except StopIteration as return_:
-                self._log.info('%r stopped with %r', widget, return_.value)
-                candidate_parent = parent.get(widget)
+                self._log.info('%r stopped with %r', task, return_.value)
+                candidate_parent = parent.get(task)
                 if not candidate_parent:
-                    if widget is not self._widget:
-                        self._log.error('%r stopped with no parent', widget)
+                    if task is not self._task:
+                        self._log.error('%r stopped with no parent', task)
                     continue
                 if candidate_parent in waiting_on_child:
-                    responses[candidate_parent] = (widget, return_.value)
-                    del parent[widget]
-                    children[candidate_parent].remove(widget)
+                    responses[candidate_parent] = (task, return_.value)
+                    del parent[task]
+                    children[candidate_parent].remove(task)
                     waiting_on_child.remove(candidate_parent)
                     running.append(candidate_parent)
                 else:
-                    terminated.append((widget, return_.value))
+                    terminated.append((task, return_.value))
             else:
                 what, *args = request
-                self._log.info('%r %r %r', widget, what, args)
+                self._log.info('%r %r %r', task, what, args)
                 if what == 'clear':
                     self._terminal.clear()
-                    running.append(widget)
+                    running.append(task)
                 elif what == 'print':
                     self._terminal.print(*args)
-                    running.append(widget)
+                    running.append(task)
                 elif what == 'sleep':
                     wake_at = now + args[0]
-                    heapq.heappush(waiting_on_time, (wake_at, widget))
+                    heapq.heappush(waiting_on_time, (wake_at, task))
                 elif what == 'read-key':
-                    waiting_on_key.append(widget)
-                elif what == 'run-widget':
-                    child_widget = args[0]
-                    parent[child_widget] = widget
-                    children[widget].append(child_widget)
-                    running.append(child_widget)
-                    running.append(widget)
-                elif what == 'wait-widget':
+                    waiting_on_key.append(task)
+                elif what == 'run-task':
+                    child_task = args[0]
+                    parent[child_task] = task
+                    children[task].append(child_task)
+                    running.append(child_task)
+                    running.append(task)
+                elif what == 'wait-task':
                     child = None
                     for candidate, return_value in terminated:
-                        if parent[candidate] is widget:
+                        if parent[candidate] is task:
                             child = candidate
                             break
                     if child is not None:
-                        responses[widget] = (child, return_value)
+                        responses[task] = (child, return_value)
                         del parent[child]
-                        children[widget].remove(child)
-                        running.append(widget)
+                        children[task].remove(child)
+                        running.append(task)
                         terminated.remove((child, return_value))
                     else:
-                        waiting_on_child.append(widget)
+                        waiting_on_child.append(task)
                 else:
-                    self._log.error('%r invalid request: %r', widget, what)
-                    # TODO: terminate widget somewhat like StopIteration
+                    self._log.error('%r invalid request: %r', task, what)
+                    # TODO: terminate task somewhat like StopIteration
 
         while self._post_prompt:
             self._handle_input(prompt=self._post_prompt, wait=True)

@@ -22,10 +22,10 @@ class Parallel(widget.Widget):
         running_widgets = []
 
         for widget in self._widgets:
-            yield ('run-widget', widget)
+            yield ('run-task', widget)
             running_widgets.append(widget)
         while running_widgets:
-            widget, return_action = yield ('wait-widget',)
+            widget, return_action = yield ('wait-task',)
             running_widgets.remove(widget)
 
         if len(self._widgets) == 1:
@@ -65,8 +65,8 @@ class Serial(widget.Widget):
         while True:
             widget = self._widgets[index]
             widget.reset()
-            yield ('run-widget', widget)
-            _, nav_hint = yield ('wait-widget',)
+            yield ('run-task', widget)
+            _, nav_hint = yield ('wait-task',)
             action = 'next'
             if self._take_nav_hints:
                 if nav_hint in self._ACTIONS:
@@ -76,8 +76,8 @@ class Serial(widget.Widget):
             while True:
                 if self._nav_widget and action is None:
                     self._nav_widget.reset()
-                    yield ('run-widget', self._nav_widget)
-                    _, action = yield ('wait-widget',)
+                    yield ('run-task', self._nav_widget)
+                    _, action = yield ('wait-task',)
                     if action not in self._ACTIONS:
                         self._log.warning('invalid nav_widget action %r', action)
                         action = None
