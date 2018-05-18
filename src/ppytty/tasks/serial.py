@@ -7,24 +7,38 @@
 
 
 from . import task
+from . import utils
+
+
+
+def mtf(monitored_task, current_index, max_index):
+
+    class TaskMonitor(task.Task):
+
+        def run(self):
+
+            sleep_task = utils.DelayReturn(seconds=3, return_value='next')
+            yield ('run-task', monitored_task)
+            yield ('run-task', sleep_task)
+            finished, return_value = yield ('wait-task',)
+            stop = monitored_task if finished is sleep_task else sleep_task
+            yield ('stop-task', stop)
+            _, _ = yield ('wait-task',)
+            return return_value
+
+    return TaskMonitor()
 
 
 
 class Serial(task.Task):
 
-    _ACTIONS = ['next', 'prev', 'redo', 'exit-next', 'exit-prev', 'exit-redo']
+    _ACTIONS = ['next', 'prev', 'redo']
 
-    def __init__(self, tasks, *, nav_task=None,
-                 take_nav_hints=True, give_nav_hints=True,
-                 stop_over=True, stop_under=True, **kw):
+    def __init__(self, tasks, *, monitor_task_factory=mtf, **kw):
 
         super().__init__(**kw)
         self._tasks = tasks
-        self._nav_task = nav_task
-        self._take_nav_hints = take_nav_hints
-        self._give_nav_hints = give_nav_hints
-        self._stop_over = stop_over
-        self._stop_under = stop_under
+        self._monitor_task_factory = monitor_task_factory
 
 
     def run(self):
@@ -35,45 +49,24 @@ class Serial(task.Task):
         while True:
             task = self._tasks[index]
             task.reset()
+            if self._monitor_task_factory:
+                task = self._monitor_task_factory(task, index, index_max)
             yield ('run-task', task)
             _, nav_hint = yield ('wait-task',)
-            action = 'next'
-            if self._take_nav_hints:
-                if nav_hint in self._ACTIONS:
-                    action = nav_hint
+            action = nav_hint if nav_hint in self._ACTIONS else 'next'
+
+            if action == 'next':
+                if index < index_max:
+                    index += 1
+                    continue
                 else:
-                    action = None
-            while True:
-                if self._nav_task and action is None:
-                    self._nav_task.reset()
-                    yield ('run-task', self._nav_task)
-                    _, action = yield ('wait-task',)
-                    if action not in self._ACTIONS:
-                        self._log.warning('invalid nav_task action %r', action)
-                        action = None
-                        continue
-                if action == 'next':
-                    if index < index_max:
-                        index += 1
-                        break
-                    elif self._stop_over:
-                        return action if self._give_nav_hints else None
-                    else:
-                        action = None
-                        continue
-                elif action == 'prev':
-                    if index > 0:
-                        index -= 1
-                        break
-                    elif self._stop_under:
-                        return action if self._give_nav_hints else None
-                    else:
-                        action = None
-                        continue
-                elif action == 'redo':
                     break
-                elif action and action.startswith('exit-') and self._give_nav_hints:
-                    return action[5:]
+            elif action == 'prev':
+                if index > 0:
+                    index -= 1
+                    continue
+                else:
+                    break
 
 
 # ----------------------------------------------------------------------------
