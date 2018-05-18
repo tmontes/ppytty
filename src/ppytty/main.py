@@ -102,8 +102,7 @@ def main():
             print(f'no {TASK_NAME_IN_SCRIPT!r} global in {args.script!r}')
             return -3
 
-    player = ppytty.Player(task)
-    player.run()
+    ppytty.run(task)
 
     return 0
 
