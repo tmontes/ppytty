@@ -69,10 +69,12 @@ def _run(top_task):
     _tasks.waiting_on_child = []
     _tasks.waiting_on_key = collections.deque()
     _tasks.waiting_on_time = []
+    _tasks.waiting_on_time_hq = []
 
     _tasks.responses = {}
 
 
+    _log.info('%r starting', top_task)
     while (_tasks.running or _tasks.waiting_on_child or _tasks.waiting_on_key or
            _tasks.waiting_on_time or _tasks.terminated):
         _state.now = time.time()
@@ -84,8 +86,9 @@ def _run(top_task):
         try:
             request = _run_task_until_request(task)
         except StopIteration as return_:
+            _log.info('%r stopped with %r', task, return_.value)
             if task is top_task:
-                break
+                continue
             _process_task_termination(task, return_.value)
         else:
             request_call, *request_args = request
@@ -122,7 +125,8 @@ def _do_print(task, *args):
 def _do_sleep(task, seconds):
 
     wake_at = _state.now + seconds
-    heapq.heappush(_tasks.waiting_on_time, (wake_at, task))
+    _tasks.waiting_on_time.append(task)
+    heapq.heappush(_tasks.waiting_on_time_hq, (wake_at, task))
 
 
 
@@ -152,10 +156,50 @@ def _do_wait_task(task):
         _tasks.responses[task] = (child, return_value)
         del _tasks.parent[child]
         _tasks.children[task].remove(child)
+        _clear_tasks_children(task)
         _tasks.running.append(task)
         _tasks.terminated.remove((child, return_value))
     else:
         _tasks.waiting_on_child.append(task)
+
+
+
+def _clear_tasks_children(task):
+
+    if not _tasks.children[task]:
+        del _tasks.children[task]
+
+
+
+def _do_stop_task(task, child_task):
+
+    if _tasks.parent[child_task] is not task:
+        raise RuntimeError('cannot kill non-child tasks')
+
+    if child_task in _tasks.running:
+        _tasks.running.remove(child_task)
+    elif child_task in _tasks.waiting_on_child:
+        _tasks.waiting_on_child.remove(child_task)
+    elif child_task in _tasks.waiting_on_key:
+        _tasks.waiting_on_key.remove(child_task)
+    elif child_task in _tasks.waiting_on_time:
+        _tasks.waiting_on_time.remove(child_task)
+        _clear_tasks_waiting_on_time_hq()
+    else:
+        terminated = [t for (t, _) in _tasks.terminated if t is child_task]
+        if terminated:
+            _log.error('%r stopping terminated task %r', task, child_task)
+        return
+
+    _tasks.terminated.append((child_task, task))
+    _tasks.running.append(task)
+
+
+
+def _clear_tasks_waiting_on_time_hq():
+
+    if not _tasks.waiting_on_time:
+        _tasks.waiting_on_time_hq.clear()
 
 
 
@@ -183,8 +227,13 @@ def _process_tasks_waiting_on_key():
 
 def _process_tasks_waiting_on_time():
 
-    if _tasks.waiting_on_time and _tasks.waiting_on_time[0][0] < _state.now:
-        _, time_waiter = heapq.heappop(_tasks.waiting_on_time)
+    if _tasks.waiting_on_time and _tasks.waiting_on_time_hq[0][0] < _state.now:
+        while True:
+            _, time_waiter = heapq.heappop(_tasks.waiting_on_time_hq)
+            if time_waiter in _tasks.waiting_on_time:
+                _tasks.waiting_on_time.remove(time_waiter)
+                _clear_tasks_waiting_on_time_hq()
+                break
         _tasks.running.append(time_waiter)
         _log.info('%r waking up', time_waiter)
 
@@ -192,7 +241,6 @@ def _process_tasks_waiting_on_time():
 
 def _process_task_termination(task, return_value):
 
-    _log.info('%r stopped with %r', task, return_value)
     candidate_parent = _tasks.parent.get(task)
     if not candidate_parent:
         _log.error('%r stopped with no parent', task)
@@ -200,6 +248,7 @@ def _process_task_termination(task, return_value):
         _tasks.responses[candidate_parent] = (task, return_value)
         del _tasks.parent[task]
         _tasks.children[candidate_parent].remove(task)
+        _clear_tasks_children(candidate_parent)
         _tasks.waiting_on_child.remove(candidate_parent)
         _tasks.running.append(candidate_parent)
     else:
@@ -245,6 +294,8 @@ def _read_keyboard(prompt=None, wait=False):
             elif quit_in_progress:
                 quit_in_progress = False
                 continue
+            elif keyboard_byte == b'D':
+                _log.critical('tasks=%r, state=%r', _tasks, _state)
             return keyboard_byte
         elif not quit_in_progress:
             return
