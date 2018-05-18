@@ -32,7 +32,7 @@ from . widgets import (
     Label,
     Widget, Serial, Parallel, DelayReturn, KeyboardAction,
 )
-from . player import run
+from . runner import run
 from . main import main
 
 __all__ = [
