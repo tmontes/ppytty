@@ -6,7 +6,8 @@
 # ----------------------------------------------------------------------------
 
 from . task import Task
-from . combine import Serial, Parallel
+from . serial import Serial
+from . parallel import Parallel
 from . utils import DelayReturn, KeyboardAction
 
 # ----------------------------------------------------------------------------
