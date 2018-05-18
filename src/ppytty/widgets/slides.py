@@ -102,8 +102,8 @@ class WidgetSequenceTimed(WidgetSequence):
             done = utils.KeyboardAction(keymap=WidgetSequenceKeyboard.key_map, name='widget')
             widgets.append(done)
         if post_delay:
-            delay = utils.DelayReturn(seconds=post_delay)
-            widgets.append(delay)
+            delay_widget = utils.DelayReturn(seconds=post_delay)
+            widgets.append(delay_widget)
         nav = utils.DelayReturn(seconds=delay, return_value='next', name='widget')
         super().__init__(widgets, nav_widget=nav, **kw)
 
