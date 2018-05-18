@@ -42,14 +42,7 @@ class Player(object):
         self._fd_stdin = sys.stdin.fileno()
         self._rd_fds = [self._fd_stdin]
 
-
         self._log = logging.getLogger('player')
-
-        self.keymap = {
-            'prev': b'[',
-            'next': b']',
-            'reload': b'r',
-        }
 
 
     def run(self):
@@ -119,10 +112,7 @@ class Player(object):
             else:
                 what, *args = request
                 self._log.info('%r %r %r', widget, what, args)
-                if what == 'get-keymap':
-                    responses[widget] = self.keymap
-                    running.append(widget)
-                elif what == 'clear':
+                if what == 'clear':
                     self._terminal.clear()
                     running.append(widget)
                 elif what == 'print':
