@@ -29,7 +29,7 @@ _NO_FDS = []
 
 class Player(object):
 
-    def __init__(self, widget, wait_when_done=True):
+    def __init__(self, widget, post_prompt='[COMPLETED]'):
 
         # TODO: default to disable logging so as not to require callers to
         #       do that themselves if they don't care; this avoids spurious
@@ -37,6 +37,8 @@ class Player(object):
         #       default standard library's logging module.
 
         self._widget = widget
+        self._post_prompt = post_prompt
+
         self._terminal = None
 
         self._fd_stdin = sys.stdin.fileno()
@@ -147,7 +149,8 @@ class Player(object):
                     self._log.error('%r invalid request: %r', widget, what)
                     # TODO: terminate widget somewhat like StopIteration
 
-        self._handle_input(prompt='DONE', wait=True)
+        while self._post_prompt:
+            self._handle_input(prompt=self._post_prompt, wait=True)
 
 
     def _prompt_context(self, prompt):
