@@ -25,12 +25,13 @@ __author__ = 'Tiago Montes'
 __email__ = 'tiago.montes@gmail.com'
 
 
+from . tasks import Task, Parallel, Serial, DelayReturn, KeyboardAction
 from . widgets import (
     SlideSequence, SlideSequenceKeyboard, SlideSequenceTimed,
     Slide,
     WidgetSequence, WidgetSequenceKeyboard, WidgetSequenceTimed,
     Label,
-    Widget, Serial, Parallel, DelayReturn, KeyboardAction,
+    Widget,
 )
 from . runner import run
 from . main import main

@@ -6,51 +6,52 @@
 # ----------------------------------------------------------------------------
 
 
-from . import widget
+from . import task
 
 
-class Parallel(widget.Widget):
 
-    def __init__(self, widgets, **kw):
+class Parallel(task.Task):
+
+    def __init__(self, tasks, **kw):
 
         super().__init__(**kw)
-        self._widgets = widgets
+        self._tasks = tasks
 
 
     def run(self):
 
-        running_widgets = []
+        running_tasks = []
 
-        for widget in self._widgets:
-            yield ('run-task', widget)
-            running_widgets.append(widget)
-        while running_widgets:
-            widget, return_action = yield ('wait-task',)
-            running_widgets.remove(widget)
+        for task in self._tasks:
+            yield ('run-task', task)
+            running_tasks.append(task)
+        while running_tasks:
+            task, return_action = yield ('wait-task',)
+            running_tasks.remove(task)
 
-        if len(self._widgets) == 1:
+        if len(self._tasks) == 1:
             return return_action
 
 
     def reset(self):
 
         super().reset()
-        for widget in self._widgets:
-            widget.reset()
+        for task in self._tasks:
+            task.reset()
 
 
 
-class Serial(widget.Widget):
+class Serial(task.Task):
 
     _ACTIONS = ['next', 'prev', 'redo', 'exit-next', 'exit-prev', 'exit-redo']
 
-    def __init__(self, widgets, *, nav_widget=None,
+    def __init__(self, tasks, *, nav_task=None,
                  take_nav_hints=True, give_nav_hints=True,
                  stop_over=True, stop_under=True, **kw):
 
         super().__init__(**kw)
-        self._widgets = widgets
-        self._nav_widget = nav_widget
+        self._tasks = tasks
+        self._nav_task = nav_task
         self._take_nav_hints = take_nav_hints
         self._give_nav_hints = give_nav_hints
         self._stop_over = stop_over
@@ -60,12 +61,12 @@ class Serial(widget.Widget):
     def run(self):
 
         index = 0
-        index_max = len(self._widgets) - 1
+        index_max = len(self._tasks) - 1
 
         while True:
-            widget = self._widgets[index]
-            widget.reset()
-            yield ('run-task', widget)
+            task = self._tasks[index]
+            task.reset()
+            yield ('run-task', task)
             _, nav_hint = yield ('wait-task',)
             action = 'next'
             if self._take_nav_hints:
@@ -74,12 +75,12 @@ class Serial(widget.Widget):
                 else:
                     action = None
             while True:
-                if self._nav_widget and action is None:
-                    self._nav_widget.reset()
-                    yield ('run-task', self._nav_widget)
+                if self._nav_task and action is None:
+                    self._nav_task.reset()
+                    yield ('run-task', self._nav_task)
                     _, action = yield ('wait-task',)
                     if action not in self._ACTIONS:
-                        self._log.warning('invalid nav_widget action %r', action)
+                        self._log.warning('invalid nav_task action %r', action)
                         action = None
                         continue
                 if action == 'next':
@@ -104,38 +105,6 @@ class Serial(widget.Widget):
                     break
                 elif action and action.startswith('exit-') and self._give_nav_hints:
                     return action[5:]
-
-
-
-class DelayReturn(widget.Widget):
-
-    def __init__(self, *, seconds=0, return_value=None, **kw):
-
-        super().__init__(**kw)
-        self._seconds = seconds
-        self._return_value = return_value
-
-
-    def run(self):
-
-        yield ('sleep', self._seconds)
-        return self._return_value
-
-
-
-class KeyboardAction(widget.Widget):
-
-    def __init__(self, keymap, default_action=None, **kw):
-
-        super().__init__(**kw)
-        self._keymap = keymap
-        self._default_action = default_action
-
-
-    def run(self):
-
-        key = yield ('read-key',)
-        return self._keymap.get(key, self._default_action)
 
 
 # ----------------------------------------------------------------------------

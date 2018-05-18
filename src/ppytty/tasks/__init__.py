@@ -5,14 +5,8 @@
 # See LICENSE for deatils.
 # ----------------------------------------------------------------------------
 
-
-from .. import tasks
-
-
-
-class Widget(tasks.Task):
-
-    pass
-
+from . task import Task
+from . combine import Serial, Parallel
+from . utils import DelayReturn, KeyboardAction
 
 # ----------------------------------------------------------------------------

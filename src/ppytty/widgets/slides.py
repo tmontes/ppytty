@@ -6,15 +6,15 @@
 # ----------------------------------------------------------------------------
 
 
-from . import utils
+from .. import tasks
 
 
-class SlideSequence(utils.Serial):
+class SlideSequence(tasks.Serial):
 
-    def __init__(self, slides, *, nav_widget, **kw):
+    def __init__(self, slides, *, nav_task, **kw):
 
         super_arg_dict = {
-            'nav_widget': nav_widget,
+            'nav_task': nav_task,
             'take_nav_hints': True,
             'give_nav_hints': False,
             'stop_over': False,
@@ -36,8 +36,8 @@ class SlideSequenceKeyboard(SlideSequence):
 
     def __init__(self, slides, **kw):
 
-        nav = utils.KeyboardAction(self.key_map, name='slide')
-        super().__init__(slides, nav_widget=nav, **kw)
+        nav = tasks.KeyboardAction(self.key_map, name='slide')
+        super().__init__(slides, nav_task=nav, **kw)
 
 
 
@@ -45,12 +45,12 @@ class SlideSequenceTimed(SlideSequence):
 
     def __init__(self, slides, *, delay, **kw):
 
-        nav = utils.DelayReturn(seconds=delay, return_value='next', name='slide')
-        super().__init__(slides, nav_widget=nav, **kw)
+        nav = tasks.DelayReturn(seconds=delay, return_value='next', name='slide')
+        super().__init__(slides, nav_task=nav, **kw)
 
 
 
-class Slide(utils.Parallel):
+class Slide(tasks.Parallel):
 
     def run(self):
 
@@ -60,12 +60,12 @@ class Slide(utils.Parallel):
 
 
 
-class WidgetSequence(utils.Serial):
+class WidgetSequence(tasks.Serial):
 
-    def __init__(self, widgets, *, nav_widget, **kw):
+    def __init__(self, widgets, *, nav_task, **kw):
 
         super_arg_dict = {
-            'nav_widget': nav_widget,
+            'nav_task': nav_task,
             'take_nav_hints': True,
             'give_nav_hints': True,
             'stop_over': True,
@@ -87,8 +87,8 @@ class WidgetSequenceKeyboard(WidgetSequence):
 
     def __init__(self, widgets, **kw):
 
-        nav = utils.KeyboardAction(keymap=self.key_map, name='widget')
-        super().__init__(widgets, nav_widget=nav, **kw)
+        nav = tasks.KeyboardAction(keymap=self.key_map, name='widget')
+        super().__init__(widgets, nav_task=nav, **kw)
 
 
 
@@ -99,13 +99,13 @@ class WidgetSequenceTimed(WidgetSequence):
         if post_keyboard or post_delay:
             widgets = list(widgets)
         if post_keyboard:
-            done = utils.KeyboardAction(keymap=WidgetSequenceKeyboard.key_map, name='widget')
+            done = tasks.KeyboardAction(keymap=WidgetSequenceKeyboard.key_map, name='widget')
             widgets.append(done)
         if post_delay:
-            delay_widget = utils.DelayReturn(seconds=post_delay)
+            delay_widget = tasks.DelayReturn(seconds=post_delay)
             widgets.append(delay_widget)
-        nav = utils.DelayReturn(seconds=delay, return_value='next', name='widget')
-        super().__init__(widgets, nav_widget=nav, **kw)
+        nav = tasks.DelayReturn(seconds=delay, return_value='next', name='widget')
+        super().__init__(widgets, nav_task=nav, **kw)
 
 
 # ----------------------------------------------------------------------------

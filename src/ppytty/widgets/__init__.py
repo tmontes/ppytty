@@ -12,6 +12,5 @@ from . slides import (
     Slide,
     WidgetSequence, WidgetSequenceKeyboard, WidgetSequenceTimed,
 )
-from . utils import Serial, Parallel, DelayReturn, KeyboardAction
 
 # ----------------------------------------------------------------------------
