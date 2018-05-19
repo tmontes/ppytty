@@ -41,4 +41,24 @@ class KeyboardAction(task.Task):
         return self._keymap.get(key, self._default_action)
 
 
+
+class Loop(task.Task):
+
+    def __init__(self, task, times=None, **kw):
+
+        self._task = task
+        self._times = times
+        super().__init__(**kw)
+
+
+    def run(self):
+
+        times_to_go = self._times
+        while times_to_go is None or times_to_go:
+            self._task.reset()
+            yield from self._task.run()
+            if times_to_go is not None:
+                times_to_go -= 1
+
+
 # ----------------------------------------------------------------------------
