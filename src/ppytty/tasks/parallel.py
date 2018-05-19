@@ -12,25 +12,30 @@ from . import task
 
 class Parallel(task.Task):
 
-    def __init__(self, tasks, **kw):
+    def __init__(self, tasks, stop_last=0, **kw):
 
         super().__init__(**kw)
         self._tasks = tasks
+        self._stop_last = stop_last
 
 
     def run(self):
 
         running_tasks = []
+        return_values = {}
 
         for task in self._tasks:
             yield ('run-task', task)
             running_tasks.append(task)
-        while running_tasks:
-            task, return_action = yield ('wait-task',)
+        while len(running_tasks) > self._stop_last:
+            task, return_value = yield ('wait-task',)
+            return_values[task] = return_value
             running_tasks.remove(task)
+        for task in running_tasks:
+            yield ('stop-task', task)
+            _, _ = yield ('wait-task',)
 
-        if len(self._tasks) == 1:
-            return return_action
+        return return_values
 
 
     def reset(self):
