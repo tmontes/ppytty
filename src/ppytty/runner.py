@@ -25,7 +25,7 @@ class _PlayerStop(Exception):
 
 
 
-_log = logging.getLogger('player')
+_log = logging.getLogger('runner')
 
 _STDIN_FD = sys.stdin.fileno()
 _RD_FDS = [_STDIN_FD]
@@ -91,20 +91,26 @@ def _run(top_task):
                 continue
             _process_task_termination(task, return_.value)
         else:
-            request_call, *request_args = request
-            _log.debug('%r called %r %r', task, request_call, request_args)
-            request_handler_name = f'_do_{request_call.replace("-", "_")}'
-            try:
-                request_handler = getattr(_this_module, request_handler_name)
-            except AttributeError:
-                _log.error('%r invalid request: %r', task, request)
-                # TODO: terminate task somewhat like StopIteration?
-            else:
-                try:
-                    request_handler(task, *request_args)
-                except Exception as e:
-                    _log.error('%r call %r execution failed: %r', task, request, e)
-                    # TODO: inconsistent state? panic?
+            _process_task_request(task, request)
+
+
+
+def _process_task_request(task, request):
+
+    request_call, *request_args = request
+    _log.debug('%r called %r %r', task, request_call, request_args)
+    request_handler_name = f'_do_{request_call.replace("-", "_")}'
+    try:
+        request_handler = getattr(_this_module, request_handler_name)
+    except AttributeError:
+        _log.error('%r invalid request: %r', task, request)
+        # TODO: terminate task somewhat like StopIteration?
+    else:
+        try:
+            request_handler(task, *request_args)
+        except Exception as e:
+            _log.error('%r call %r execution failed: %r', task, request, e)
+            # TODO: inconsistent state? panic?
 
 
 
