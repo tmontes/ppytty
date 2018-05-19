@@ -302,6 +302,7 @@ def _read_keyboard(prompt=None, wait=False):
                 continue
             elif keyboard_byte == b'D':
                 _log.critical('tasks=%r, state=%r', _tasks, _state)
+                continue
             return keyboard_byte
         elif not quit_in_progress:
             return
