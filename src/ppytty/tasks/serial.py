@@ -6,47 +6,9 @@
 # ----------------------------------------------------------------------------
 
 
-from . import task
 from . import parallel
+from . import task
 from . import utils
-
-
-
-class _TaskMonitor(parallel.Parallel):
-
-    def __init__(self, task, monitor_task, **kw):
-
-        super().__init__([task, monitor_task], stop_last=1, **kw)
-
-
-    def run(self):
-
-        result = yield from super().run()
-        if len(result) > 1:
-            self._log.warn('more than one result: %r', result)
-        return result.popitem()[1]
-
-
-
-def serial_timed_control(seconds):
-
-    def monitor_factory(monitored_task, current_index, max_index):
-
-        sleep_task = utils.DelayReturn(seconds=seconds, return_value='next')
-        return _TaskMonitor(monitored_task, sleep_task)
-
-    return monitor_factory
-
-
-
-def serial_keyboard_control(key_map=None):
-
-    def monitor_factory(monitored_task, current_index, max_index):
-
-        keyboard_task = utils.KeyboardAction(keymap=key_map)
-        return _TaskMonitor(monitored_task, keyboard_task)
-
-    return monitor_factory
 
 
 
@@ -98,6 +60,46 @@ class Serial(task.Task):
                     continue
                 elif self._stop_when_under:
                     return action if self._return_nav_hint else None
+            elif action == 'redo':
+                last_run_index = None
+
+
+    @staticmethod
+    def timed_monitor(seconds):
+
+        def monitor_factory(monitored_task, current_index, max_index):
+
+            sleep_task = utils.DelayReturn(seconds=seconds, return_value='next')
+            return _TaskMonitor(monitored_task, sleep_task)
+
+        return monitor_factory
+
+
+    @staticmethod
+    def keyboard_monitor(key_map=None):
+
+        def monitor_factory(monitored_task, current_index, max_index):
+
+            keyboard_task = utils.KeyboardAction(keymap=key_map)
+            return _TaskMonitor(monitored_task, keyboard_task)
+
+        return monitor_factory
+
+
+
+class _TaskMonitor(parallel.Parallel):
+
+    def __init__(self, task, monitor_task, **kw):
+
+        super().__init__([task, monitor_task], stop_last=1, **kw)
+
+
+    def run(self):
+
+        result = yield from super().run()
+        if len(result) > 1:
+            self._log.warn('more than one result: %r', result)
+        return result.popitem()[1]
 
 
 # ----------------------------------------------------------------------------
