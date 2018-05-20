@@ -22,8 +22,8 @@ class Task(object):
 
     def __repr__(self):
 
-        name = repr(self._name) if self._name else f'at {hex(id(self))}'
-        return f'<{self.__class__.__name__} {name}>'
+        name = f' {self._name!r}' if self._name else ''
+        return f'<{self.__class__.__name__}{name} at {hex(id(self))}>'
 
 
     @property
