@@ -58,6 +58,7 @@ def run(task, post_prompt='[COMPLETED]'):
 
 def _run(top_task):
 
+    _tasks.top_task = top_task
     _tasks.running = collections.deque()
     _tasks.running.append(top_task)
 
@@ -71,10 +72,10 @@ def _run(top_task):
     _tasks.waiting_on_time = []
     _tasks.waiting_on_time_hq = []
 
+    _tasks.requests = {}
     _tasks.responses = {}
 
 
-    _log.info('%r starting', top_task)
     while (_tasks.running or _tasks.waiting_on_child or _tasks.waiting_on_key or
            _tasks.waiting_on_time or _tasks.terminated):
         _state.now = time.time()
@@ -97,8 +98,9 @@ def _run(top_task):
 
 def _process_task_request(task, request):
 
+    _log.debug('%r request %r', task, request)
+    _tasks.requests[task] = request
     request_call, *request_args = request
-    _log.debug('%r called %r %r', task, request_call, request_args)
     request_handler_name = f'_do_{request_call.replace("-", "_")}'
     try:
         request_handler = getattr(_this_module, request_handler_name)
@@ -202,6 +204,40 @@ def _do_stop_task(task, child_task):
 
 
 
+_SEPARATOR = '-' * 60
+
+def _do_dump_state(top_task):
+
+    def _task_status(task):
+        if task in _tasks.running:
+            return 'RR'
+        elif task in _tasks.waiting_on_child:
+            return 'WC'
+        elif task in _tasks.waiting_on_key:
+            return 'WK'
+        elif task in _tasks.waiting_on_time:
+            return 'WT'
+        elif task in (t for (t, _) in _tasks.terminated):
+            return 'TT'
+        else:
+            return '??'
+
+    def _task_lines(task, level=0):
+        indent = ' ' * 4 * level
+        status = _task_status(task)
+        _log.critical(f'{status} {indent}{task}')
+        if task in _tasks.children:
+            for child in _tasks.children[task]:
+                _task_lines(child, level+1)
+
+    _log.critical(_SEPARATOR)
+    _task_lines(top_task)
+    _log.critical(_SEPARATOR)
+    _log.critical('tasks=%r, state=%r', _tasks, _state)
+    _log.critical(_SEPARATOR)
+
+
+
 def _clear_tasks_waiting_on_time_hq():
 
     if not _tasks.waiting_on_time:
@@ -211,10 +247,19 @@ def _clear_tasks_waiting_on_time_hq():
 
 def _run_task_until_request(task):
 
+    request = _tasks.requests.get(task)
     response = _tasks.responses.get(task)
+    if request is not None:
+        _log.debug('%r respond %r with %r', task, request, response)
+    elif response is not None:
+        _log.error('%r respond no request with %r', task, response)
+    else:
+        _log.debug('%r running', task)
     try:
         return task.running.send(response)
     finally:
+        if request:
+            del _tasks.requests[task]
         if response:
             del _tasks.responses[task]
 
@@ -301,7 +346,7 @@ def _read_keyboard(prompt=None, wait=False):
                 quit_in_progress = False
                 continue
             elif keyboard_byte == b'D':
-                _log.critical('tasks=%r, state=%r', _tasks, _state)
+                _do_dump_state(_tasks.top_task)
                 continue
             return keyboard_byte
         elif not quit_in_progress:
