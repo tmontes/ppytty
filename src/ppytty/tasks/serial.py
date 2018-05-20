@@ -16,7 +16,7 @@ class Serial(task.Task):
 
     _ACTIONS = ['next', 'prev', 'redo']
 
-    def __init__(self, tasks, *, default_nav='next', return_nav_hint=False,
+    def __init__(self, tasks, *, default_nav='next', return_nav_hint=True,
                  stop_when_under=True, stop_when_over=True, monitor_factory=None,
                  **kw):
 
