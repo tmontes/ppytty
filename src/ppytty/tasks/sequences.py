@@ -22,9 +22,10 @@ class OuterSequenceKeyboard(serial.Serial):
 
     def __init__(self, slides, **kw):
 
+        mf = self.keyboard_monitor(self.key_map, monitored_name=kw.get('name'))
         super().__init__(slides, default_nav=None, return_nav_hint=False,
                         stop_when_under=False, stop_when_over=False,
-                        monitor_factory=self.keyboard_monitor(self.key_map), **kw)
+                        monitor_factory=mf, **kw)
 
 
 
@@ -32,9 +33,10 @@ class OuterSequenceTimed(serial.Serial):
 
     def __init__(self, slides, *, delay, **kw):
 
+        mf = self.timed_monitor(delay, monitored_name=kw.get('name'))
         super().__init__(slides, default_nav=None, return_nav_hint=False,
                         stop_when_under=False, stop_when_over=False,
-                        monitor_factory=self.timed_monitor(delay), **kw)
+                        monitor_factory=mf, **kw)
 
 
 

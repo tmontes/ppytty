@@ -65,23 +65,27 @@ class Serial(task.Task):
 
 
     @staticmethod
-    def timed_monitor(seconds):
+    def timed_monitor(seconds, monitored_name=None):
 
         def monitor_factory(monitored_task, current_index, max_index):
 
-            sleep_task = utils.DelayReturn(seconds=seconds, return_value='next')
-            return _TaskMonitor(monitored_task, sleep_task)
+            tm_name = f'{monitored_name or ""}.{current_index}'
+            st_name = f'{tm_name}.st'
+            sleep_task = utils.DelayReturn(seconds=seconds, return_value='next', name=st_name)
+            return _TaskMonitor(monitored_task, sleep_task, name=tm_name)
 
         return monitor_factory
 
 
     @staticmethod
-    def keyboard_monitor(key_map=None):
+    def keyboard_monitor(key_map=None, monitored_name=None):
 
         def monitor_factory(monitored_task, current_index, max_index):
 
-            keyboard_task = utils.KeyboardAction(keymap=key_map)
-            return _TaskMonitor(monitored_task, keyboard_task)
+            tm_name = f'{monitored_name or ""}.{current_index}'
+            kt_name = f'{tm_name}.ka'
+            keyboard_task = utils.KeyboardAction(keymap=key_map, name=kt_name)
+            return _TaskMonitor(monitored_task, keyboard_task, name=tm_name)
 
         return monitor_factory
 
@@ -91,7 +95,7 @@ class _TaskMonitor(parallel.Parallel):
 
     def __init__(self, task, monitor_task, **kw):
 
-        super().__init__([task, monitor_task], stop_last=1, **kw)
+        super().__init__([monitor_task, task], stop_last=1, **kw)
 
 
     def run(self):
