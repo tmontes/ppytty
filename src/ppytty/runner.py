@@ -167,6 +167,7 @@ def _do_wait_task(task):
         _clear_tasks_children(task)
         _tasks.running.append(task)
         _tasks.terminated.remove((child, return_value))
+        _clear_tasks_requests_responses(child)
     else:
         _tasks.waiting_on_child.append(task)
 
@@ -176,6 +177,14 @@ def _clear_tasks_children(task):
 
     if not _tasks.children[task]:
         del _tasks.children[task]
+
+
+
+def _clear_tasks_requests_responses(task):
+
+    for target in (_tasks.requests, _tasks.responses):
+        if task in target:
+            del target[task]
 
 
 
@@ -203,6 +212,7 @@ def _do_stop_task(task, child_task, keep_running=True):
             _log.error('%r will not stop terminated task %r', task, child_task)
         return
 
+    _clear_tasks_requests_responses(child_task)
     if keep_running:
         _tasks.terminated.append((child_task, ('stopped-by', task)))
         _tasks.running.append(task)
@@ -210,6 +220,7 @@ def _do_stop_task(task, child_task, keep_running=True):
     else:
         del _tasks.parent[child_task]
         _tasks.children[task].remove(child_task)
+        _clear_tasks_children(task)
         _log.info('%r stopped from parent %r stop', child_task, task)
 
 
@@ -314,6 +325,7 @@ def _process_task_completion(task, return_value):
         _tasks.running.append(candidate_parent)
     else:
         _tasks.terminated.append((task, return_value))
+    _clear_tasks_requests_responses(task)
 
 
 
