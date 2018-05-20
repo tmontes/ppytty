@@ -1,10 +1,10 @@
-ppytty_task = ppytty.SlideSequenceKeyboard([
+ppytty_task = ppytty.OuterSequenceKeyboard([
     ppytty.Slide([
-        ppytty.WidgetSequenceTimed([
+        ppytty.InnerSequenceTimed([
             ppytty.Label('Hello world!', name='l1'),
             ppytty.Label('And more...', name='l2'),
             ppytty.Label('Done with the first slide!', name='l3'),
-        ], name='s1.d1', delay=0.2, post_keyboard=True),
+        ], name='s1.d1', delay=0.2),
     ], name='s1'),
     ppytty.Slide([
         ppytty.Label('...nearly done', name='l3'),

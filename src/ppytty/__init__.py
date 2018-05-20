@@ -25,11 +25,15 @@ __author__ = 'Tiago Montes'
 __email__ = 'tiago.montes@gmail.com'
 
 
-from . tasks import Task, Parallel, Serial, DelayReturn, KeyboardAction
+from . tasks import (
+    Task,
+    Parallel, Serial,
+    DelayReturn, KeyboardAction, Loop,
+    OuterSequenceKeyboard, OuterSequenceTimed,
+    InnerSequenceKeyboard, InnerSequenceTimed,
+)
 from . widgets import (
-    SlideSequence, SlideSequenceKeyboard, SlideSequenceTimed,
     Slide,
-    WidgetSequence, WidgetSequenceKeyboard, WidgetSequenceTimed,
     Label,
     Widget,
 )
@@ -37,19 +41,19 @@ from . runner import run
 from . main import main
 
 __all__ = [
-    'SlideSequence',
-    'SlideSequenceKeyboard',
-    'SlideSequenceTimed',
+    'OuterSequenceKeyboard',
+    'OuterSequenceTimed',
     'Slide',
-    'WidgetSequence',
-    'WidgetSequenceKeyboard',
-    'WidgetSequenceTimed',
+    'InnerSequenceKeyboard',
+    'InnerSequenceTimed',
     'Label',
     'Widget',
+    'Task',
     'Serial',
     'Parallel',
     'DelayReturn',
     'KeyboardAction',
+    'Loop',
     'run',
     'main',
 ]

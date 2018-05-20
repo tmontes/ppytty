@@ -5,8 +5,18 @@
 # See LICENSE for deatils.
 # ----------------------------------------------------------------------------
 
-from . widget import Widget
-from . label import Label
-from . slide import Slide
+
+from .. import tasks
+
+
+
+class Slide(tasks.Parallel):
+
+    def run(self):
+
+        yield ('clear',)
+        result = yield from super().run()
+        return result
+
 
 # ----------------------------------------------------------------------------
