@@ -34,7 +34,7 @@ class Serial(task.Task):
         index = 0
         index_max = len(self._tasks) - 1
         last_run_index = None
-        do_nothing = utils.Loop(utils.DelayReturn(seconds=3600))
+        do_nothing = utils.Loop(utils.DelayReturn(seconds=3600), name='nothing')
 
         while True:
             task = self._tasks[index] if index != last_run_index else do_nothing
