@@ -52,7 +52,7 @@ class InnerSequenceKeyboard(serial.Serial):
 
     def __init__(self, widgets, **kw):
 
-        mf = self.keyboard_monitor(self.key_map)
+        mf = self.keyboard_monitor(self.key_map, monitored_name=kw.get('name'))
         super().__init__(widgets, default_nav=None, monitor_factory=mf, **kw)
 
 
@@ -61,7 +61,7 @@ class InnerSequenceTimed(serial.Serial):
 
     def __init__(self, widgets, *, delay, **kw):
 
-        mf = self.timed_monitor(delay)
+        mf = self.timed_monitor(delay, monitored_name=kw.get('name'))
         super().__init__(widgets, default_nav=None, monitor_factory=mf, **kw)
 
 
