@@ -56,7 +56,8 @@ class Loop(task.Task):
         times_to_go = self._times
         while times_to_go is None or times_to_go:
             self._task.reset()
-            yield from self._task.run()
+            yield ('run-task', self._task)
+            _, _ = yield ('wait-task',)
             if times_to_go is not None:
                 times_to_go -= 1
 
