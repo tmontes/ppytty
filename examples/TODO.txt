@@ -8,15 +8,10 @@ multilevel_key.py
 multilevel_mix.py
 
     - Moving out of the first "slide" before it ends and going back to it
-      leads to a failing condition with the error:
-
-      01:31:20 E runner <InnerSequenceTimed 's1.d1'> stopped with no parent
+      seems to leave "stopped tasks" in the runner state.
 
 
 multilevel_time.py
 
 nonstop_level1.py
-
-    - Fails like crazy if multi reloads/redos are triggered.
-    - Somehow the DelayReturn Loops multiply themselves.
 
