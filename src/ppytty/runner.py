@@ -87,10 +87,10 @@ def _run(top_task):
         try:
             request = _run_task_until_request(task)
         except StopIteration as return_:
-            _log.info('%r stopped with %r', task, return_.value)
+            _log.info('%r completed with %r', task, return_.value)
             if task is top_task:
                 continue
-            _process_task_termination(task, return_.value)
+            _process_task_completion(task, return_.value)
         else:
             _process_task_request(task, request)
 
@@ -179,10 +179,14 @@ def _clear_tasks_children(task):
 
 
 
-def _do_stop_task(task, child_task):
+def _do_stop_task(task, child_task, keep_running=True):
 
     if _tasks.parent[child_task] is not task:
         raise RuntimeError('cannot kill non-child tasks')
+
+    if child_task in _tasks.children:
+        for grand_child_task in _tasks.children[child_task]:
+            _do_stop_task(child_task, grand_child_task, keep_running=False)
 
     if child_task in _tasks.running:
         _tasks.running.remove(child_task)
@@ -196,11 +200,17 @@ def _do_stop_task(task, child_task):
     else:
         terminated = [t for (t, _) in _tasks.terminated if t is child_task]
         if terminated:
-            _log.error('%r stopping terminated task %r', task, child_task)
+            _log.error('%r will not stop terminated task %r', task, child_task)
         return
 
-    _tasks.terminated.append((child_task, task))
-    _tasks.running.append(task)
+    if keep_running:
+        _tasks.terminated.append((child_task, ('stopped-by', task)))
+        _tasks.running.append(task)
+        _log.info('%r stopped by %r', child_task, task)
+    else:
+        del _tasks.parent[child_task]
+        _tasks.children[task].remove(child_task)
+        _log.info('%r stopped from parent %r stop', child_task, task)
 
 
 
@@ -290,11 +300,11 @@ def _process_tasks_waiting_on_time():
 
 
 
-def _process_task_termination(task, return_value):
+def _process_task_completion(task, return_value):
 
     candidate_parent = _tasks.parent.get(task)
     if not candidate_parent:
-        _log.error('%r stopped with no parent', task)
+        _log.error('%r completed with no parent', task)
     if candidate_parent in _tasks.waiting_on_child:
         _tasks.responses[candidate_parent] = (task, return_value)
         del _tasks.parent[task]
