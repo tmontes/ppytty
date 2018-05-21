@@ -49,7 +49,7 @@ _DEFAULT_TASK = ppytty.OuterSequenceKeyboard([
             ppytty.Label('Hello world!', name='l1'),
             ppytty.Label('And more...', name='l2'),
             ppytty.Label('Done with the first slide!', name='l3'),
-        ], name='s1.d1', delay=0.2),
+        ], name='s1.d1', min_delay=0.5, max_delay=1),
     ], name='s1'),
     ppytty.Slide([
         ppytty.Label('...nearly done', name='l3'),
