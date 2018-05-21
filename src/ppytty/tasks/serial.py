@@ -76,12 +76,12 @@ class Serial(task.Task):
             min_duration_task = utils.RunForAtLeast(
                 monitored_task, min_seconds,
                 return_early='next', return_late='next',
-                name=f'{monitor_name}',
+                name=monitor_name,
             )
             max_duration_task = utils.RunForAtMost(
                 min_duration_task, max_seconds,
                 return_early='next', return_late='next',
-                name=f'{monitor_name}',
+                name=monitor_name,
             )
             return max_duration_task
 
