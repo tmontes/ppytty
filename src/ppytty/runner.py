@@ -299,15 +299,14 @@ def _process_tasks_waiting_on_key():
 
 def _process_tasks_waiting_on_time():
 
-    if _tasks.waiting_on_time and _tasks.waiting_on_time_hq[0][0] < _state.now:
-        while True:
+    if _tasks.waiting_on_time:
+        while _tasks.waiting_on_time_hq and _tasks.waiting_on_time_hq[0][0] < _state.now:
             _, time_waiter = heapq.heappop(_tasks.waiting_on_time_hq)
             if time_waiter in _tasks.waiting_on_time:
                 _tasks.waiting_on_time.remove(time_waiter)
                 _clear_tasks_waiting_on_time_hq()
-                break
-        _tasks.running.append(time_waiter)
-        _log.info('%r waking up', time_waiter)
+                _tasks.running.append(time_waiter)
+                _log.info('%r waking up', time_waiter)
 
 
 
