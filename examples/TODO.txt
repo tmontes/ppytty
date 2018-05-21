@@ -5,13 +5,3 @@ multilevel_key.py
 
     - Keys are not being handled by the correct inner/outer sequence.
 
-multilevel_mix.py
-
-    - Moving out of the first "slide" before it ends and going back to it
-      seems to leave "stopped tasks" in the runner state.
-
-
-multilevel_time.py
-
-nonstop_level1.py
-
