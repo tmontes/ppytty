@@ -62,4 +62,79 @@ class Loop(task.Task):
                 times_to_go -= 1
 
 
+
+TASK = object()
+
+
+
+class RunForAtLeast(task.Task):
+
+    def __init__(self, task, seconds, return_early=TASK, return_late=TASK, **kw):
+
+        super().__init__(**kw)
+        self._task = task
+        self._seconds = seconds
+        self._return_early = return_early
+        self._return_late = return_late
+
+
+    def run(self):
+
+        timeout_task = DelayReturn(seconds=self._seconds)
+
+        yield ('run-task', timeout_task)
+        yield ('run-task', self._task)
+
+        completed_first, value = yield ('wait-task',)
+        if completed_first is self._task:
+            return_value = value if self._return_early is TASK else self._return_early
+            expected_second = timeout_task
+        elif completed_first is timeout_task:
+            expected_second = self._task
+
+        completed_second, value = yield ('wait-task',)
+        if completed_second is not expected_second:
+            self._log.error('unexpected second completed: %r', completed_second)
+        if completed_second is self._task:
+            return_value = value if self._return_late is TASK else self._return_late
+
+        return return_value
+
+
+
+class RunForAtMost(task.Task):
+
+    def __init__(self, task, seconds, return_early=TASK, return_late='timeout', **kw):
+
+        super().__init__(**kw)
+        self._task = task
+        self._seconds = seconds
+        self._return_early = return_early
+        self._return_late = return_late
+
+
+    def run(self):
+
+        timeout_task = DelayReturn(seconds=self._seconds)
+
+        yield ('run-task', timeout_task)
+        yield ('run-task', self._task)
+
+        completed_first, value = yield ('wait-task',)
+        if completed_first is self._task:
+            stop_second = timeout_task
+            return_value = value if self._return_early is TASK else self._return_early
+        elif completed_first is timeout_task:
+            stop_second = self._task
+
+        yield ('stop-task', stop_second)
+        completed_second, value = yield ('wait-task',)
+        if completed_second is not stop_second:
+            self._log.error('unexpected second completed: %r', completed_second)
+        if completed_second is self._task:
+            return_value = self._return_late
+
+        return return_value
+
+
 # ----------------------------------------------------------------------------

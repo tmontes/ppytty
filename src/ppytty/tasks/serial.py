@@ -65,14 +65,25 @@ class Serial(task.Task):
 
 
     @staticmethod
-    def timed_monitor(seconds, monitored_name=None):
+    def time_monitor(min_seconds, max_seconds, monitored_name=None):
+
+        if min_seconds > max_seconds:
+            raise ValueError('invalid min_seconds > max_seconds')
 
         def monitor_factory(monitored_task, current_index, max_index):
 
-            tm_name = f'{monitored_name or ""}.{current_index}'
-            st_name = f'{tm_name}.st'
-            sleep_task = utils.DelayReturn(seconds=seconds, return_value='next', name=st_name)
-            return _TaskMonitor(monitored_task, sleep_task, name=tm_name)
+            monitor_name = f'{monitored_name or ""}.{current_index}'
+            min_duration_task = utils.RunForAtLeast(
+                monitored_task, min_seconds,
+                return_early='next', return_late='next',
+                name=f'{monitor_name}',
+            )
+            max_duration_task = utils.RunForAtMost(
+                min_duration_task, max_seconds,
+                return_early='next', return_late='next',
+                name=f'{monitor_name}',
+            )
+            return max_duration_task
 
         return monitor_factory
 

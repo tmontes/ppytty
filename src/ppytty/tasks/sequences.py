@@ -31,9 +31,9 @@ class OuterSequenceKeyboard(serial.Serial):
 
 class OuterSequenceTimed(serial.Serial):
 
-    def __init__(self, slides, *, delay, **kw):
+    def __init__(self, slides, *, min_delay, max_delay, **kw):
 
-        mf = self.timed_monitor(delay, monitored_name=kw.get('name'))
+        mf = self.time_monitor(min_delay, max_delay, monitored_name=kw.get('name'))
         super().__init__(slides, default_nav=None, return_nav_hint=False,
                         stop_when_under=False, stop_when_over=False,
                         monitor_factory=mf, **kw)
@@ -59,9 +59,9 @@ class InnerSequenceKeyboard(serial.Serial):
 
 class InnerSequenceTimed(serial.Serial):
 
-    def __init__(self, widgets, *, delay, **kw):
+    def __init__(self, widgets, *, min_delay, max_delay, **kw):
 
-        mf = self.timed_monitor(delay, monitored_name=kw.get('name'))
+        mf = self.time_monitor(min_delay, max_delay, monitored_name=kw.get('name'))
         super().__init__(widgets, default_nav=None, monitor_factory=mf, **kw)
 
 
