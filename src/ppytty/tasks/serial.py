@@ -93,28 +93,11 @@ class Serial(task.Task):
 
         def monitor_factory(monitored_task, current_index, max_index):
 
-            tm_name = f'{monitored_name or ""}.{current_index}'
-            kt_name = f'{tm_name}.ka'
-            keyboard_task = utils.KeyboardAction(keymap=key_map, name=kt_name)
-            return _TaskMonitor(monitored_task, keyboard_task, name=tm_name)
+            monitor_name = f'{monitored_name or ""}.{current_index}'
+            keyboard_task = utils.KeyboardAction(keymap=key_map, name=monitor_name)
+            return utils.MasterSlave(keyboard_task, monitored_task, name=monitor_name)
 
         return monitor_factory
-
-
-
-class _TaskMonitor(parallel.Parallel):
-
-    def __init__(self, task, monitor_task, **kw):
-
-        super().__init__([monitor_task, task], stop_last=1, **kw)
-
-
-    def run(self):
-
-        result = yield from super().run()
-        if len(result) > 1:
-            self._log.warn('more than one result: %r', result)
-        return result.popitem()[1]
 
 
 # ----------------------------------------------------------------------------

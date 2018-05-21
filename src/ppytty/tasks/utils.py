@@ -67,6 +67,44 @@ TASK = object()
 
 
 
+class MasterSlave(task.Task):
+
+    def __init__(self, master, slave, **kw):
+
+        super().__init__(*kw)
+        self._master = master
+        self._slave = slave
+
+
+    def run(self):
+
+        yield ('run-task', self._master)
+        yield ('run-task', self._slave)
+
+        completed_first, value = yield('wait-task',)
+        if completed_first is self._master:
+            yield ('stop-task', self._slave)
+            return_value = value
+            expected_second = self._slave
+        elif completed_first is self._slave:
+            expected_second = self._master
+        else:
+            self._log.error('unexpected first completed: %r', completed_first)
+
+        completed_second, value = yield ('wait-task',)
+        if completed_second is not expected_second:
+            self._log.error('unexpected second completed: %r', completed_second)
+        if completed_second is self._master:
+            return_value = value
+        elif completed_second is self._slave:
+            pass
+        else:
+            self._log.error('unexpected second completed: %r', completed_second)
+
+        return return_value
+
+
+
 class RunForAtLeast(task.Task):
 
     def __init__(self, task, seconds, return_early=TASK, return_late=TASK, **kw):
