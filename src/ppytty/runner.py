@@ -196,6 +196,8 @@ def _do_stop_task(task, child_task, keep_running=True):
     if child_task in _tasks.children:
         for grand_child_task in _tasks.children[child_task]:
             _do_stop_task(child_task, grand_child_task, keep_running=False)
+            del _tasks.parent[grand_child_task]
+        del _tasks.children[child_task]
 
     if child_task in _tasks.running:
         _tasks.running.remove(child_task)
@@ -218,16 +220,12 @@ def _do_stop_task(task, child_task, keep_running=True):
         _tasks.running.append(task)
         _log.info('%r stopped by %r', child_task, task)
     else:
-        del _tasks.parent[child_task]
-        _tasks.children[task].remove(child_task)
-        _clear_tasks_children(task)
         _log.info('%r stopped from parent %r stop', child_task, task)
-
 
 
 _SEPARATOR = '-' * 60
 
-def _do_dump_state(top_task):
+def _do_dump_state(task):
 
     def _task_status(task):
         if task in _tasks.running:
@@ -252,10 +250,13 @@ def _do_dump_state(top_task):
                 _task_lines(child, level+1)
 
     _log.critical(_SEPARATOR)
-    _task_lines(top_task)
+    _task_lines(_tasks.top_task)
     _log.critical(_SEPARATOR)
     _log.critical('tasks=%r, state=%r', _tasks, _state)
     _log.critical(_SEPARATOR)
+
+    if task is not None:
+        _tasks.running.append(task)
 
 
 
@@ -367,7 +368,7 @@ def _read_keyboard(prompt=None, wait=False):
                 quit_in_progress = False
                 continue
             elif keyboard_byte == b'D':
-                _do_dump_state(_tasks.top_task)
+                _do_dump_state(None)
                 continue
             return keyboard_byte
         elif not quit_in_progress:
