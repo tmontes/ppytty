@@ -351,7 +351,10 @@ def _read_keyboard(prompt=None, wait=False):
 
     quit_in_progress = False
 
-    timeout = None if wait else 0.02
+    if _tasks.waiting_on_time:
+        timeout = max(_tasks.waiting_on_time_hq[0][0] - _state.now, 0)
+    else:
+        timeout = None
     while True:
         actual_prompt = 'QUIT?' if quit_in_progress else prompt
         with _prompt_context(actual_prompt):
