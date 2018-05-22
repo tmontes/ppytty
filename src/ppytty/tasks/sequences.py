@@ -12,7 +12,7 @@ from . import serial
 
 class OuterSequenceKeyboard(serial.Serial):
 
-    key_map = {
+    action_map = {
         b'{': 'prev',
         b'}': 'next',
         b'[': 'prev',
@@ -20,9 +20,9 @@ class OuterSequenceKeyboard(serial.Serial):
         b'r': 'redo',
     }
 
-    def __init__(self, slides, **kw):
+    def __init__(self, slides, key_priority=1000, **kw):
 
-        mf = self.keyboard_monitor(self.key_map, monitored_name=kw.get('name'))
+        mf = self.keyboard_monitor(self.action_map, key_priority, monitored_name=kw.get('name'))
         super().__init__(slides, default_nav=None, return_nav_hint=False,
                         stop_when_under=False, stop_when_over=False,
                         monitor_factory=mf, **kw)
@@ -42,17 +42,17 @@ class OuterSequenceTimed(serial.Serial):
 
 class InnerSequenceKeyboard(serial.Serial):
 
-    key_map = {
-        b'{': 'exit-prev',
-        b'}': 'exit-next',
-        b'[': 'exit-redo',
+    action_map = {
+        b'{': b'{',
+        b'}': b'}',
+        b'[': b'r',
         b']': 'next',
-        b'r': 'exit-redo',
+        b'r': b'r',
     }
 
-    def __init__(self, widgets, **kw):
+    def __init__(self, widgets, key_priority=100, **kw):
 
-        mf = self.keyboard_monitor(self.key_map, monitored_name=kw.get('name'))
+        mf = self.keyboard_monitor(self.action_map, key_priority, monitored_name=kw.get('name'))
         super().__init__(widgets, default_nav=None, monitor_factory=mf, **kw)
 
 
