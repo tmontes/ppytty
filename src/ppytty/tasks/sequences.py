@@ -10,14 +10,39 @@ from . import serial
 
 
 
-class OuterSequenceKeyboard(serial.Serial):
+class Keymap(object):
 
-    action_map = {
-        b'{': 'prev',
-        b'}': 'next',
-        b'[': 'prev',
-        b']': 'next',
-        b'r': 'redo',
+    OUTER_PREV = b'{'
+    OUTER_NEXT = b'}'
+    OUTER_REDO = b'r'
+    INNER_PREV = b'['
+    INNER_NEXT = b']'
+    INNER_REDO = b'r'
+
+
+
+class KeyboardControlMixin(object):
+
+    ACTION_MAP = {}
+
+    def action_map(self, current_index, max_index):
+
+        if current_index == 0:
+            return getattr(self, 'ACTION_MAP_FIRST', self.ACTION_MAP)
+        if current_index == max_index:
+            return getattr(self, 'ACTION_MAP_LAST', self.ACTION_MAP)
+        return self.ACTION_MAP
+
+
+
+class OuterSequenceKeyboard(KeyboardControlMixin, serial.Serial):
+
+    ACTION_MAP = {
+        Keymap.OUTER_PREV: 'prev',
+        Keymap.OUTER_NEXT: 'next',
+        Keymap.OUTER_REDO: 'redo',
+        Keymap.INNER_PREV: 'prev',
+        Keymap.INNER_NEXT: 'next',
     }
 
     def __init__(self, slides, key_priority=1000, **kw):
@@ -40,15 +65,21 @@ class OuterSequenceTimed(serial.Serial):
 
 
 
-class InnerSequenceKeyboard(serial.Serial):
+class InnerSequenceKeyboard(KeyboardControlMixin, serial.Serial):
 
-    action_map = {
-        b'{': b'{',
-        b'}': b'}',
-        b'[': b'r',
-        b']': 'next',
-        b'r': b'r',
+    ACTION_MAP = {
+        Keymap.OUTER_PREV: Keymap.OUTER_PREV,
+        Keymap.OUTER_NEXT: Keymap.OUTER_NEXT,
+        Keymap.INNER_PREV: Keymap.OUTER_REDO,
+        Keymap.INNER_NEXT: 'next',
+        Keymap.INNER_REDO: Keymap.OUTER_REDO,
     }
+
+    ACTION_MAP_FIRST = dict(ACTION_MAP)
+    ACTION_MAP_FIRST[Keymap.INNER_PREV] = Keymap.OUTER_PREV
+
+    ACTION_MAP_LAST = dict(ACTION_MAP)
+    ACTION_MAP_LAST[Keymap.INNER_NEXT] = Keymap.OUTER_NEXT
 
     def __init__(self, widgets, key_priority=100, **kw):
 
