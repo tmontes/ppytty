@@ -6,7 +6,6 @@
 # ----------------------------------------------------------------------------
 
 
-from . import parallel
 from . import task
 from . import utils
 
