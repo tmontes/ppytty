@@ -16,13 +16,15 @@ class Serial(task.Task):
 
     _ACTIONS = ['next', 'prev', 'redo']
 
-    def __init__(self, tasks, *, default_nav='next', return_nav_hint=True,
-                 stop_when_under=True, stop_when_over=True, monitor_factory=None,
+    def __init__(self, tasks, *, default_nav='next', take_nav_hint=True,
+                 return_nav_hint=True, stop_when_under=True, stop_when_over=True,
+                 monitor_factory=None,
                  **kw):
 
         super().__init__(**kw)
         self._tasks = tasks
         self._default_nav = default_nav
+        self._take_nav_hint = take_nav_hint
         self._return_nav_hint = return_nav_hint
         self._stop_when_under = stop_when_under
         self._stop_when_over = stop_when_over
@@ -44,7 +46,10 @@ class Serial(task.Task):
 
             yield ('run-task', task)
             _, nav_hint = yield ('wait-task',)
-            action = nav_hint if nav_hint in self._ACTIONS else self._default_nav
+
+            action = self._default_nav
+            if self._take_nav_hint and nav_hint in self._ACTIONS:
+                action = nav_hint
 
             last_run_index = index
 
