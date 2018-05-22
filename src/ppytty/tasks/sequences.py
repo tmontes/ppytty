@@ -57,8 +57,8 @@ class OuterSequenceKeyboard(KeyboardControlMixin, serial.Serial):
 
         mf = self.keyboard_monitor(self.action_map, key_priority, monitored_name=kw.get('name'))
         super().__init__(slides, default_nav=None, return_nav_hint=False,
-                        stop_when_under=False, stop_when_over=False,
-                        monitor_factory=mf, **kw)
+                         stop_when_under=False, stop_when_over=False,
+                         monitor_factory=mf, **kw)
 
 
 
@@ -68,8 +68,8 @@ class OuterSequenceTimed(serial.Serial):
 
         mf = self.time_monitor(min_delay, max_delay, monitored_name=kw.get('name'))
         super().__init__(slides, default_nav=None, return_nav_hint=False,
-                        stop_when_under=False, stop_when_over=False,
-                        monitor_factory=mf, **kw)
+                         stop_when_under=False, stop_when_over=False,
+                         monitor_factory=mf, **kw)
 
 
 
