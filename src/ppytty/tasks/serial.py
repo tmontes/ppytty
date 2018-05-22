@@ -99,7 +99,11 @@ class Serial(task.Task):
         def monitor_factory(monitored_task, current_index, max_index):
 
             monitor_name = f'{monitored_name or ""}.{current_index}'
-            keyboard_task = utils.KeyboardAction(action_map, priority, name=monitor_name)
+            if callable(action_map):
+                effective_action_map = action_map(current_index, max_index)
+            else:
+                effective_action_map = action_map
+            keyboard_task = utils.KeyboardAction(effective_action_map, priority, name=monitor_name)
             return utils.MasterSlave(keyboard_task, monitored_task, name=monitor_name)
 
         return monitor_factory
