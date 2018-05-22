@@ -28,17 +28,22 @@ class DelayReturn(task.Task):
 
 class KeyboardAction(task.Task):
 
-    def __init__(self, keymap, default_action=None, **kw):
+    def __init__(self, action_map, priority=0, default_action=None, **kw):
 
         super().__init__(**kw)
-        self._keymap = keymap
+        self._action_map = action_map
+        self._priority = priority
         self._default_action = default_action
 
 
     def run(self):
 
-        key = yield ('read-key',)
-        return self._keymap.get(key, self._default_action)
+        key = yield ('read-key', self._priority)
+        action = self._action_map.get(key, self._default_action)
+        if isinstance(action, bytes):
+            yield ('put-key', action)
+            return
+        return action
 
 
 
