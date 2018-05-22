@@ -94,12 +94,12 @@ class Serial(task.Task):
 
 
     @staticmethod
-    def keyboard_monitor(key_map=None, monitored_name=None):
+    def keyboard_monitor(action_map=None, priority=0, monitored_name=None):
 
         def monitor_factory(monitored_task, current_index, max_index):
 
             monitor_name = f'{monitored_name or ""}.{current_index}'
-            keyboard_task = utils.KeyboardAction(keymap=key_map, name=monitor_name)
+            keyboard_task = utils.KeyboardAction(action_map, priority, name=monitor_name)
             return utils.MasterSlave(keyboard_task, monitored_task, name=monitor_name)
 
         return monitor_factory
