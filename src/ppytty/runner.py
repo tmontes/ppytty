@@ -68,7 +68,8 @@ def _run(top_task):
     _tasks.children = collections.defaultdict(list)
 
     _tasks.waiting_on_child = []
-    _tasks.waiting_on_key = collections.deque()
+    _tasks.waiting_on_key = []
+    _tasks.waiting_on_key_hq = []
     _tasks.waiting_on_time = []
     _tasks.waiting_on_time_hq = []
 
@@ -138,9 +139,17 @@ def _do_sleep(task, seconds):
 
 
 
-def _do_read_key(task):
+def _do_read_key(task, priority):
 
     _tasks.waiting_on_key.append(task)
+    heapq.heappush(_tasks.waiting_on_key_hq, (priority, task))
+
+
+
+def _do_put_key(task, pushed_back_key):
+
+    _process_tasks_waiting_on_key(pushed_back_key)
+    _tasks.running.append(task)
 
 
 
@@ -287,14 +296,19 @@ def _run_task_until_request(task):
 
 
 
-def _process_tasks_waiting_on_key():
+def _process_tasks_waiting_on_key(keyboard_byte=None):
 
-    keyboard_byte = _read_keyboard(prompt='?')
+    if keyboard_byte is None:
+        keyboard_byte = _read_keyboard(prompt='?')
+
     if keyboard_byte and _tasks.waiting_on_key:
-        key_waiter = _tasks.waiting_on_key.popleft()
-        _tasks.responses[key_waiter] = keyboard_byte
-        _tasks.running.append(key_waiter)
-        _log.info('%r getting key %r', key_waiter, keyboard_byte)
+        while _tasks.waiting_on_key_hq:
+            _, key_waiter = heapq.heappop(_tasks.waiting_on_key_hq)
+            if key_waiter in _tasks.waiting_on_key:
+                _tasks.responses[key_waiter] = keyboard_byte
+                _tasks.running.append(key_waiter)
+                _log.info('%r getting key %r', key_waiter, keyboard_byte)
+                break
 
 
 
