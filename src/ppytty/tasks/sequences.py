@@ -45,6 +45,14 @@ class OuterSequenceKeyboard(KeyboardControlMixin, serial.Serial):
         Keymap.INNER_NEXT: 'next',
     }
 
+    ACTION_MAP_FIRST = dict(ACTION_MAP)
+    ACTION_MAP_FIRST[Keymap.OUTER_PREV] = 'redo'
+    ACTION_MAP_FIRST[Keymap.INNER_PREV] = 'redo'
+
+    ACTION_MAP_LAST = dict(ACTION_MAP)
+    del ACTION_MAP_LAST[Keymap.OUTER_NEXT]
+    del ACTION_MAP_LAST[Keymap.INNER_NEXT]
+
     def __init__(self, slides, key_priority=1000, **kw):
 
         mf = self.keyboard_monitor(self.action_map, key_priority, monitored_name=kw.get('name'))
