@@ -42,7 +42,7 @@ class KeyboardAction(task.Task):
         action = self._action_map.get(key, self._default_action)
         if isinstance(action, bytes):
             yield ('put-key', action)
-            return
+            return None
         return action
 
 
