@@ -232,6 +232,7 @@ def _do_stop_task(task, child_task, keep_running=True):
         _log.info('%r stopped from parent %r stop', child_task, task)
 
 
+
 _SEPARATOR = '-' * 60
 
 def _do_dump_state(task):
@@ -305,6 +306,7 @@ def _process_tasks_waiting_on_key(keyboard_byte=None):
         while _tasks.waiting_on_key_hq:
             _, key_waiter = heapq.heappop(_tasks.waiting_on_key_hq)
             if key_waiter in _tasks.waiting_on_key:
+                _tasks.waiting_on_key.remove(key_waiter)
                 _tasks.responses[key_waiter] = keyboard_byte
                 _tasks.running.append(key_waiter)
                 _log.info('%r getting key %r', key_waiter, keyboard_byte)
