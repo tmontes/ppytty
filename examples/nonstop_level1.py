@@ -1,9 +1,3 @@
-km = {
-    b'[': 'prev',
-    b']': 'next',
-    b'r': 'redo',
-}
-
 ppytty_task = ppytty.OuterSequenceKeyboard([
     ppytty.Serial([
         ppytty.Label('first label', name='l1'),
