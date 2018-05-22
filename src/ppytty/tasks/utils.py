@@ -71,7 +71,7 @@ class MasterSlave(task.Task):
 
     def __init__(self, master, slave, **kw):
 
-        super().__init__(*kw)
+        super().__init__(**kw)
         self._master = master
         self._slave = slave
 
