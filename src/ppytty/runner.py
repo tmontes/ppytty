@@ -20,7 +20,7 @@ from . terminal import Terminal
 
 
 class _PlayerStop(Exception):
-    
+
     pass
 
 
@@ -50,7 +50,7 @@ def run(task, post_prompt='[COMPLETED]'):
         try:
             _run(task)
             while post_prompt:
-                _ = _read_keyboard(prompt=post_prompt, wait=True)
+                _ = _read_keyboard(prompt=post_prompt)
         except _PlayerStop:
             pass
 
@@ -240,16 +240,15 @@ def _do_dump_state(task):
     def _task_status(task):
         if task in _tasks.running:
             return 'RR'
-        elif task in _tasks.waiting_on_child:
+        if task in _tasks.waiting_on_child:
             return 'WC'
-        elif task in _tasks.waiting_on_key:
+        if task in _tasks.waiting_on_key:
             return 'WK'
-        elif task in _tasks.waiting_on_time:
+        if task in _tasks.waiting_on_time:
             return 'WT'
-        elif task in (t for (t, _) in _tasks.terminated):
+        if task in (t for (t, _) in _tasks.terminated):
             return 'TT'
-        else:
-            return '??'
+        return '??'
 
     def _task_lines(task, level=0):
         indent = ' ' * 4 * level
@@ -363,7 +362,7 @@ def _prompt_context(prompt):
 
 
 
-def _read_keyboard(prompt=None, wait=False):
+def _read_keyboard(prompt=None):
 
     quit_in_progress = False
 
@@ -391,7 +390,7 @@ def _read_keyboard(prompt=None, wait=False):
                 continue
             return keyboard_byte
         elif not quit_in_progress:
-            return
+            break
 
 
 # ----------------------------------------------------------------------------
