@@ -58,4 +58,14 @@ pulses = [
 
 random.choice(pulses).set_msgs(s.center(10) for s in 'Where is waldo?!'.split())
 
-ppytty_task = ppytty.Slide(pulses)
+ppytty_task = ppytty.OuterSequenceKeyboard([
+    ppytty.Slide([
+        ppytty.Label(''),
+        ppytty.Label('  Get ready to find Waldo...'),
+    ]),
+    ppytty.Slide(pulses),
+    ppytty.Slide([
+        ppytty.Label(''),
+        ppytty.Label('  Did you find him?'),
+    ]),
+])
