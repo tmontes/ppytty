@@ -22,16 +22,14 @@ class Terminal(object):
         self._term = blessings.Terminal()
         self._outfd = sys.stdout.fileno()
 
+        self._write = self._term.stream.write
+        self._flush = self._term.stream.flush
+
 
     def _fail_if_not_tty(self, stream):
 
         if not stream.isatty():
             raise RuntimeError(f'{stream.name} must be a TTY')
-
-
-    def _write(self, string):
-
-        self._term.stream.write(string)
 
 
     def _termios_settings(self, activate=True):
@@ -76,20 +74,19 @@ class Terminal(object):
 
     def clear(self):
 
-        self._term.stream.write(self._term.clear)
+        self._write(self._term.clear)
 
 
     def print(self, string):
 
-        self._term.stream.write(string + '\n')
-        self._term.stream.flush()
+        self._write(string + '\n')
+        self._flush()
 
 
     def print_at(self, col, row, string):
 
-        with self._term.location(col, row):
-            self._term.stream.write(string)
-            self._term.stream.flush()
+        self._write(self._term.move(row, col) + string)
+        self._flush()
 
 
 # ----------------------------------------------------------------------------
