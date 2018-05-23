@@ -131,6 +131,13 @@ def _do_print(task, *args):
 
 
 
+def _do_print_at(task, *args):
+
+    _state.terminal.print_at(*args)
+    _tasks.running.append(task)
+
+
+
 def _do_sleep(task, seconds):
 
     wake_at = _state.now + seconds
