@@ -135,14 +135,14 @@ def _do_sleep(task, seconds):
 
     wake_at = _state.now + seconds
     _tasks.waiting_on_time.append(task)
-    heapq.heappush(_tasks.waiting_on_time_hq, (wake_at, task))
+    heapq.heappush(_tasks.waiting_on_time_hq, (wake_at, id(task), task))
 
 
 
 def _do_read_key(task, priority):
 
     _tasks.waiting_on_key.append(task)
-    heapq.heappush(_tasks.waiting_on_key_hq, (priority, task))
+    heapq.heappush(_tasks.waiting_on_key_hq, (priority, id(task), task))
 
 
 
@@ -303,7 +303,7 @@ def _process_tasks_waiting_on_key(keyboard_byte=None):
 
     if keyboard_byte and _tasks.waiting_on_key:
         while _tasks.waiting_on_key_hq:
-            _, key_waiter = heapq.heappop(_tasks.waiting_on_key_hq)
+            _, _, key_waiter = heapq.heappop(_tasks.waiting_on_key_hq)
             if key_waiter in _tasks.waiting_on_key:
                 _tasks.waiting_on_key.remove(key_waiter)
                 _tasks.responses[key_waiter] = keyboard_byte
@@ -317,7 +317,7 @@ def _process_tasks_waiting_on_time():
 
     if _tasks.waiting_on_time:
         while _tasks.waiting_on_time_hq and _tasks.waiting_on_time_hq[0][0] < _state.now:
-            _, time_waiter = heapq.heappop(_tasks.waiting_on_time_hq)
+            _, _, time_waiter = heapq.heappop(_tasks.waiting_on_time_hq)
             if time_waiter in _tasks.waiting_on_time:
                 _tasks.waiting_on_time.remove(time_waiter)
                 _clear_tasks_waiting_on_time_hq()
