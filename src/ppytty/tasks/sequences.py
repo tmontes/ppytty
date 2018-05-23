@@ -87,7 +87,7 @@ class InnerSequenceKeyboard(KeyboardControlMixin, serial.Serial):
     ACTION_MAP_FIRST[Keymap.INNER_PREV] = Keymap.OUTER_PREV
 
     ACTION_MAP_LAST = dict(ACTION_MAP)
-    ACTION_MAP_LAST[Keymap.INNER_NEXT] = Keymap.OUTER_NEXT
+    ACTION_MAP_LAST[Keymap.INNER_NEXT] = Keymap.INNER_NEXT
 
     def __init__(self, widgets, key_priority=100, **kw):
 
