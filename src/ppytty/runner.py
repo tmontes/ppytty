@@ -377,6 +377,7 @@ def _read_keyboard(prompt=None):
         timeout = max(_tasks.waiting_on_time_hq[0][0] - _state.now, 0)
     else:
         timeout = None
+    save_timeout = timeout
     while True:
         actual_prompt = 'QUIT?' if quit_in_progress else prompt
         with _prompt_context(actual_prompt):
@@ -388,9 +389,11 @@ def _read_keyboard(prompt=None):
                     raise _PlayerStop()
                 else:
                     quit_in_progress = True
+                    timeout = None
                 continue
             elif quit_in_progress:
                 quit_in_progress = False
+                timeout = save_timeout
                 continue
             elif keyboard_byte == b'D':
                 _do_dump_state(None)
