@@ -83,9 +83,13 @@ class Terminal(object):
         self._flush()
 
 
-    def print_at(self, col, row, string):
+    def print_at(self, col, row, string, save_location=False):
 
-        self._write(self._term.move(row, col) + string)
+        if not save_location:
+            self._write(self._term.move(row, col) + string)
+        else:
+            with self._term.location(col, row):
+                self._write(string)
         self._flush()
 
 
