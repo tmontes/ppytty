@@ -37,6 +37,8 @@ A few odd ideas
 ^^^^^^^^^^^^^^^
 * Optional render to PDF?
 * Support speaker notes (maybe via a named PIPE? or just a file?)
+* Allow running a Python REPL after sourcing the contents of a "code thing"
+  (maybe the REPL could be passed in the same "external python script" that the code thing takes itself)
 
 
 
