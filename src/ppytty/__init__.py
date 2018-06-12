@@ -2,7 +2,7 @@
 # ppytty
 # ----------------------------------------------------------------------------
 # Copyright (c) Tiago Montes.
-# See LICENSE for deatils.
+# See LICENSE for details.
 # ----------------------------------------------------------------------------
 
 """
@@ -37,7 +37,7 @@ from . widgets import (
     Label,
     Widget,
 )
-from . runner import run
+from . kernel import run
 from . main import main
 
 __all__ = [
