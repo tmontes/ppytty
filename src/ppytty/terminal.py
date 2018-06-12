@@ -35,7 +35,7 @@ class Terminal(object):
     def _termios_settings(self, activate=True):
 
         tc_attrs = termios.tcgetattr(self._outfd)
-        settings = termios.ICANON | termios.ECHO
+        settings = termios.ICANON | termios.ECHO | termios.ISIG
         if activate:
             tc_attrs[3] &= ~settings
         else:
