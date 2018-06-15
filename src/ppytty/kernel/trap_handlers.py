@@ -6,11 +6,15 @@
 # ----------------------------------------------------------------------------
 
 import heapq
+import logging
 
 from . import common
-from . log import log
 from . import scheduler
 from . state import tasks, state
+
+
+
+log = logging.getLogger(__name__)
 
 
 

@@ -17,7 +17,7 @@ class Task(object):
         self._name = name
         self._running = None
 
-        logger_name = f'task.{self.__class__.__name__}.{self._name}'
+        logger_name = f'ppytty.task.{self.__class__.__name__}.{self._name}'
         self._log = logging.getLogger(logger_name)
 
 

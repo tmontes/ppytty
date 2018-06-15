@@ -7,16 +7,20 @@
 
 import contextlib
 import heapq
+import logging
 import os
 import select
 import sys
 import time
 
-from . log import log
 from . import trap_handlers
 from . import common
 from . state import tasks, state
 from . terminal import Terminal
+
+
+
+log = logging.getLogger(__name__)
 
 
 
@@ -33,11 +37,6 @@ _NO_FDS = []
 
 
 def run(task, post_prompt='[COMPLETED]'):
-
-    # TODO: default to disable logging so as not to require callers to
-    #       do that themselves if they don't care; this avoids spurious
-    #       sys.stderr output resulting from messages >= warning from the
-    #       default standard library's logging module.
 
     with Terminal() as terminal:
         state.terminal = terminal
