@@ -95,7 +95,7 @@ if __name__ == "__main__":
         extras_require=EXTRAS_REQUIRE,
         entry_points={
             'console_scripts': [
-                'ppytty=ppytty:main',
+                'ppytty=ppytty.__main__:main',
             ],
         },
     )

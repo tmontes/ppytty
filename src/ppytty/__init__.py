@@ -38,7 +38,6 @@ from . widgets import (
     Widget,
 )
 from . kernel import run
-from . main import main
 
 __all__ = [
     'OuterSequenceKeyboard',
@@ -55,7 +54,6 @@ __all__ = [
     'KeyboardAction',
     'Loop',
     'run',
-    'main',
 ]
 
 
