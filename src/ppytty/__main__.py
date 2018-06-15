@@ -45,10 +45,10 @@ def _setup_logging(log_filename=None, log_level_specs=None):
 
 
 
-def main():
+def main(argv=sys.argv, env=os.environ, task=default.TASK):
 
-    arg_list = os.environ.get('PPYTTY', '').split()
-    arg_list.extend(sys.argv[1:])
+    arg_list = env.get('PPYTTY', '').split()
+    arg_list.extend(argv[1:])
 
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('-v', '--version', action='store_true')
@@ -71,7 +71,6 @@ def main():
         print(e)
         return -1
 
-    task = default.TASK
     if args.script:
         try:
             script = runpy.run_path(args.script, init_globals={'ppytty': ppytty})
