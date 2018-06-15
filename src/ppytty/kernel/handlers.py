@@ -9,7 +9,7 @@ import heapq
 
 from . import common
 from . log import log
-from . import runner
+from . import scheduler
 from . state import tasks, state
 
 
@@ -52,7 +52,7 @@ def read_key(task, priority):
 
 def put_key(task, pushed_back_key):
 
-    runner.process_tasks_waiting_on_key(pushed_back_key)
+    scheduler.process_tasks_waiting_on_key(pushed_back_key)
     tasks.running.append(task)
 
 
