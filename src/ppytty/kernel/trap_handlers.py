@@ -74,13 +74,13 @@ def wait_task(task):
             child = candidate
             break
     if child is not None:
-        tasks.responses[task] = (child, return_value)
+        tasks.trap_results[task] = (child, return_value)
         del tasks.parent[child]
         tasks.children[task].remove(child)
         common.clear_tasks_children(task)
         tasks.running.append(task)
         tasks.terminated.remove((child, return_value))
-        common.clear_tasks_requests_responses(child)
+        common.clear_tasks_traps(child)
     else:
         tasks.waiting_on_child.append(task)
 
@@ -112,7 +112,7 @@ def stop_task(task, child_task, keep_running=True):
             log.error('%r will not stop terminated task %r', task, child_task)
         return
 
-    common.clear_tasks_requests_responses(child_task)
+    common.clear_tasks_traps(child_task)
     if keep_running:
         tasks.terminated.append((child_task, ('stopped-by', task)))
         tasks.running.append(task)

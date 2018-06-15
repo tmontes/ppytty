@@ -40,10 +40,10 @@ tasks = types.SimpleNamespace(
     waiting_on_time_hq = [],
 
 
-    # Keys: Tasks, Values: The last Task request, if any.
-    requests = {},
+    # Keys: Tasks, Values: The current Task trap, if any.
+    trap_calls = {},
     # Keys: Tasks, Values: The value to return to the task, if any.
-    responses = {},
+    trap_results = {},
 )
 
 

@@ -13,7 +13,7 @@ import sys
 import time
 
 from . log import log
-from . import handlers
+from . import trap_handlers
 from . import common
 from . state import tasks, state
 from . terminal import Terminal
@@ -64,54 +64,54 @@ def scheduler(top_task):
             continue
         task = tasks.running.popleft()
         try:
-            request = run_task_until_request(task)
+            trap = run_task_until_trap(task)
         except StopIteration as return_:
             log.info('%r completed with %r', task, return_.value)
             if task is top_task:
                 continue
             process_task_completion(task, return_.value)
         else:
-            process_task_request(task, request)
+            process_task_trap(task, trap)
 
 
 
-def process_task_request(task, request):
+def process_task_trap(task, trap):
 
-    log.debug('%r request %r', task, request)
-    tasks.requests[task] = request
-    request_call, *request_args = request
-    request_handler_name = request_call.replace("-", "_")
+    log.debug('%r trap: %r', task, trap)
+    tasks.trap_calls[task] = trap
+    trap_name, *trap_args = trap
+    trap_handler_name = trap_name.replace("-", "_")
     try:
-        request_handler = getattr(handlers, request_handler_name)
+        trap_handler = getattr(trap_handlers, trap_handler_name)
     except AttributeError:
-        log.error('%r invalid request: %r', task, request)
+        log.error('%r invalid trap: %r', task, trap)
         # TODO: terminate task somewhat like StopIteration?
     else:
         try:
-            request_handler(task, *request_args)
+            trap_handler(task, *trap_args)
         except Exception as e:
-            log.error('%r call %r execution failed: %r', task, request, e)
+            log.error('%r call %r execution failed: %r', task, trap, e)
             # TODO: inconsistent state? panic?
 
 
 
-def run_task_until_request(task):
+def run_task_until_trap(task):
 
-    request = tasks.requests.get(task)
-    response = tasks.responses.get(task)
-    if request is not None:
-        log.debug('%r respond %r with %r', task, request, response)
-    elif response is not None:
-        log.error('%r respond no request with %r', task, response)
+    prev_trap_call = tasks.trap_calls.get(task)
+    prev_trap_result = tasks.trap_results.get(task)
+    if prev_trap_call is not None:
+        log.debug('%r trap %r result: %r', task, prev_trap_call, prev_trap_result)
+    elif prev_trap_result is not None:
+        log.error('%r no trap result: %r', task, prev_trap_result)
     else:
         log.debug('%r running', task)
     try:
-        return task.running.send(response)
+        return task.running.send(prev_trap_result)
     finally:
-        if request:
-            del tasks.requests[task]
-        if response:
-            del tasks.responses[task]
+        if prev_trap_call:
+            del tasks.trap_calls[task]
+        if prev_trap_result:
+            del tasks.trap_results[task]
 
 
 
@@ -125,7 +125,7 @@ def process_tasks_waiting_on_key(keyboard_byte=None):
             _, _, key_waiter = heapq.heappop(tasks.waiting_on_key_hq)
             if key_waiter in tasks.waiting_on_key:
                 tasks.waiting_on_key.remove(key_waiter)
-                tasks.responses[key_waiter] = keyboard_byte
+                tasks.trap_results[key_waiter] = keyboard_byte
                 tasks.running.append(key_waiter)
                 log.info('%r getting key %r', key_waiter, keyboard_byte)
                 break
@@ -151,7 +151,7 @@ def process_task_completion(task, return_value):
     if not candidate_parent:
         log.error('%r completed with no parent', task)
     if candidate_parent in tasks.waiting_on_child:
-        tasks.responses[candidate_parent] = (task, return_value)
+        tasks.trap_results[candidate_parent] = (task, return_value)
         del tasks.parent[task]
         tasks.children[candidate_parent].remove(task)
         common.clear_tasks_children(candidate_parent)
@@ -159,7 +159,7 @@ def process_task_completion(task, return_value):
         tasks.running.append(candidate_parent)
     else:
         tasks.terminated.append((task, return_value))
-    common.clear_tasks_requests_responses(task)
+    common.clear_tasks_traps(task)
 
 
 
@@ -208,7 +208,7 @@ def _read_keyboard(prompt=None):
                 timeout = save_timeout
                 continue
             elif keyboard_byte == b'D':
-                handlers.dump_state(None)
+                trap_handlers.dump_state(None)
                 continue
             return keyboard_byte
         elif not quit_in_progress:

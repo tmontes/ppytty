@@ -16,9 +16,9 @@ def clear_tasks_children(task):
 
 
 
-def clear_tasks_requests_responses(task):
+def clear_tasks_traps(task):
 
-    for target in (tasks.requests, tasks.responses):
+    for target in (tasks.trap_calls, tasks.trap_results):
         if task in target:
             del target[task]
 
