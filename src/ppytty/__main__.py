@@ -17,16 +17,18 @@ from . import default
 
 
 
-def _setup_logging(log_filename=None, log_level_specs=None):
+def setup_logging(log_filename, log_level_specs):
 
-    root_logger = logging.getLogger()
-    handler = logging.FileHandler(log_filename) if log_filename else logging.NullHandler()
+    if not log_filename:
+        return
+    handler = logging.FileHandler(log_filename)
     formatter = logging.Formatter(
         fmt='%(asctime)s %(levelname).1s %(name)s %(message)s',
         datefmt='%H:%M:%S',)
     handler.setFormatter(formatter)
+    root_logger = logging.getLogger()
     root_logger.addHandler(handler)
-    if not log_filename or not log_level_specs:
+    if not log_level_specs:
         root_logger.setLevel(logging.WARNING)
         return
     for log_level_spec in log_level_specs:
@@ -45,7 +47,7 @@ def _setup_logging(log_filename=None, log_level_specs=None):
 
 
 
-def main(argv=sys.argv, env=os.environ, task=default.TASK):
+def parse_arguments(argv=sys.argv, env=os.environ):
 
     arg_list = env.get('PPYTTY', '').split()
     arg_list.extend(argv[1:])
@@ -59,30 +61,53 @@ def main(argv=sys.argv, env=os.environ, task=default.TASK):
                             [<logger-name>:]<level>, <level> is
                             [debug|info|warn|error|critical]""")
     arg_parser.add_argument('script', nargs='?')
-    args = arg_parser.parse_args(arg_list)
+
+    return arg_parser.parse_args(arg_list)
+
+
+
+def task_from_args(args, task=default.TASK):
+
+    if not args.script:
+        return task
+
+    try:
+        script_globals = runpy.run_path(args.script, init_globals={'ppytty': ppytty})
+    except Exception as e:
+        raise RuntimeError(f'failed running {args.script!r}: {e}')
+
+    TASK_NAME_IN_SCRIPT = 'ppytty_task'
+    try:
+        task = script_globals[TASK_NAME_IN_SCRIPT]
+    except KeyError:
+        raise RuntimeError(f'no {TASK_NAME_IN_SCRIPT!r} global in {args.script!r}')
+
+    return task
+
+
+
+def main():
+
+    args = parse_arguments()
 
     if args.version:
         print(ppytty.__version__)
         return 0
 
     try:
-        _setup_logging(args.log_filename, args.log_level_specs)
+        setup_logging(args.log_filename, args.log_level_specs)
     except RuntimeError as e:
         print(e)
         return -1
+    except OSError as e:
+        print('failed opening output log file:', e)
+        return -1
 
-    if args.script:
-        try:
-            script = runpy.run_path(args.script, init_globals={'ppytty': ppytty})
-        except Exception as e:
-            print(f'failed running {args.script!r}: {e}')
-            return -2
-        TASK_NAME_IN_SCRIPT = 'ppytty_task'
-        try:
-            task = script[TASK_NAME_IN_SCRIPT]
-        except KeyError as e:
-            print(f'no {TASK_NAME_IN_SCRIPT!r} global in {args.script!r}')
-            return -3
+    try:
+        task = task_from_args(args)
+    except RuntimeError as e:
+        print(e)
+        return -2
 
     ppytty.run(task)
 
