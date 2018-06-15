@@ -72,7 +72,7 @@ def task_from_args(args, task=default.TASK):
         return task
 
     try:
-        script_globals = runpy.run_path(args.script, init_globals={'ppytty': ppytty})
+        script_globals = runpy.run_path(args.script)
     except Exception as e:
         raise RuntimeError(f'failed running {args.script!r}: {e}')
 

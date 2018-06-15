@@ -1,3 +1,5 @@
+import ppytty
+
 ppytty_task = ppytty.OuterSequenceKeyboard([
     ppytty.Serial([
         ppytty.Label('first label', name='l1'),
