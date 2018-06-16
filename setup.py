@@ -25,6 +25,7 @@ CLASSIFIERS = [
 ]
 INSTALL_REQUIRES = [
     "blessings",
+    "pyte",
 ]
 EXTRAS_REQUIRE = {
     "docs": [
