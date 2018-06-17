@@ -155,35 +155,40 @@ class Window(object):
         screen = self._screen
         screen_cursor = screen.cursor
         screen_buffer = screen.buffer
+        screen_dirty = screen.dirty
         left = self._left
         top = self._top
         width = self._width
         height = self._height
         window_bg = self._bg
 
+        bt_move = bt.move
+        self_char_format = self._char_format
+
         payload = [bt.hide_cursor]
+        payload_append = payload.append
 
         prev_char_format = ''
-        line_numbers = range(height) if full else screen.dirty
+        line_numbers = range(height) if full else screen_dirty
         for line_no in line_numbers:
             line_data = screen_buffer[line_no]
-            payload.append(bt.move(top+line_no, left))
+            payload_append(bt_move(top+line_no, left))
             for column_no in range(width):
                 char_data, fg, bg, bold, _, _, _, reverse = line_data[column_no]
                 default_bg = window_bg
                 if hasattr(window_bg, '__getitem__'):
                     default_bg = window_bg[line_no][column_no]
-                char_format = self._char_format(bt, fg, bg, bold, reverse, default_bg)
+                char_format = self_char_format(bt, fg, bg, bold, reverse, default_bg)
                 if char_format != prev_char_format:
-                    payload.append(char_format)
+                    payload_append(char_format)
                     prev_char_format = char_format
-                payload.append(char_data)
+                payload_append(char_data)
 
-        payload.append(bt.normal)
-        payload.append(bt.move(top+screen_cursor.y, left+screen_cursor.x))
+        payload_append(bt.normal)
+        payload_append(bt_move(top+screen_cursor.y, left+screen_cursor.x))
         if not screen_cursor.hidden:
-            payload.append(bt.normal_cursor)
-        screen.dirty.clear()
+            payload_append(bt.normal_cursor)
+        screen_dirty.clear()
         return ''.join(payload).encode(encoding)
 
 
@@ -203,16 +208,17 @@ class Window(object):
 
         colors = Window._COLORS
         parts = [bt.normal]
+        parts_append = parts.append
         if bold:
-            parts.append(bt.bold)
+            parts_append(bt.bold)
         if reverse:
-            parts.append(bt.reverse)
+            parts_append(bt.reverse)
         fg_idx = colors.get(fg)
         if fg_idx is not None:
-            parts.append(bt.color(fg_idx))
+            parts_append(bt.color(fg_idx))
         bg_idx = colors.get(bg, default_bg)
         if bg_idx is not None:
-            parts.append(bt.on_color(bg_idx))
+            parts_append(bt.on_color(bg_idx))
         return ''.join(parts)
 
 
