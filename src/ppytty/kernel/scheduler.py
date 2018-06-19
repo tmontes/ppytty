@@ -162,9 +162,9 @@ def _prompt_context(prompt):
     def _prompt(prompt):
         col = state.terminal.width - len(prompt)
         row = state.terminal.height - 1
-        state.terminal.print_at(col, row, prompt, save_location=True)
+        state.terminal.print(prompt, col, row, save_location=True)
         yield
-        state.terminal.print_at(col, row, ' '*len(prompt), save_location=True)
+        state.terminal.print(' '*len(prompt), col, row, save_location=True)
 
     @contextlib.contextmanager
     def _no_prompt():

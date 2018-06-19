@@ -31,7 +31,7 @@ class Pulse(ppytty.Task):
         for msg in self._msgs:
             for fg in itertools.chain(fade_in, fade_out):
                 output = f'\x1b[38;5;{fg}m{msg}{normal}'
-                yield ('print-at', self._x, self._y, output)
+                yield ('print', output, self._x, self._y)
                 yield ('sleep', self._delay)
 
 

@@ -32,13 +32,6 @@ def print(task, *args):
 
 
 
-def print_at(task, *args):
-
-    state.terminal.print_at(*args)
-    tasks.running.append(task)
-
-
-
 def sleep(task, seconds):
 
     wake_at = state.now + seconds

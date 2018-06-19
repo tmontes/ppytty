@@ -102,17 +102,14 @@ class Terminal(object):
         self._write(self._bt_clear)
 
 
-    def print(self, text):
+    def print(self, text, x=None, y=None, save_location=False):
 
-        self._write(text, '\n')
-
-
-    def print_at(self, col, row, text, save_location=False):
-
+        positioning = not (x is None or y is None)
         self._write(
             self._bt_save if save_location else '',
-            self._bt_move(row, col),
+            self._bt_move(y, x) if positioning else '',
             text,
+            '\n' if not positioning else '',
             self._bt_restore if save_location else '',
         )
 
