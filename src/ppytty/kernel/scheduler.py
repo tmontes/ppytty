@@ -10,12 +10,11 @@ import heapq
 import logging
 import os
 import select
-import sys
 import time
 
 from . import trap_handlers
 from . import common
-from . state import tasks, state
+from . state import tasks, io_fds, state
 from . terminal import Terminal
 
 
@@ -30,16 +29,11 @@ class _PlayerStop(Exception):
 
 
 
-_STDIN_FD = sys.stdin.fileno()
-_RD_FDS = [_STDIN_FD]
-_NO_FDS = []
-
-
-
 def run(task, post_prompt='[COMPLETED]'):
 
-    with Terminal() as terminal:
-        state.terminal = terminal
+    with Terminal() as t:
+        state.terminal = t
+        io_fds.set_user_io(t.in_fd, t.out_fd)
         try:
             scheduler(task)
             while post_prompt:
@@ -180,6 +174,8 @@ def _prompt_context(prompt):
 
 
 
+_NO_FDS = []
+
 def _read_keyboard(prompt=None):
 
     quit_in_progress = False
@@ -192,9 +188,9 @@ def _read_keyboard(prompt=None):
     while True:
         actual_prompt = 'QUIT?' if quit_in_progress else prompt
         with _prompt_context(actual_prompt):
-            fds, _, _ = select.select(_RD_FDS, _NO_FDS, _NO_FDS, timeout)
-        if _STDIN_FD in fds:
-            keyboard_byte = os.read(_STDIN_FD, 1)
+            fds, _, _ = select.select(io_fds.input, _NO_FDS, _NO_FDS, timeout)
+        if io_fds.user_in in fds:
+            keyboard_byte = os.read(io_fds.user_in, 1)
             if keyboard_byte == b'q':
                 if quit_in_progress:
                     raise _PlayerStop()

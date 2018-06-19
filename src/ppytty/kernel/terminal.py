@@ -14,13 +14,14 @@ import blessings
 
 class Terminal(object):
 
-    def __init__(self):
+    def __init__(self, in_file=sys.stdin, out_file=sys.stdout):
 
-        self._fail_if_not_tty(sys.stdin)
-        self._fail_if_not_tty(sys.stdout)
+        self._fail_if_not_tty(in_file)
+        self._fail_if_not_tty(out_file)
 
         self._term = blessings.Terminal()
-        self._outfd = sys.stdout.fileno()
+        self._in_fd = in_file.fileno()
+        self._out_fd = out_file.fileno()
 
         self._write = self._term.stream.write
         self._flush = self._term.stream.flush
@@ -32,15 +33,27 @@ class Terminal(object):
             raise RuntimeError(f'{stream.name} must be a TTY')
 
 
+    @property
+    def in_fd(self):
+
+        return self._in_fd
+
+
+    @property
+    def out_fd(self):
+
+        return self._out_fd
+
+
     def _termios_settings(self, activate=True):
 
-        tc_attrs = termios.tcgetattr(self._outfd)
+        tc_attrs = termios.tcgetattr(self._out_fd)
         settings = termios.ICANON | termios.ECHO | termios.ISIG
         if activate:
             tc_attrs[3] &= ~settings
         else:
             tc_attrs[3] |= settings
-        termios.tcsetattr(self._outfd, termios.TCSANOW, tc_attrs)
+        termios.tcsetattr(self._out_fd, termios.TCSANOW, tc_attrs)
 
 
     def __enter__(self):
