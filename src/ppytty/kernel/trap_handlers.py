@@ -11,6 +11,7 @@ import logging
 from . import common
 from . import scheduler
 from . state import tasks, state
+from . window import Window
 
 
 
@@ -28,6 +29,23 @@ def clear(task):
 def print(task, *args):
 
     state.terminal.print(*args)
+    tasks.running.append(task)
+
+
+
+def window_create(task, left, top, width, height, bg=None):
+
+    try:
+        w = Window(left, top, width, height, bg)
+    except Exception as e:
+        log.error('%r window create failed: %s', task, e)
+        log.debug('%r traceback', task, exc_info=True)
+        w = None
+    else:
+        tasks.windows[task].append(w)
+        state.all_windows.append(w)
+
+    tasks.trap_results[task] = w
     tasks.running.append(task)
 
 
