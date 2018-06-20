@@ -44,6 +44,10 @@ tasks = types.SimpleNamespace(
     trap_calls = {},
     # Keys: Tasks, Values: The value to return to the task, if any.
     trap_results = {},
+
+
+    # Keys: Tasks, Values: List of Task created Windows.
+    windows = collections.defaultdict(list),
 )
 
 
@@ -75,6 +79,9 @@ state = types.SimpleNamespace(
 
     # Interactive input/output user terminal.
     terminal = None,
+
+    # Task created Window list in back to front rendering order.
+    all_windows = [],
 )
 
 
