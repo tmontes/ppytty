@@ -62,6 +62,34 @@ def window_destroy(task, window):
 
 
 
+def window_render(task, window, full=False):
+
+    if not window in tasks.windows[task]:
+        raise RuntimeError('cannot render non-owned windows')
+
+    # Render `window` and all other windows that:
+    # - Overlap with it.
+    # - Are on top of it.
+
+    try:
+        window_index = state.all_windows.index(window)
+    except ValueError:
+        raise RuntimeError('unexpected condition: window not in all_windows')
+
+    data = window.render(full=full)
+    state.terminal.feed(data)
+
+    for w in state.all_windows[window_index+1:]:
+        # TODO: do not re-render non-overlapping windows!!!
+        data = w.render(full=True)
+        state.terminal.feed(data)
+
+    state.terminal.render()
+
+    tasks.running.append(task)
+
+
+
 def sleep(task, seconds):
 
     wake_at = state.now + seconds
