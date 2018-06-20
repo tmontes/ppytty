@@ -5,7 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from . state import tasks
+from . state import tasks, state
 
 
 
@@ -23,13 +23,24 @@ def clear_tasks_traps(task):
             del target[task]
 
 
+
 def clear_tasks_waiting_on_time_hq():
 
     if not tasks.waiting_on_time:
         tasks.waiting_on_time_hq.clear()
 
 
+
 # TODO: Do we need a "clear_tasks_waiting_on_key_hq"? Probably.
+
+
+
+def destroy_task_windows(task):
+
+    for window in tasks.windows[task]:
+        state.all_windows.remove(window)
+
+    del tasks.windows[task]
 
 
 # ----------------------------------------------------------------------------

@@ -153,6 +153,7 @@ def process_task_completion(task, return_value):
     else:
         tasks.terminated.append((task, return_value))
     common.clear_tasks_traps(task)
+    common.destroy_task_windows(task)
 
 
 
