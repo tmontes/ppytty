@@ -12,11 +12,13 @@ import termios
 
 import blessings
 
+from . import window
 
 
 class Terminal(object):
 
     def __init__(self, in_file=sys.stdin, out_file=sys.stdout, kind=None,
+                 left=0, top=0, width=None, height=None, bg=None,
                  encoding='UTF-8'):
 
         self._fail_if_not_tty(in_file)
@@ -28,11 +30,17 @@ class Terminal(object):
         self._bt = blessings.Terminal(kind=kind, stream=out_file)
         self._encoding = encoding
 
+        width = width if width else self._bt.width
+        height = height if height else self._bt.height
+        self._window = window.Window(left, top, width, height, bg)
+
         # Speed up sub-attribute access with these attributes.
         self._bt_clear = self._bt.clear
         self._bt_save = self._bt.save
         self._bt_restore = self._bt.restore
         self._bt_move = self._bt.move
+        self._window_feed = self._window.feed
+        self._window_render = self._window.render
         self._os_write_out_fd = functools.partial(os.write, self._out_fd)
 
 
@@ -112,6 +120,16 @@ class Terminal(object):
             '\n' if not positioning else '',
             self._bt_restore if save_location else '',
         )
+
+    def feed(self, data):
+
+        self._window_feed(data)
+
+
+    def render(self, full=False):
+
+        data = self._window_render(bt=self._bt, full=full, encoding=self._encoding)
+        self._os_write_out_fd(data)
 
 
 # ----------------------------------------------------------------------------
