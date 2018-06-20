@@ -140,6 +140,7 @@ def stop_task(task, child_task, keep_running=True):
         return
 
     common.clear_tasks_traps(child_task)
+    common.destroy_task_windows(child_task)
     if keep_running:
         tasks.terminated.append((child_task, ('stopped-by', task)))
         tasks.running.append(task)
