@@ -206,6 +206,7 @@ def dump_state(task):
     log.critical(_SEPARATOR)
     _task_lines(tasks.top_task)
     log.critical(_SEPARATOR)
+    # TODO: add io_fds here
     log.critical('tasks=%r, state=%r', tasks, state)
     log.critical(_SEPARATOR)
 
