@@ -50,6 +50,18 @@ def window_create(task, left, top, width, height, bg=None):
 
 
 
+def window_destroy(task, window):
+
+    if not window in tasks.windows[task]:
+        raise RuntimeError('cannot destroy non-owned windows')
+
+    tasks.windows[task].remove(window)
+    state.all_windows.remove(window)
+
+    tasks.running.append(task)
+
+
+
 def sleep(task, seconds):
 
     wake_at = state.now + seconds
