@@ -130,7 +130,7 @@ class Window(object):
         self._screen.cursor_position()
 
 
-    def write(self, text, x=None, y=None, fg=None, bg=None):
+    def print(self, text, x=None, y=None, fg=None, bg=None):
 
         attrs = []
         if fg:
@@ -143,7 +143,7 @@ class Window(object):
         if x is not None and y is not None:
             self._screen.cursor_position(y+1, x+1)
 
-        self._screen.draw(text)
+        self._stream.feed(text.encode('utf8'))
 
         if attrs:
             self._screen.select_graphic_rendition(0)
