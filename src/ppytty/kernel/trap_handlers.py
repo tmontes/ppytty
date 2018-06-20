@@ -80,7 +80,8 @@ def window_render(task, window, full=False):
     state.terminal.feed(data)
 
     for w in state.all_windows[window_index+1:]:
-        # TODO: do not re-render non-overlapping windows!!!
+        if not w.overlaps(window):
+            continue
         data = w.render(full=True)
         state.terminal.feed(data)
 

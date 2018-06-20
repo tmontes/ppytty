@@ -124,6 +124,22 @@ class Window(object):
         location = f'{self._left},{self._top}'
         return f'<Window {geometry}@{location} {hex(id(self))}>'
 
+
+    def overlaps(self, window):
+
+        a_min_x = self._left
+        a_max_x = a_min_x + self._width - 1
+        a_min_y = self._top
+        a_max_y = a_min_y + self._height - 1
+        b_min_x = window._left
+        b_max_x = b_min_x + window._width - 1
+        b_min_y = window._top
+        b_max_y = b_min_y + window._height - 1
+        horizontal = (a_min_x <= b_max_x) and (a_max_x >= b_min_x)
+        vertical = (a_min_y <= b_max_y) and (a_max_y >= b_min_y)
+        return horizontal and vertical
+
+
     def clear(self, how=2):
 
         self._screen.erase_in_display(how)
