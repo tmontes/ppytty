@@ -118,6 +118,12 @@ class Window(object):
         self._stream = pyte.ByteStream(self._screen)
 
 
+    def __repr__(self):
+
+        geometry = f'{self._width}x{self._height}'
+        location = f'{self._left},{self._top}'
+        return f'<Window {geometry}@{location} {hex(id(self))}>'
+
     def clear(self, how=2):
 
         self._screen.erase_in_display(how)
