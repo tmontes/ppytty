@@ -21,13 +21,9 @@ class Terminal(object):
                  left=0, top=0, width=None, height=None, bg=None,
                  encoding='UTF-8'):
 
-        self._fail_if_not_tty(in_file)
-        self._fail_if_not_tty(out_file)
-
         self._in_fd = in_file.fileno()
         self._out_fd = out_file.fileno()
-
-        self._ttyname = os.ttyname(self._out_fd)
+        self._ttyname = self._common_tty_name(self._in_fd, self._out_fd)
 
         self._bt = blessings.Terminal(kind=kind, stream=out_file)
         self._encoding = encoding
@@ -47,10 +43,17 @@ class Terminal(object):
         self._os_write_out_fd = functools.partial(os.write, self._out_fd)
 
 
-    def _fail_if_not_tty(self, stream):
+    def _common_tty_name(self, *fds):
 
-        if not stream.isatty():
-            raise RuntimeError(f'{stream!r} must be a TTY')
+        try:
+            tty_names = {os.ttyname(fd) for fd in fds}
+        except OSError:
+            raise RuntimeError(f'terminal I/O requires TTYs')
+
+        if len(tty_names) != 1:
+            raise RuntimeError('terminal I/O must be on the same TTY')
+
+        return tty_names.pop()
 
 
     def __repr__(self):
