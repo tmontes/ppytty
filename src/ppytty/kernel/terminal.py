@@ -39,6 +39,7 @@ class Terminal(object):
         self._bt_save = self._bt.save
         self._bt_restore = self._bt.restore
         self._bt_move = self._bt.move
+        self._window_clear = self._window.clear
         self._window_feed = self._window.feed
         self._window_render = self._window.render
         self._os_write_out_fd = functools.partial(os.write, self._out_fd)
@@ -120,6 +121,11 @@ class Terminal(object):
             '\n' if not positioning else '',
             self._bt_restore if save_location else '',
         )
+
+    def clear(self):
+
+        self._window_clear()
+
 
     def feed(self, data):
 

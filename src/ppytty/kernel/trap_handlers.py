@@ -58,6 +58,12 @@ def window_destroy(task, window):
     tasks.windows[task].remove(window)
     state.all_windows.remove(window)
 
+    # One window is gone: need to re-render everything to account for it.
+    # Possible optimizations:
+    # - If completely within another window, just rerender that window.
+    # - Just clear needed terminal lines and rerender overlapping windows.
+    common.rerender_all_windows()
+
     tasks.running.append(task)
 
 

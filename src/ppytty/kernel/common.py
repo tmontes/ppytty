@@ -43,4 +43,16 @@ def destroy_task_windows(task):
     del tasks.windows[task]
 
 
+
+def rerender_all_windows():
+
+    state.terminal.clear()
+
+    for w in state.all_windows:
+        data = w.render(full=True)
+        state.terminal.feed(data)
+
+    state.terminal.render()
+
+
 # ----------------------------------------------------------------------------
