@@ -37,10 +37,14 @@ def clear_tasks_waiting_on_time_hq():
 
 def destroy_task_windows(task):
 
+    need_rerender = bool(tasks.windows[task])
+
     for window in tasks.windows[task]:
         state.all_windows.remove(window)
-
     del tasks.windows[task]
+
+    if need_rerender:
+        rerender_all_windows()
 
 
 
