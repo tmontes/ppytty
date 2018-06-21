@@ -60,8 +60,6 @@ def scheduler(top_task):
             trap = run_task_until_trap(task)
         except StopIteration as return_:
             log.info('%r completed with %r', task, return_.value)
-            if task is top_task:
-                continue
             process_task_completion(task, return_.value)
         else:
             process_task_trap(task, trap)
@@ -141,7 +139,7 @@ def process_tasks_waiting_on_time():
 def process_task_completion(task, return_value):
 
     candidate_parent = tasks.parent.get(task)
-    if not candidate_parent:
+    if not candidate_parent and task is not tasks.top_task:
         log.error('%r completed with no parent', task)
     if candidate_parent in tasks.waiting_on_child:
         tasks.trap_results[candidate_parent] = (task, return_value)
@@ -150,7 +148,7 @@ def process_task_completion(task, return_value):
         common.clear_tasks_children(candidate_parent)
         tasks.waiting_on_child.remove(candidate_parent)
         tasks.running.append(candidate_parent)
-    else:
+    elif task is not tasks.top_task:
         tasks.terminated.append((task, return_value))
     common.clear_tasks_traps(task)
     common.destroy_task_windows(task)
