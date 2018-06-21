@@ -5,12 +5,13 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
+import collections
 import heapq
 import logging
 
 from . import common
 from . import scheduler
-from . state import tasks, state
+from . state import tasks, state, io_fds
 from . window import Window
 
 
@@ -187,7 +188,7 @@ def stop_task(task, child_task, keep_running=True):
 
 _SEPARATOR = '-' * 60
 
-def dump_state(task):
+def dump_state(task, tag=''):
 
     def _task_status(task):
         if task in tasks.running:
@@ -202,20 +203,31 @@ def dump_state(task):
             return 'TT'
         return '??'
 
-    def _task_lines(task, level=0):
+    def _log_task_lines(task, level=0):
         indent = ' ' * 4 * level
         status = _task_status(task)
         log.critical(f'{status} {indent}{task}')
         if task in tasks.children:
             for child in tasks.children[task]:
-                _task_lines(child, level+1)
+                _log_task_lines(child, level+1)
 
-    log.critical(_SEPARATOR)
-    _task_lines(tasks.top_task)
-    log.critical(_SEPARATOR)
-    # TODO: add io_fds here
-    log.critical('tasks=%r, state=%r', tasks, state)
-    log.critical(_SEPARATOR)
+    def _log_object_vars(name, obj):
+        for k, v in vars(obj).items():
+            if k.startswith('_') or callable(getattr(obj, k, None)):
+                continue
+            if isinstance(v, collections.defaultdict):
+                v = dict(v)
+            log.critical('%s.%s=%r', name, k, v)
+
+    tag_string = f'{tag} | ' if tag else ''
+
+    log.critical(f'-[ {tag_string}DUMP STATE | TASK HIERARCHY ]'.ljust(60, '-'))
+    _log_task_lines(tasks.top_task)
+    log.critical(f'-[ {tag_string}DUMP STATE | DATA STRUCTURES ]'.ljust(60, '-'))
+    _log_object_vars('tasks', tasks)
+    _log_object_vars('state', state)
+    _log_object_vars('io_fds', io_fds)
+    log.critical(f'-[ {tag_string}DUMP STATE | DONE ]'.ljust(60, '-'))
 
     if task is not None:
         tasks.running.append(task)

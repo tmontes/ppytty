@@ -27,6 +27,8 @@ class Terminal(object):
         self._in_fd = in_file.fileno()
         self._out_fd = out_file.fileno()
 
+        self._ttyname = os.ttyname(self._out_fd)
+
         self._bt = blessings.Terminal(kind=kind, stream=out_file)
         self._encoding = encoding
 
@@ -49,6 +51,11 @@ class Terminal(object):
 
         if not stream.isatty():
             raise RuntimeError(f'{stream!r} must be a TTY')
+
+
+    def __repr__(self):
+
+        return f'<Terminal {self._ttyname} {hex(id(self))}>'
 
 
     @property
