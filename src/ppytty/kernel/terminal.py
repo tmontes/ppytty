@@ -105,12 +105,12 @@ class Terminal(object):
         return self._bt.height
 
 
-    def clear(self):
+    def direct_clear(self):
 
         self._write(self._bt_clear)
 
 
-    def print(self, text, x=None, y=None, save_location=False):
+    def direct_print(self, text, x=None, y=None, save_location=False):
 
         positioning = not (x is None or y is None)
         self._write(

@@ -19,7 +19,7 @@ class Label(widget.Widget):
 
     def run(self):
 
-        yield ('print', self._text)
+        yield ('direct-print', self._text)
 
 
 # ----------------------------------------------------------------------------

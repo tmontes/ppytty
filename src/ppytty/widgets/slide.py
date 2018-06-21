@@ -14,7 +14,7 @@ class Slide(tasks.Parallel):
 
     def run(self):
 
-        yield ('clear',)
+        yield ('direct-clear',)
         result = yield from super().run()
         return result
 

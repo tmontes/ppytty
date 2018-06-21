@@ -19,16 +19,16 @@ log = logging.getLogger(__name__)
 
 
 
-def clear(task):
+def direct_clear(task):
 
-    state.terminal.clear()
+    state.terminal.direct_clear()
     tasks.running.append(task)
 
 
 
-def print(task, *args):
+def direct_print(task, *args):
 
-    state.terminal.print(*args)
+    state.terminal.direct_print(*args)
     tasks.running.append(task)
 
 
