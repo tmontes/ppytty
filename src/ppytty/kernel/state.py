@@ -12,7 +12,7 @@ import types
 
 tasks = types.SimpleNamespace(
 
-    # TODO: Discarding this one - just used as "dump state" starting point.
+    # The task given to the scheduler, to be run.
     top_task = None,
 
     # Running tasks queue.
@@ -21,7 +21,7 @@ tasks = types.SimpleNamespace(
     # Termminated tasks will be here until their parent task waits on them.
     terminated = [],
 
-    # Keys: Tasks, Values: Respective parent Task.
+    # Keys: Tasks, Values: Their parent Task.
     parent = {},
     # Keys: Tasks, Values: List of child Tasks, if any.
     children = collections.defaultdict(list),
@@ -29,18 +29,16 @@ tasks = types.SimpleNamespace(
     # Tasks waiting on children.
     waiting_on_child = [],
 
-    # Tasks waiting on keyboard input.
+    # Tasks waiting on keyboard input, and the associated priority queue.
     waiting_on_key = [],
-    # The associated priority queue.
     waiting_on_key_hq = [],
 
-    # Tasks sleeping.
+    # Tasks sleeping, and the associated priority queue.
     waiting_on_time = [],
-    # The associated priority queue.
     waiting_on_time_hq = [],
 
 
-    # Keys: Tasks, Values: The current Task trap, if any.
+    # Keys: Tasks, Values: Their current trap, if any.
     trap_calls = {},
     # Keys: Tasks, Values: The value to return to the task, if any.
     trap_results = {},
