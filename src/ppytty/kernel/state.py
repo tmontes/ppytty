@@ -83,4 +83,31 @@ state = types.SimpleNamespace(
 )
 
 
+
+def reset():
+
+    tasks.top_task = None
+    tasks.runnable = collections.deque()
+    tasks.terminated = []
+    tasks.parent = {}
+    tasks.children = collections.defaultdict(list)
+    tasks.waiting_on_child = []
+    tasks.waiting_on_key = []
+    tasks.waiting_on_key_hq = []
+    tasks.waiting_on_time = []
+    tasks.waiting_on_time_hq = []
+    tasks.trap_calls = {}
+    tasks.trap_results = {}
+    tasks.windows = collections.defaultdict(list)
+
+    io_fds.input = []
+    io_fds.output = []
+    io_fds.user_in = None
+    io_fds.user_out = None
+
+    state.now = None
+    state.terminal = None
+    state.all_windows = []
+
+
 # ----------------------------------------------------------------------------
