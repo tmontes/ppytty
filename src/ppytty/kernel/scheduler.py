@@ -202,7 +202,7 @@ def _read_keyboard(prompt=None):
                 timeout = save_timeout
                 continue
             elif keyboard_byte == b'D':
-                trap_handlers.dump_state(None)
+                trap_handlers.state_dump(None)
                 continue
             return keyboard_byte
         elif not quit_in_progress:

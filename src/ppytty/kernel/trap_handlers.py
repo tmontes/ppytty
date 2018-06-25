@@ -188,7 +188,7 @@ def task_destroy(task, child_task, keep_running=True):
 
 _SEPARATOR = '-' * 60
 
-def dump_state(task, tag=''):
+def state_dump(task, tag=''):
 
     def _task_status(task):
         if task in tasks.running:
