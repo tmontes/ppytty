@@ -31,14 +31,12 @@ __author__ = 'Tiago Montes'
 __email__ = 'tiago.montes@gmail.com'
 
 
-from . tasks import (
+from . lib import (
     Task,
     Parallel, Serial,
     DelayReturn, KeyboardAction, Loop,
     OuterSequenceKeyboard, OuterSequenceTimed,
     InnerSequenceKeyboard, InnerSequenceTimed,
-)
-from . widgets import (
     Slide,
     Label,
     Widget,
