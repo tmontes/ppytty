@@ -15,10 +15,10 @@ tasks = types.SimpleNamespace(
     # The task given to the scheduler, to be run.
     top_task = None,
 
-    # Running tasks queue.
-    running = collections.deque(),
+    # Runnable tasks queue.
+    runnable = collections.deque(),
 
-    # Termminated tasks will be here until their parent task waits on them.
+    # Terminated tasks will be here until their parent task waits on them.
     terminated = [],
 
     # Keys: Tasks, Values: Their parent Task.

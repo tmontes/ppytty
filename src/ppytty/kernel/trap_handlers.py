@@ -23,14 +23,14 @@ log = logging.getLogger(__name__)
 def direct_clear(task):
 
     state.terminal.direct_clear()
-    tasks.running.append(task)
+    tasks.runnable.append(task)
 
 
 
 def direct_print(task, *args):
 
     state.terminal.direct_print(*args)
-    tasks.running.append(task)
+    tasks.runnable.append(task)
 
 
 
@@ -47,7 +47,7 @@ def window_create(task, left, top, width, height, bg=None):
         state.all_windows.append(w)
 
     tasks.trap_results[task] = w
-    tasks.running.append(task)
+    tasks.runnable.append(task)
 
 
 
@@ -65,7 +65,7 @@ def window_destroy(task, window):
     # - Just clear needed terminal lines and rerender overlapping windows.
     common.rerender_all_windows()
 
-    tasks.running.append(task)
+    tasks.runnable.append(task)
 
 
 
@@ -94,7 +94,7 @@ def window_render(task, window, full=False):
 
     state.terminal.render()
 
-    tasks.running.append(task)
+    tasks.runnable.append(task)
 
 
 
@@ -116,7 +116,7 @@ def read_key(task, priority):
 def put_key(task, pushed_back_key):
 
     scheduler.process_tasks_waiting_on_key(pushed_back_key)
-    tasks.running.append(task)
+    tasks.runnable.append(task)
 
 
 
@@ -124,8 +124,8 @@ def task_spawn(task, child_task):
 
     tasks.parent[child_task] = task
     tasks.children[task].append(child_task)
-    tasks.running.append(child_task)
-    tasks.running.append(task)
+    tasks.runnable.append(child_task)
+    tasks.runnable.append(task)
 
 
 
@@ -141,7 +141,7 @@ def task_wait(task):
         del tasks.parent[child]
         tasks.children[task].remove(child)
         common.clear_tasks_children(task)
-        tasks.running.append(task)
+        tasks.runnable.append(task)
         tasks.terminated.remove((child, return_value))
         common.clear_tasks_traps(child)
     else:
@@ -160,8 +160,8 @@ def task_destroy(task, child_task, keep_running=True):
             del tasks.parent[grand_child_task]
         del tasks.children[child_task]
 
-    if child_task in tasks.running:
-        tasks.running.remove(child_task)
+    if child_task in tasks.runnable:
+        tasks.runnable.remove(child_task)
     elif child_task in tasks.waiting_on_child:
         tasks.waiting_on_child.remove(child_task)
     elif child_task in tasks.waiting_on_key:
@@ -179,7 +179,7 @@ def task_destroy(task, child_task, keep_running=True):
     common.destroy_task_windows(child_task)
     if keep_running:
         tasks.terminated.append((child_task, ('destroyed-by', task)))
-        tasks.running.append(task)
+        tasks.runnable.append(task)
         log.info('%r destroyed by %r', child_task, task)
     else:
         log.info('%r destroyed from parent %r destroy', child_task, task)
@@ -191,7 +191,7 @@ _SEPARATOR = '-' * 60
 def state_dump(task, tag=''):
 
     def _task_status(task):
-        if task in tasks.running:
+        if task in tasks.runnable:
             return 'RR'
         if task in tasks.waiting_on_child:
             return 'WC'
@@ -230,7 +230,7 @@ def state_dump(task, tag=''):
     log.critical(f'-[ {tag_string}DUMP STATE | DONE ]'.ljust(60, '-'))
 
     if task is not None:
-        tasks.running.append(task)
+        tasks.runnable.append(task)
 
 
 # ----------------------------------------------------------------------------

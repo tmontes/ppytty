@@ -46,16 +46,16 @@ def run(task, post_prompt='[COMPLETED]'):
 def scheduler(top_task):
 
     tasks.top_task = top_task
-    tasks.running.append(top_task)
+    tasks.runnable.append(top_task)
 
-    while (tasks.running or tasks.waiting_on_child or tasks.waiting_on_key or
+    while (tasks.runnable or tasks.waiting_on_child or tasks.waiting_on_key or
            tasks.waiting_on_time or tasks.terminated):
         state.now = time.time()
-        if not tasks.running:
+        if not tasks.runnable:
             process_tasks_waiting_on_key()
             process_tasks_waiting_on_time()
             continue
-        task = tasks.running.popleft()
+        task = tasks.runnable.popleft()
         try:
             trap = run_task_until_trap(task)
         except StopIteration as return_:
@@ -117,7 +117,7 @@ def process_tasks_waiting_on_key(keyboard_byte=None):
             if key_waiter in tasks.waiting_on_key:
                 tasks.waiting_on_key.remove(key_waiter)
                 tasks.trap_results[key_waiter] = keyboard_byte
-                tasks.running.append(key_waiter)
+                tasks.runnable.append(key_waiter)
                 log.info('%r getting key %r', key_waiter, keyboard_byte)
                 break
 
@@ -131,7 +131,7 @@ def process_tasks_waiting_on_time():
             if time_waiter in tasks.waiting_on_time:
                 tasks.waiting_on_time.remove(time_waiter)
                 common.clear_tasks_waiting_on_time_hq()
-                tasks.running.append(time_waiter)
+                tasks.runnable.append(time_waiter)
                 log.info('%r waking up', time_waiter)
 
 
@@ -147,7 +147,7 @@ def process_task_completion(task, return_value):
         tasks.children[candidate_parent].remove(task)
         common.clear_tasks_children(candidate_parent)
         tasks.waiting_on_child.remove(candidate_parent)
-        tasks.running.append(candidate_parent)
+        tasks.runnable.append(candidate_parent)
     elif task is not tasks.top_task:
         tasks.terminated.append((task, return_value))
     common.clear_tasks_traps(task)
