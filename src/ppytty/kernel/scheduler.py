@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 
 
-class _PlayerStop(Exception):
+class _SchedulerStop(Exception):
 
     pass
 
@@ -38,7 +38,7 @@ def run(task, post_prompt='[COMPLETED]'):
             scheduler(task)
             while post_prompt:
                 _ = _read_keyboard(prompt=post_prompt)
-        except _PlayerStop:
+        except _SchedulerStop:
             pass
 
 
@@ -192,7 +192,7 @@ def _read_keyboard(prompt=None):
             keyboard_byte = os.read(io_fds.user_in, 1)
             if keyboard_byte == b'q':
                 if quit_in_progress:
-                    raise _PlayerStop()
+                    raise _SchedulerStop()
                 else:
                     quit_in_progress = True
                     timeout = None
