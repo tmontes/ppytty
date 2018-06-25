@@ -44,7 +44,7 @@ class Serial(task.Task):
                 task = self._monitor_factory(task, index, index_max)
 
             yield ('task-spawn', task)
-            _, nav_hint = yield ('wait-task',)
+            _, nav_hint = yield ('task-wait',)
 
             action = self._default_nav
             if self._take_nav_hint and nav_hint in self._ACTIONS:

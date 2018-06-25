@@ -129,7 +129,7 @@ def task_spawn(task, child_task):
 
 
 
-def wait_task(task):
+def task_wait(task):
 
     child = None
     for candidate, return_value in tasks.terminated:
