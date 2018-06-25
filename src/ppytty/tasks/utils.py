@@ -88,7 +88,7 @@ class MasterSlave(task.Task):
 
         completed_first, value = yield('task-wait',)
         if completed_first is self._master:
-            yield ('stop-task', self._slave)
+            yield ('task-destroy', self._slave)
             return_value = value
             expected_second = self._slave
         elif completed_first is self._slave:
@@ -170,7 +170,7 @@ class RunForAtMost(task.Task):
         elif completed_first is timeout_task:
             stop_second = self._task
 
-        yield ('stop-task', stop_second)
+        yield ('task-destroy', stop_second)
         completed_second, value = yield ('task-wait',)
         if completed_second is not stop_second:
             self._log.error('unexpected second completed: %r', completed_second)

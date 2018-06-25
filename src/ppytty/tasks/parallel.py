@@ -32,7 +32,7 @@ class Parallel(task.Task):
             return_values[task] = return_value
             running_tasks.remove(task)
         for task in running_tasks:
-            yield ('stop-task', task)
+            yield ('task-destroy', task)
             _, _ = yield ('task-wait',)
 
         return return_values

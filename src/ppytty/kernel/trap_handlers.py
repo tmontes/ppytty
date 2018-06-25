@@ -149,14 +149,14 @@ def task_wait(task):
 
 
 
-def stop_task(task, child_task, keep_running=True):
+def task_destroy(task, child_task, keep_running=True):
 
     if tasks.parent[child_task] is not task:
         raise RuntimeError('cannot kill non-child tasks')
 
     if child_task in tasks.children:
         for grand_child_task in tasks.children[child_task]:
-            stop_task(child_task, grand_child_task, keep_running=False)
+            task_destroy(child_task, grand_child_task, keep_running=False)
             del tasks.parent[grand_child_task]
         del tasks.children[child_task]
 
@@ -178,11 +178,11 @@ def stop_task(task, child_task, keep_running=True):
     common.clear_tasks_traps(child_task)
     common.destroy_task_windows(child_task)
     if keep_running:
-        tasks.terminated.append((child_task, ('stopped-by', task)))
+        tasks.terminated.append((child_task, ('destroyed-by', task)))
         tasks.running.append(task)
-        log.info('%r stopped by %r', child_task, task)
+        log.info('%r destroyed by %r', child_task, task)
     else:
-        log.info('%r stopped from parent %r stop', child_task, task)
+        log.info('%r destroyed from parent %r destroy', child_task, task)
 
 
 
