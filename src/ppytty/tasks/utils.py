@@ -61,8 +61,8 @@ class Loop(task.Task):
         times_to_go = self._times
         while times_to_go is None or times_to_go:
             self._task.reset()
-            yield ('run-task', self._task)
-            _, _ = yield ('wait-task',)
+            yield ('task-spawn', self._task)
+            _, _ = yield ('task-wait',)
             if times_to_go is not None:
                 times_to_go -= 1
 
@@ -83,12 +83,12 @@ class MasterSlave(task.Task):
 
     def run(self):
 
-        yield ('run-task', self._master)
-        yield ('run-task', self._slave)
+        yield ('task-spawn', self._master)
+        yield ('task-spawn', self._slave)
 
-        completed_first, value = yield('wait-task',)
+        completed_first, value = yield('task-wait',)
         if completed_first is self._master:
-            yield ('stop-task', self._slave)
+            yield ('task-destroy', self._slave)
             return_value = value
             expected_second = self._slave
         elif completed_first is self._slave:
@@ -96,7 +96,7 @@ class MasterSlave(task.Task):
         else:
             self._log.error('unexpected first completed: %r', completed_first)
 
-        completed_second, value = yield ('wait-task',)
+        completed_second, value = yield ('task-wait',)
         if completed_second is not expected_second:
             self._log.error('unexpected second completed: %r', completed_second)
         if completed_second is self._master:
@@ -125,17 +125,17 @@ class RunForAtLeast(task.Task):
 
         timeout_task = DelayReturn(seconds=self._seconds)
 
-        yield ('run-task', timeout_task)
-        yield ('run-task', self._task)
+        yield ('task-spawn', timeout_task)
+        yield ('task-spawn', self._task)
 
-        completed_first, value = yield ('wait-task',)
+        completed_first, value = yield ('task-wait',)
         if completed_first is self._task:
             return_value = value if self._return_early is TASK else self._return_early
             expected_second = timeout_task
         elif completed_first is timeout_task:
             expected_second = self._task
 
-        completed_second, value = yield ('wait-task',)
+        completed_second, value = yield ('task-wait',)
         if completed_second is not expected_second:
             self._log.error('unexpected second completed: %r', completed_second)
         if completed_second is self._task:
@@ -160,18 +160,18 @@ class RunForAtMost(task.Task):
 
         timeout_task = DelayReturn(seconds=self._seconds)
 
-        yield ('run-task', timeout_task)
-        yield ('run-task', self._task)
+        yield ('task-spawn', timeout_task)
+        yield ('task-spawn', self._task)
 
-        completed_first, value = yield ('wait-task',)
+        completed_first, value = yield ('task-wait',)
         if completed_first is self._task:
             stop_second = timeout_task
             return_value = value if self._return_early is TASK else self._return_early
         elif completed_first is timeout_task:
             stop_second = self._task
 
-        yield ('stop-task', stop_second)
-        completed_second, value = yield ('wait-task',)
+        yield ('task-destroy', stop_second)
+        completed_second, value = yield ('task-wait',)
         if completed_second is not stop_second:
             self._log.error('unexpected second completed: %r', completed_second)
         if completed_second is self._task:
