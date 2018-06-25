@@ -25,7 +25,7 @@ class Parallel(task.Task):
         return_values = {}
 
         for task in self._tasks:
-            yield ('run-task', task)
+            yield ('task-spawn', task)
             running_tasks.append(task)
         while len(running_tasks) > self._stop_last:
             task, return_value = yield ('wait-task',)

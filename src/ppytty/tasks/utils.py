@@ -61,7 +61,7 @@ class Loop(task.Task):
         times_to_go = self._times
         while times_to_go is None or times_to_go:
             self._task.reset()
-            yield ('run-task', self._task)
+            yield ('task-spawn', self._task)
             _, _ = yield ('wait-task',)
             if times_to_go is not None:
                 times_to_go -= 1
@@ -83,8 +83,8 @@ class MasterSlave(task.Task):
 
     def run(self):
 
-        yield ('run-task', self._master)
-        yield ('run-task', self._slave)
+        yield ('task-spawn', self._master)
+        yield ('task-spawn', self._slave)
 
         completed_first, value = yield('wait-task',)
         if completed_first is self._master:
@@ -125,8 +125,8 @@ class RunForAtLeast(task.Task):
 
         timeout_task = DelayReturn(seconds=self._seconds)
 
-        yield ('run-task', timeout_task)
-        yield ('run-task', self._task)
+        yield ('task-spawn', timeout_task)
+        yield ('task-spawn', self._task)
 
         completed_first, value = yield ('wait-task',)
         if completed_first is self._task:
@@ -160,8 +160,8 @@ class RunForAtMost(task.Task):
 
         timeout_task = DelayReturn(seconds=self._seconds)
 
-        yield ('run-task', timeout_task)
-        yield ('run-task', self._task)
+        yield ('task-spawn', timeout_task)
+        yield ('task-spawn', self._task)
 
         completed_first, value = yield ('wait-task',)
         if completed_first is self._task:

@@ -120,7 +120,7 @@ def put_key(task, pushed_back_key):
 
 
 
-def run_task(task, child_task):
+def task_spawn(task, child_task):
 
     tasks.parent[child_task] = task
     tasks.children[task].append(child_task)
