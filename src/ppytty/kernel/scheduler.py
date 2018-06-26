@@ -45,6 +45,7 @@ def run(task, post_prompt='[COMPLETED]'):
 
 def scheduler(top_task):
 
+    top_task = common.runnable_task(top_task)
     tasks.top_task = top_task
     tasks.runnable.append(top_task)
 
@@ -97,7 +98,7 @@ def run_task_until_trap(task):
     else:
         log.debug('%r running', task)
     try:
-        return task.running.send(prev_trap_result)
+        return task.send(prev_trap_result)
     finally:
         if prev_trap_call:
             del tasks.trap_calls[task]
