@@ -44,10 +44,10 @@ class Serial(task.Task):
                 task = self._monitor_factory(task, index, index_max)
 
             yield ('task-spawn', task)
-            _, nav_hint = yield ('task-wait',)
+            _, success, nav_hint = yield ('task-wait',)
 
             action = self._default_nav
-            if self._take_nav_hint and nav_hint in self._ACTIONS:
+            if self._take_nav_hint and success and nav_hint in self._ACTIONS:
                 action = nav_hint
 
             last_run_index = index

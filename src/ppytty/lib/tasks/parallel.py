@@ -22,20 +22,20 @@ class Parallel(task.Task):
     def run(self):
 
         running_tasks = []
-        return_values = {}
+        results = {}
 
         for task in self._tasks:
             yield ('task-spawn', task)
             running_tasks.append(task)
         while len(running_tasks) > self._stop_last:
-            task, return_value = yield ('task-wait',)
-            return_values[task] = return_value
+            task, success, return_value = yield ('task-wait',)
+            results[task] = (success, return_value)
             running_tasks.remove(task)
         for task in running_tasks:
             yield ('task-destroy', task)
-            _, _ = yield ('task-wait',)
+            _ = yield ('task-wait',)
 
-        return return_values
+        return results
 
 
     def reset(self):
