@@ -51,7 +51,7 @@ def scheduler(top_task):
 
     while (tasks.runnable or tasks.waiting_on_child or tasks.waiting_on_key or
            tasks.waiting_on_time or tasks.terminated):
-        state.now = time.time()
+        state.now = time.monotonic()
         if not tasks.runnable:
             process_tasks_waiting_on_key()
             process_tasks_waiting_on_time()
