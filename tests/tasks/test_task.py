@@ -80,7 +80,7 @@ class TestTaskWithKernel(unittest.TestCase):
     def test_tasks_are_runnable(self):
 
         task = _SleepZeroTask()
-        run(task, post_prompt='')
+        run(task)
 
 
 # ----------------------------------------------------------------------------
