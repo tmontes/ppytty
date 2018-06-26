@@ -8,10 +8,8 @@
 import contextlib
 import heapq
 import logging
-import os
-import select
-import time
 
+from . import hw
 from . import trap_handlers
 from . import common
 from . state import tasks, io_fds, state
@@ -51,7 +49,7 @@ def scheduler(top_task):
 
     while (tasks.runnable or tasks.waiting_on_child or tasks.waiting_on_key or
            tasks.waiting_on_time or tasks.terminated):
-        state.now = time.monotonic()
+        state.now = hw.time_monotonic()
         if not tasks.runnable:
             process_tasks_waiting_on_key()
             process_tasks_waiting_on_time()
@@ -188,9 +186,9 @@ def _read_keyboard(prompt=None):
     while True:
         actual_prompt = 'QUIT?' if quit_in_progress else prompt
         with _prompt_context(actual_prompt):
-            fds, _, _ = select.select(io_fds.input, _NO_FDS, _NO_FDS, timeout)
+            fds, _, _ = hw.select_select(io_fds.input, _NO_FDS, _NO_FDS, timeout)
         if io_fds.user_in in fds:
-            keyboard_byte = os.read(io_fds.user_in, 1)
+            keyboard_byte = hw.os_read(io_fds.user_in, 1)
             if keyboard_byte == b'q':
                 if quit_in_progress:
                     raise _SchedulerStop()
