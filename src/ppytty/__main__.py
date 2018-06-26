@@ -109,7 +109,7 @@ def main():
         print(e)
         return -2
 
-    ppytty.run(task)
+    ppytty.run(task, post_prompt='[COMPLETED]')
 
     return 0
 

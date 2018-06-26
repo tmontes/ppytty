@@ -38,37 +38,37 @@ class TestRun(unittest.TestCase):
     def test_gen_function(self):
 
         generator_function = _sleep_zero_task
-        run(generator_function, post_prompt='')
+        run(generator_function)
 
 
     def test_gen_object(self):
 
         generator_object = _sleep_zero_task()
-        run(generator_object, post_prompt='')
+        run(generator_object)
 
 
     def test_gen_function_spawn_gen_function(self):
 
         generator_function = _spawn_sleep_zero_task_via_function
-        run(generator_function, post_prompt='')
+        run(generator_function)
 
 
     def test_gen_function_spawn_gen_object(self):
 
         generator_function = _spawn_sleep_zero_task_via_object
-        run(generator_function, post_prompt='')
+        run(generator_function)
 
 
     def test_gen_object_spawn_gen_function(self):
 
         generator_function = _spawn_sleep_zero_task_via_function()
-        run(generator_function, post_prompt='')
+        run(generator_function)
 
 
     def test_gen_object_spawn_gen_object(self):
 
         generator_function = _spawn_sleep_zero_task_via_object()
-        run(generator_function, post_prompt='')
+        run(generator_function)
 
 
 # ----------------------------------------------------------------------------

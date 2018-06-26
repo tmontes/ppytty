@@ -29,7 +29,7 @@ class _SchedulerStop(Exception):
 
 
 
-def run(task, post_prompt='[COMPLETED]'):
+def run(task, post_prompt=None):
 
     with Terminal() as t:
         state.terminal = t
