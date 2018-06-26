@@ -89,13 +89,23 @@ STATE_OBJECTS = {
 
 
 
-def _assert_has_attrs(object_name, object, attr_names):
+def _assert_attrs_are_these(object_name, object, attr_names):
 
+    # `object` has all attributes in `attr_names`
     try:
         for attr_name in attr_names:
             _ = getattr(object, attr_name)
     except AttributeError:
         raise AssertionError(f'{object_name!r} has no attribute {attr_name!r}')
+
+    # no `object` attributes other than those in `attr_names`
+    for attr_name in dir(object):
+        if attr_name.startswith('_'):
+            continue
+        if callable(getattr(object, attr_name)):
+            continue
+        if attr_name not in attr_names:
+            raise AssertionError(f'{object_name!r} untested attribute {attr_name!r}')
 
 
 
@@ -124,12 +134,12 @@ class TestRun(unittest.TestCase):
         state.reset()
 
 
-    def test_state_attrs_exist(self):
+    def test_state_attrs_are_these(self):
 
         for attr_name, attr_dict in STATE_OBJECTS.items():
             state_object = getattr(state, attr_name)
             with self.subTest(attr_name=attr_name):
-                _assert_has_attrs(attr_name, state_object, attr_dict.keys())
+                _assert_attrs_are_these(attr_name, state_object, attr_dict.keys())
 
 
     def test_state_attrs_are_clean(self):
