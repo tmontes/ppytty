@@ -28,4 +28,11 @@ def spawn_sleep_zero_gen_object():
     yield ('task-wait',)
 
 
+
+def sleep_zero_return_42_idiv_arg(arg):
+
+    yield ('sleep', 0)
+    return 42 // arg
+
+
 # ----------------------------------------------------------------------------

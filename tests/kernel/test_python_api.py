@@ -51,4 +51,21 @@ class TestRun(unittest.TestCase):
         run(generator_object)
 
 
+
+class TestReturns(unittest.TestCase):
+
+    def test_task_return(self):
+
+        success, result = run(tasks.sleep_zero_return_42_idiv_arg(42))
+        self.assertTrue(success)
+        self.assertEqual(result, 1)
+
+
+    def test_task_exception(self):
+
+        success, result = run(tasks.sleep_zero_return_42_idiv_arg(0))
+        self.assertFalse(success)
+        self.assertIsInstance(result, ZeroDivisionError)
+
+
 # ----------------------------------------------------------------------------
