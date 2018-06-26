@@ -122,6 +122,7 @@ def put_key(task, pushed_back_key):
 
 def task_spawn(task, child_task):
 
+    child_task = common.runnable_task(child_task)
     tasks.parent[child_task] = task
     tasks.children[task].append(child_task)
     tasks.runnable.append(child_task)

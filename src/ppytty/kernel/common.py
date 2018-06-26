@@ -9,6 +9,12 @@ from . state import tasks, state
 
 
 
+def runnable_task(task):
+
+    return task() if callable(task) else task
+
+
+
 def clear_tasks_children(task):
 
     if not tasks.children[task]:
