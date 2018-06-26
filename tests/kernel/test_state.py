@@ -68,6 +68,8 @@ def _change_dict(object, attr_name):
 STATE_OBJECTS = {
     'tasks': {
         'top_task': (_assert_is_none, _change_scalar),
+        'top_task_success': (_assert_is_none, _change_scalar),
+        'top_task_result': (_assert_is_none, _change_scalar),
         'runnable': (_assert_empty_list, _change_list),
         'terminated': (_assert_empty_list, _change_list),
         'parent': (_assert_empty_dict, _change_dict),

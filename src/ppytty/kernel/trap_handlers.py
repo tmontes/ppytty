@@ -133,17 +133,17 @@ def task_spawn(task, child_task):
 def task_wait(task):
 
     child = None
-    for candidate, return_value in tasks.terminated:
+    for candidate, success, result in tasks.terminated:
         if tasks.parent[candidate] is task:
             child = candidate
             break
     if child is not None:
-        tasks.trap_results[task] = (child, return_value)
+        tasks.trap_results[task] = (child, success, result)
         del tasks.parent[child]
         tasks.children[task].remove(child)
         common.clear_tasks_children(task)
         tasks.runnable.append(task)
-        tasks.terminated.remove((child, return_value))
+        tasks.terminated.remove((child, success, result))
         common.clear_tasks_traps(child)
     else:
         tasks.waiting_on_child.append(task)
@@ -171,7 +171,7 @@ def task_destroy(task, child_task, keep_running=True):
         tasks.waiting_on_time.remove(child_task)
         common.clear_tasks_waiting_on_time_hq()
     else:
-        terminated = [t for (t, _) in tasks.terminated if t is child_task]
+        terminated = [t for (t, _, _) in tasks.terminated if t is child_task]
         if terminated:
             log.error('%r will not stop terminated task %r', task, child_task)
         return
@@ -179,7 +179,7 @@ def task_destroy(task, child_task, keep_running=True):
     common.clear_tasks_traps(child_task)
     common.destroy_task_windows(child_task)
     if keep_running:
-        tasks.terminated.append((child_task, ('destroyed-by', task)))
+        tasks.terminated.append((child_task, False, ('destroyed-by', task)))
         tasks.runnable.append(task)
         log.info('%r destroyed by %r', child_task, task)
     else:
@@ -200,7 +200,7 @@ def state_dump(task, tag=''):
             return 'WK'
         if task in tasks.waiting_on_time:
             return 'WT'
-        if task in (t for (t, _) in tasks.terminated):
+        if task in (t for (t, _, _) in tasks.terminated):
             return 'TT'
         return '??'
 

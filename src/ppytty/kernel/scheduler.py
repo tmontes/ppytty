@@ -33,11 +33,13 @@ def run(task, post_prompt=None):
         state.terminal = t
         io_fds.set_user_io(t.in_fd, t.out_fd)
         try:
-            scheduler(task)
+            success, result = scheduler(task)
             while post_prompt:
                 _ = _read_keyboard(prompt=post_prompt)
-        except _SchedulerStop:
-            pass
+        except _SchedulerStop as e:
+            success, result = None, e
+
+    return success, result
 
 
 
@@ -59,9 +61,14 @@ def scheduler(top_task):
             trap = run_task_until_trap(task)
         except StopIteration as return_:
             log.info('%r completed with %r', task, return_.value)
-            process_task_completion(task, return_.value)
+            process_task_completion(task, success=True, result=return_.value)
+        except Exception as e:
+            log.warning('%r crashed with %r', task, e)
+            process_task_completion(task, success=False, result=e)
         else:
             process_task_trap(task, trap)
+
+    return tasks.top_task_success, tasks.top_task_result
 
 
 
@@ -135,20 +142,23 @@ def process_tasks_waiting_on_time():
 
 
 
-def process_task_completion(task, return_value):
+def process_task_completion(task, success, result):
 
     candidate_parent = tasks.parent.get(task)
     if not candidate_parent and task is not tasks.top_task:
         log.error('%r completed with no parent', task)
     if candidate_parent in tasks.waiting_on_child:
-        tasks.trap_results[candidate_parent] = (task, return_value)
+        tasks.trap_results[candidate_parent] = (task, success, result)
         del tasks.parent[task]
         tasks.children[candidate_parent].remove(task)
         common.clear_tasks_children(candidate_parent)
         tasks.waiting_on_child.remove(candidate_parent)
         tasks.runnable.append(candidate_parent)
     elif task is not tasks.top_task:
-        tasks.terminated.append((task, return_value))
+        tasks.terminated.append((task, success, result))
+    else:
+        tasks.top_task_success = success
+        tasks.top_task_result = result
     common.clear_tasks_traps(task)
     common.destroy_task_windows(task)
 

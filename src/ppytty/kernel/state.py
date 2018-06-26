@@ -15,6 +15,12 @@ tasks = types.SimpleNamespace(
     # The task given to the scheduler, to be run.
     top_task = None,
 
+    # True if top_task completed, False otherwise (exception or interrupted).
+    top_task_success = None,
+
+    # Exception if top_task_success is False, else whatever top_task returned.
+    top_task_result = None,
+
     # Runnable tasks queue.
     runnable = collections.deque(),
 
@@ -87,6 +93,8 @@ state = types.SimpleNamespace(
 def reset():
 
     tasks.top_task = None
+    tasks.top_task_success = None
+    tasks.top_task_result = None
     tasks.runnable = collections.deque()
     tasks.terminated = []
     tasks.parent = {}
