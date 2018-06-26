@@ -12,6 +12,14 @@ import logging
 
 class Task(object):
 
+    # Kernel scheduler runs either generator functions or generator objects.
+    # When given a callable, it will call it, and use the result as a generator
+    # object, with its .send method to make it progress.
+    #
+    # Task behaves (enough) like a generator function in the sense that it is
+    # callable. It also supports resetting itself, this the self._running
+    # related complexity.
+
     def __init__(self, name=None):
 
         self._name = name
@@ -27,13 +35,25 @@ class Task(object):
         return f'<{self.__class__.__name__}{name} {hex(id(self))}>'
 
 
-    @property
-    def running(self):
+    def _start_running(self):
+
+        self._running = self.run()
+
+
+    def __call__(self):
+
+        self._start_running()
+        return self
+
+
+    def send(self, *args, **kwargs):
+
+        # The kernel scheduler calls this to make the Task progress.
 
         if self._running is None:
-            self._running = self.run()
+            self._start_running()
 
-        return self._running
+        return self._running.send(*args, **kwargs)
 
 
     def run(self):
@@ -43,6 +63,7 @@ class Task(object):
 
     def reset(self):
 
+        # TODO: Do we really need resettable Tasks? TBD, as the lib evolves.
         self._running = None
 
 

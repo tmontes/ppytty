@@ -7,7 +7,7 @@
 
 import unittest
 
-from ppytty import Task
+from ppytty import Task, run
 
 
 class TestTask(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestTask(unittest.TestCase):
     def test_running_task_raises_not_implemented(self):
 
         with self.assertRaises(NotImplementedError):
-            self.task.running.send(None)
+            self.task.send(None)
 
 
 
@@ -55,15 +55,32 @@ class TestBasicTask(unittest.TestCase):
 
         task = _BasicTask(name='basic-task')
 
-        first_value = task.running.send(None)
+        first_value = task.send(None)
         self.assertEqual(1, first_value, 'first iteration value is wrong')
 
-        second_value = task.running.send(None)
+        second_value = task.send(None)
         self.assertEqual(2, second_value, 'first iteration value is wrong')
 
         task.reset()
-        values = [v for v in task.running]
-        self.assertEqual([1, 2, 3], values, 'second run values are wrong')
+        reset_value = task.send(None)
+        self.assertEqual(1, reset_value, 'second run value is wrong')
+
+
+
+class _SleepZeroTask(Task):
+
+    def run(self):
+
+        yield ('sleep', 0)
+
+
+
+class TestTaskWithKernel(unittest.TestCase):
+
+    def test_tasks_are_runnable(self):
+
+        task = _SleepZeroTask()
+        run(task, post_prompt='')
 
 
 # ----------------------------------------------------------------------------
