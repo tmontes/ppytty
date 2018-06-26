@@ -6,20 +6,21 @@
 # ----------------------------------------------------------------------------
 
 import functools
-import os
-import sys
-import termios
 
 import blessings
 
+from . import hw
 from . import window
 
 
 class Terminal(object):
 
-    def __init__(self, in_file=sys.stdin, out_file=sys.stdout, kind=None,
+    def __init__(self, in_file=None, out_file=None, kind=None,
                  left=0, top=0, width=None, height=None, bg=None,
                  encoding='UTF-8'):
+
+        in_file = hw.sys_stdin if in_file is None else in_file
+        out_file = hw.sys_stdout if out_file is None else out_file
 
         self._in_fd = in_file.fileno()
         self._out_fd = out_file.fileno()
@@ -40,13 +41,13 @@ class Terminal(object):
         self._window_clear = self._window.clear
         self._window_feed = self._window.feed
         self._window_render = self._window.render
-        self._os_write_out_fd = functools.partial(os.write, self._out_fd)
+        self._os_write_out_fd = functools.partial(hw.os_write, self._out_fd)
 
 
     def _common_tty_name(self, *fds):
 
         try:
-            tty_names = {os.ttyname(fd) for fd in fds}
+            tty_names = {hw.os_ttyname(fd) for fd in fds}
         except OSError:
             raise RuntimeError(f'terminal I/O requires TTYs')
 
@@ -75,13 +76,13 @@ class Terminal(object):
 
     def _termios_settings(self, activate=True):
 
-        tc_attrs = termios.tcgetattr(self._out_fd)
-        settings = termios.ICANON | termios.ECHO | termios.ISIG
+        tc_attrs = hw.termios_tcgetattr(self._out_fd)
+        settings = hw.termios_ICANON | hw.termios_ECHO | hw.termios_ISIG
         if activate:
             tc_attrs[3] &= ~settings
         else:
             tc_attrs[3] |= settings
-        termios.tcsetattr(self._out_fd, termios.TCSANOW, tc_attrs)
+        hw.termios_tcsetattr(self._out_fd, hw.termios_TCSANOW, tc_attrs)
 
 
     def _write(self, *text):
