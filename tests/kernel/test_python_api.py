@@ -9,27 +9,7 @@ import unittest
 
 from ppytty import run
 
-
-
-def _sleep_zero_task():
-
-    yield ('sleep', 0)
-
-
-
-def _spawn_sleep_zero_task_via_function():
-
-    generator_function = _sleep_zero_task
-    yield ('task-spawn', generator_function)
-    yield ('task-wait',)
-
-
-
-def _spawn_sleep_zero_task_via_object():
-
-    generator_object = _sleep_zero_task()
-    yield ('task-spawn', generator_object)
-    yield ('task-wait',)
+from . import tasks
 
 
 
@@ -37,38 +17,38 @@ class TestRun(unittest.TestCase):
 
     def test_gen_function(self):
 
-        generator_function = _sleep_zero_task
+        generator_function = tasks.sleep_zero
         run(generator_function)
 
 
     def test_gen_object(self):
 
-        generator_object = _sleep_zero_task()
+        generator_object = tasks.sleep_zero()
         run(generator_object)
 
 
     def test_gen_function_spawn_gen_function(self):
 
-        generator_function = _spawn_sleep_zero_task_via_function
+        generator_function = tasks.spawn_sleep_zero_gen_function
         run(generator_function)
 
 
     def test_gen_function_spawn_gen_object(self):
 
-        generator_function = _spawn_sleep_zero_task_via_object
+        generator_function = tasks.spawn_sleep_zero_gen_object
         run(generator_function)
 
 
     def test_gen_object_spawn_gen_function(self):
 
-        generator_function = _spawn_sleep_zero_task_via_function()
-        run(generator_function)
+        generator_object = tasks.spawn_sleep_zero_gen_function()
+        run(generator_object)
 
 
     def test_gen_object_spawn_gen_object(self):
 
-        generator_function = _spawn_sleep_zero_task_via_object()
-        run(generator_function)
+        generator_object = tasks.spawn_sleep_zero_gen_object()
+        run(generator_object)
 
 
 # ----------------------------------------------------------------------------
