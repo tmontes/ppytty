@@ -9,11 +9,12 @@ import unittest
 
 from ppytty import run
 
+from . import io_bypass
 from . import tasks
 
 
 
-class TestSpawn(unittest.TestCase):
+class TestSpawn(io_bypass.NoOutputTestCase):
 
     def test_spawn_gen_function(self):
 
@@ -30,7 +31,7 @@ class TestSpawn(unittest.TestCase):
 
 
 
-class TestWait(unittest.TestCase):
+class TestWait(io_bypass.NoOutputTestCase):
 
     def test_wait_child_success(self):
 
