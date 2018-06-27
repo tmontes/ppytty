@@ -6,116 +6,112 @@
 # ----------------------------------------------------------------------------
 
 import collections
-import types
 
 
 
-tasks = types.SimpleNamespace(
+class _Base(object):
 
-    # The task given to the scheduler, to be run.
-    top_task = None,
+    def __init__(self):
 
-    # True if top_task completed, False otherwise (exception or interrupted).
-    top_task_success = None,
-
-    # Exception if top_task_success is False, else whatever top_task returned.
-    top_task_result = None,
-
-    # Runnable tasks queue.
-    runnable = collections.deque(),
-
-    # Terminated tasks will be here until their parent task waits on them.
-    terminated = [],
-
-    # Keys: Tasks, Values: Their parent Task.
-    parent = {},
-    # Keys: Tasks, Values: List of child Tasks, if any.
-    children = collections.defaultdict(list),
-
-    # Tasks waiting on children.
-    waiting_on_child = [],
-
-    # Tasks waiting on keyboard input, and the associated priority queue.
-    waiting_on_key = [],
-    waiting_on_key_hq = [],
-
-    # Tasks sleeping, and the associated priority queue.
-    waiting_on_time = [],
-    waiting_on_time_hq = [],
+        self.reset()
 
 
-    # Keys: Tasks, Values: Their current trap, if any.
-    trap_calls = {},
-    # Keys: Tasks, Values: The value to return to the task, if any.
-    trap_results = {},
+    def reset(self):
 
-
-    # Keys: Tasks, Values: List of Task created Windows.
-    windows = collections.defaultdict(list),
-)
+        raise NotImplementedError()
 
 
 
-class io_fds(object):
+class _Tasks(_Base):
 
-    input = []
-    output = []
-    user_in = None
-    user_out = None
+    def reset(self):
 
-    # Would be more Pythonic with class-level properties for `user_in` and
-    # `user_out`: that would require a meta-class and maybe that's too much
-    # for such a simple, single-use, use case.
+        # The task given to the scheduler, to be run.
+        self.top_task = None
 
-    @classmethod
-    def set_user_io(cls, in_fd, out_fd):
-        cls.user_in = in_fd
-        cls.input.append(in_fd)
-        cls.user_out = out_fd
-        cls.output.append(out_fd)
+        # True if top_task completed, False otherwise (exception or interrupted).
+        self.top_task_success = None
+
+        # Exception if top_task_success is False, else whatever top_task returned.
+        self.top_task_result = None
+
+        # Runnable tasks queue.
+        self.runnable = collections.deque()
+
+        # Terminated tasks will be here until their parent task waits on them.
+        self.terminated = []
+
+        # Keys: Tasks, Values: Their parent Task.
+        self.parent = {}
+        # Keys: Tasks, Values: List of child Tasks, if any.
+        self.children = collections.defaultdict(list)
+
+        # Tasks waiting on children.
+        self.waiting_on_child = []
+
+        # Tasks waiting on keyboard input, and the associated priority queue.
+        self.waiting_on_key = []
+        self.waiting_on_key_hq = []
+
+        # Tasks sleeping, and the associated priority queue.
+        self.waiting_on_time = []
+        self.waiting_on_time_hq = []
+
+        # Keys: Tasks, Values: Their current trap, if any.
+        self.trap_calls = {}
+        # Keys: Tasks, Values: The value to return to the task, if any.
+        self.trap_results = {}
+
+        # Keys: Tasks, Values: List of Task created Windows.
+        self.windows = collections.defaultdict(list)
 
 
 
-state = types.SimpleNamespace(
+class _IOFDs(_Base):
 
-    # Global time.
-    now = None,
+    def reset(self):
 
-    # Interactive input/output user terminal.
-    terminal = None,
+        self.input = []
+        self.output = []
+        self.user_in = None
+        self.user_out = None
 
-    # Task created Window list in back to front rendering order.
-    all_windows = [],
-)
+
+    def set_user_io(self, in_fd, out_fd):
+
+        self.user_in = in_fd
+        self.input.append(in_fd)
+        self.user_out = out_fd
+        self.output.append(out_fd)
+
+
+
+class _State(_Base):
+
+    def reset(self):
+
+        # Global time.
+        self.now = None
+
+        # Interactive input/output user terminal.
+        self.terminal = None
+
+        # Task created Window list in back to front rendering order.
+        self.all_windows = []
+
+
+
+tasks = _Tasks()
+io_fds = _IOFDs()
+state = _State()
 
 
 
 def reset():
 
-    tasks.top_task = None
-    tasks.top_task_success = None
-    tasks.top_task_result = None
-    tasks.runnable = collections.deque()
-    tasks.terminated = []
-    tasks.parent = {}
-    tasks.children = collections.defaultdict(list)
-    tasks.waiting_on_child = []
-    tasks.waiting_on_key = []
-    tasks.waiting_on_key_hq = []
-    tasks.waiting_on_time = []
-    tasks.waiting_on_time_hq = []
-    tasks.trap_calls = {}
-    tasks.trap_results = {}
-    tasks.windows = collections.defaultdict(list)
-
-    io_fds.input = []
-    io_fds.output = []
-    io_fds.user_in = None
-    io_fds.user_out = None
-
-    state.now = None
-    state.terminal = None
-    state.all_windows = []
+    tasks.reset()
+    io_fds.reset()
+    state.reset()
 
 
 # ----------------------------------------------------------------------------
