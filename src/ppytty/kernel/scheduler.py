@@ -49,12 +49,12 @@ def scheduler(top_task):
     tasks.top_task = top_task
     tasks.runnable.append(top_task)
 
-    while (tasks.runnable or tasks.waiting_on_child or tasks.waiting_on_key or
-           tasks.waiting_on_time or tasks.terminated):
+    while (tasks.runnable or tasks.waiting_child or tasks.waiting_key or
+           tasks.waiting_time or tasks.terminated):
         state.now = hw.time_monotonic()
         if not tasks.runnable:
-            process_tasks_waiting_on_key()
-            process_tasks_waiting_on_time()
+            process_tasks_waiting_key()
+            process_tasks_waiting_time()
             continue
         task = tasks.runnable.popleft()
         try:
@@ -112,16 +112,16 @@ def run_task_until_trap(task):
 
 
 
-def process_tasks_waiting_on_key(keyboard_byte=None):
+def process_tasks_waiting_key(keyboard_byte=None):
 
     if keyboard_byte is None:
         keyboard_byte = _read_keyboard(prompt='?')
 
-    if keyboard_byte and tasks.waiting_on_key:
-        while tasks.waiting_on_key_hq:
-            _, _, key_waiter = heapq.heappop(tasks.waiting_on_key_hq)
-            if key_waiter in tasks.waiting_on_key:
-                tasks.waiting_on_key.remove(key_waiter)
+    if keyboard_byte and tasks.waiting_key:
+        while tasks.waiting_key_hq:
+            _, _, key_waiter = heapq.heappop(tasks.waiting_key_hq)
+            if key_waiter in tasks.waiting_key:
+                tasks.waiting_key.remove(key_waiter)
                 tasks.trap_results[key_waiter] = keyboard_byte
                 tasks.runnable.append(key_waiter)
                 log.info('%r getting key %r', key_waiter, keyboard_byte)
@@ -129,14 +129,14 @@ def process_tasks_waiting_on_key(keyboard_byte=None):
 
 
 
-def process_tasks_waiting_on_time():
+def process_tasks_waiting_time():
 
-    if tasks.waiting_on_time:
-        while tasks.waiting_on_time_hq and tasks.waiting_on_time_hq[0][0] < state.now:
-            _, _, time_waiter = heapq.heappop(tasks.waiting_on_time_hq)
-            if time_waiter in tasks.waiting_on_time:
-                tasks.waiting_on_time.remove(time_waiter)
-                common.clear_tasks_waiting_on_time_hq()
+    if tasks.waiting_time:
+        while tasks.waiting_time_hq and tasks.waiting_time_hq[0][0] < state.now:
+            _, _, time_waiter = heapq.heappop(tasks.waiting_time_hq)
+            if time_waiter in tasks.waiting_time:
+                tasks.waiting_time.remove(time_waiter)
+                common.clear_tasks_waiting_time_hq()
                 tasks.runnable.append(time_waiter)
                 log.info('%r waking up', time_waiter)
 
@@ -147,12 +147,12 @@ def process_task_completion(task, success, result):
     candidate_parent = tasks.parent.get(task)
     if not candidate_parent and task is not tasks.top_task:
         log.error('%r completed with no parent', task)
-    if candidate_parent in tasks.waiting_on_child:
+    if candidate_parent in tasks.waiting_child:
         tasks.trap_results[candidate_parent] = (task, success, result)
         del tasks.parent[task]
         tasks.children[candidate_parent].remove(task)
         common.clear_tasks_children(candidate_parent)
-        tasks.waiting_on_child.remove(candidate_parent)
+        tasks.waiting_child.remove(candidate_parent)
         tasks.runnable.append(candidate_parent)
     elif task is not tasks.top_task:
         tasks.terminated.append((task, success, result))
@@ -188,8 +188,8 @@ def _read_keyboard(prompt=None):
 
     quit_in_progress = False
 
-    if tasks.waiting_on_time:
-        timeout = max(tasks.waiting_on_time_hq[0][0] - state.now, 0)
+    if tasks.waiting_time:
+        timeout = max(tasks.waiting_time_hq[0][0] - state.now, 0)
     else:
         timeout = None
     save_timeout = timeout

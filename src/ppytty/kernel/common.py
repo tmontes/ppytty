@@ -30,14 +30,14 @@ def clear_tasks_traps(task):
 
 
 
-def clear_tasks_waiting_on_time_hq():
+def clear_tasks_waiting_time_hq():
 
-    if not tasks.waiting_on_time:
-        tasks.waiting_on_time_hq.clear()
+    if not tasks.waiting_time:
+        tasks.waiting_time_hq.clear()
 
 
 
-# TODO: Do we need a "clear_tasks_waiting_on_key_hq"? Probably.
+# TODO: Do we need a "clear_tasks_waiting_key_hq"? Probably.
 
 
 

@@ -47,15 +47,15 @@ class _Tasks(_Base):
         self.children = collections.defaultdict(list)
 
         # Tasks waiting on children.
-        self.waiting_on_child = []
+        self.waiting_child = []
 
         # Tasks waiting on keyboard input, and the associated priority queue.
-        self.waiting_on_key = []
-        self.waiting_on_key_hq = []
+        self.waiting_key = []
+        self.waiting_key_hq = []
 
         # Tasks sleeping, and the associated priority queue.
-        self.waiting_on_time = []
-        self.waiting_on_time_hq = []
+        self.waiting_time = []
+        self.waiting_time_hq = []
 
         # Keys: Tasks, Values: Their current trap, if any.
         self.trap_calls = {}

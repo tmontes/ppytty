@@ -101,21 +101,21 @@ def window_render(task, window, full=False):
 def sleep(task, seconds):
 
     wake_at = state.now + seconds
-    tasks.waiting_on_time.append(task)
-    heapq.heappush(tasks.waiting_on_time_hq, (wake_at, id(task), task))
+    tasks.waiting_time.append(task)
+    heapq.heappush(tasks.waiting_time_hq, (wake_at, id(task), task))
 
 
 
 def read_key(task, priority):
 
-    tasks.waiting_on_key.append(task)
-    heapq.heappush(tasks.waiting_on_key_hq, (priority, id(task), task))
+    tasks.waiting_key.append(task)
+    heapq.heappush(tasks.waiting_key_hq, (priority, id(task), task))
 
 
 
 def put_key(task, pushed_back_key):
 
-    scheduler.process_tasks_waiting_on_key(pushed_back_key)
+    scheduler.process_tasks_waiting_key(pushed_back_key)
     tasks.runnable.append(task)
 
 
@@ -146,7 +146,7 @@ def task_wait(task):
         tasks.terminated.remove((child, success, result))
         common.clear_tasks_traps(child)
     else:
-        tasks.waiting_on_child.append(task)
+        tasks.waiting_child.append(task)
 
 
 
@@ -163,13 +163,13 @@ def task_destroy(task, child_task, keep_running=True):
 
     if child_task in tasks.runnable:
         tasks.runnable.remove(child_task)
-    elif child_task in tasks.waiting_on_child:
-        tasks.waiting_on_child.remove(child_task)
-    elif child_task in tasks.waiting_on_key:
-        tasks.waiting_on_key.remove(child_task)
-    elif child_task in tasks.waiting_on_time:
-        tasks.waiting_on_time.remove(child_task)
-        common.clear_tasks_waiting_on_time_hq()
+    elif child_task in tasks.waiting_child:
+        tasks.waiting_child.remove(child_task)
+    elif child_task in tasks.waiting_key:
+        tasks.waiting_key.remove(child_task)
+    elif child_task in tasks.waiting_time:
+        tasks.waiting_time.remove(child_task)
+        common.clear_tasks_waiting_time_hq()
     else:
         terminated = [t for (t, _, _) in tasks.terminated if t is child_task]
         if terminated:
@@ -194,11 +194,11 @@ def state_dump(task, tag=''):
     def _task_status(task):
         if task in tasks.runnable:
             return 'RR'
-        if task in tasks.waiting_on_child:
+        if task in tasks.waiting_child:
             return 'WC'
-        if task in tasks.waiting_on_key:
+        if task in tasks.waiting_key:
             return 'WK'
-        if task in tasks.waiting_on_time:
+        if task in tasks.waiting_time:
             return 'WT'
         if task in (t for (t, _, _) in tasks.terminated):
             return 'TT'
