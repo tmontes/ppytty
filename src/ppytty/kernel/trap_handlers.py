@@ -11,7 +11,7 @@ import logging
 
 from . import common
 from . import scheduler
-from . state import tasks, state, io_fds
+from . state import state
 from . window import Window
 
 
@@ -23,14 +23,14 @@ log = logging.getLogger(__name__)
 def direct_clear(task):
 
     state.terminal.direct_clear()
-    tasks.runnable.append(task)
+    state.runnable_tasks.append(task)
 
 
 
 def direct_print(task, *args):
 
     state.terminal.direct_print(*args)
-    tasks.runnable.append(task)
+    state.runnable_tasks.append(task)
 
 
 
@@ -43,20 +43,20 @@ def window_create(task, left, top, width, height, bg=None):
         log.debug('%r traceback', task, exc_info=True)
         w = None
     else:
-        tasks.windows[task].append(w)
+        state.task_windows[task].append(w)
         state.all_windows.append(w)
 
-    tasks.trap_results[task] = w
-    tasks.runnable.append(task)
+    state.trap_results[task] = w
+    state.runnable_tasks.append(task)
 
 
 
 def window_destroy(task, window):
 
-    if not window in tasks.windows[task]:
+    if not window in state.task_windows[task]:
         raise RuntimeError('cannot destroy non-owned windows')
 
-    tasks.windows[task].remove(window)
+    state.task_windows[task].remove(window)
     state.all_windows.remove(window)
 
     # One window is gone: need to re-render everything to account for it.
@@ -65,13 +65,13 @@ def window_destroy(task, window):
     # - Just clear needed terminal lines and rerender overlapping windows.
     common.rerender_all_windows()
 
-    tasks.runnable.append(task)
+    state.runnable_tasks.append(task)
 
 
 
 def window_render(task, window, full=False):
 
-    if not window in tasks.windows[task]:
+    if not window in state.task_windows[task]:
         raise RuntimeError('cannot render non-owned windows')
 
     # Render `window` and all other windows that:
@@ -94,84 +94,84 @@ def window_render(task, window, full=False):
 
     state.terminal.render()
 
-    tasks.runnable.append(task)
+    state.runnable_tasks.append(task)
 
 
 
 def sleep(task, seconds):
 
     wake_at = state.now + seconds
-    tasks.waiting_time.append(task)
-    heapq.heappush(tasks.waiting_time_hq, (wake_at, id(task), task))
+    state.tasks_waiting_time.append(task)
+    heapq.heappush(state.tasks_waiting_time_hq, (wake_at, id(task), task))
 
 
 
 def read_key(task, priority):
 
-    tasks.waiting_key.append(task)
-    heapq.heappush(tasks.waiting_key_hq, (priority, id(task), task))
+    state.tasks_waiting_key.append(task)
+    heapq.heappush(state.tasks_waiting_key_hq, (priority, id(task), task))
 
 
 
 def put_key(task, pushed_back_key):
 
     scheduler.process_tasks_waiting_key(pushed_back_key)
-    tasks.runnable.append(task)
+    state.runnable_tasks.append(task)
 
 
 
 def task_spawn(task, child_task):
 
     child_task = common.runnable_task(child_task)
-    tasks.parent[child_task] = task
-    tasks.children[task].append(child_task)
-    tasks.runnable.append(child_task)
-    tasks.runnable.append(task)
+    state.parent_task[child_task] = task
+    state.child_tasks[task].append(child_task)
+    state.runnable_tasks.append(child_task)
+    state.runnable_tasks.append(task)
 
 
 
 def task_wait(task):
 
     child = None
-    for candidate, success, result in tasks.terminated:
-        if tasks.parent[candidate] is task:
+    for candidate, success, result in state.completed_tasks:
+        if state.parent_task[candidate] is task:
             child = candidate
             break
     if child is not None:
-        tasks.trap_results[task] = (child, success, result)
-        del tasks.parent[child]
-        tasks.children[task].remove(child)
+        state.trap_results[task] = (child, success, result)
+        del state.parent_task[child]
+        state.child_tasks[task].remove(child)
         common.clear_tasks_children(task)
-        tasks.runnable.append(task)
-        tasks.terminated.remove((child, success, result))
+        state.runnable_tasks.append(task)
+        state.completed_tasks.remove((child, success, result))
         common.clear_tasks_traps(child)
     else:
-        tasks.waiting_child.append(task)
+        state.tasks_waiting_child.append(task)
 
 
 
 def task_destroy(task, child_task, keep_running=True):
 
-    if tasks.parent[child_task] is not task:
+    if state.parent_task[child_task] is not task:
         raise RuntimeError('cannot kill non-child tasks')
 
-    if child_task in tasks.children:
-        for grand_child_task in tasks.children[child_task]:
+    if child_task in state.child_tasks:
+        for grand_child_task in state.child_tasks[child_task]:
             task_destroy(child_task, grand_child_task, keep_running=False)
-            del tasks.parent[grand_child_task]
-        del tasks.children[child_task]
+            del state.parent_task[grand_child_task]
+        del state.child_tasks[child_task]
 
-    if child_task in tasks.runnable:
-        tasks.runnable.remove(child_task)
-    elif child_task in tasks.waiting_child:
-        tasks.waiting_child.remove(child_task)
-    elif child_task in tasks.waiting_key:
-        tasks.waiting_key.remove(child_task)
-    elif child_task in tasks.waiting_time:
-        tasks.waiting_time.remove(child_task)
+    if child_task in state.runnable_tasks:
+        state.runnable_tasks.remove(child_task)
+    elif child_task in state.tasks_waiting_child:
+        state.tasks_waiting_child.remove(child_task)
+    elif child_task in state.tasks_waiting_key:
+        state.tasks_waiting_key.remove(child_task)
+    elif child_task in state.tasks_waiting_time:
+        state.tasks_waiting_time.remove(child_task)
         common.clear_tasks_waiting_time_hq()
     else:
-        terminated = [t for (t, _, _) in tasks.terminated if t is child_task]
+        terminated = [t for (t, _, _) in state.completed_tasks if t is child_task]
         if terminated:
             log.error('%r will not stop terminated task %r', task, child_task)
         return
@@ -179,8 +179,8 @@ def task_destroy(task, child_task, keep_running=True):
     common.clear_tasks_traps(child_task)
     common.destroy_task_windows(child_task)
     if keep_running:
-        tasks.terminated.append((child_task, False, ('destroyed-by', task)))
-        tasks.runnable.append(task)
+        state.completed_tasks.append((child_task, False, ('destroyed-by', task)))
+        state.runnable_tasks.append(task)
         log.info('%r destroyed by %r', child_task, task)
     else:
         log.info('%r destroyed from parent %r destroy', child_task, task)
@@ -192,15 +192,15 @@ _SEPARATOR = '-' * 60
 def state_dump(task, tag=''):
 
     def _task_status(task):
-        if task in tasks.runnable:
+        if task in state.runnable_tasks:
             return 'RR'
-        if task in tasks.waiting_child:
+        if task in state.tasks_waiting_child:
             return 'WC'
-        if task in tasks.waiting_key:
+        if task in state.tasks_waiting_key:
             return 'WK'
-        if task in tasks.waiting_time:
+        if task in state.tasks_waiting_time:
             return 'WT'
-        if task in (t for (t, _, _) in tasks.terminated):
+        if task in (t for (t, _, _) in state.completed_tasks):
             return 'TT'
         return '??'
 
@@ -208,8 +208,8 @@ def state_dump(task, tag=''):
         indent = ' ' * 4 * level
         status = _task_status(task)
         log.critical(f'{status} {indent}{task}')
-        if task in tasks.children:
-            for child in tasks.children[task]:
+        if task in state.child_tasks:
+            for child in state.child_tasks[task]:
                 _log_task_lines(child, level+1)
 
     def _log_object_vars(name, obj):
@@ -223,15 +223,13 @@ def state_dump(task, tag=''):
     tag_string = f'{tag} | ' if tag else ''
 
     log.critical(f'-[ {tag_string}DUMP STATE | TASK HIERARCHY ]'.ljust(60, '-'))
-    _log_task_lines(tasks.top_task)
+    _log_task_lines(state.top_task)
     log.critical(f'-[ {tag_string}DUMP STATE | DATA STRUCTURES ]'.ljust(60, '-'))
-    _log_object_vars('tasks', tasks)
     _log_object_vars('state', state)
-    _log_object_vars('io_fds', io_fds)
     log.critical(f'-[ {tag_string}DUMP STATE | DONE ]'.ljust(60, '-'))
 
     if task is not None:
-        tasks.runnable.append(task)
+        state.runnable_tasks.append(task)
 
 
 # ----------------------------------------------------------------------------

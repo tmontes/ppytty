@@ -9,22 +9,12 @@ import collections
 
 
 
-class _Base(object):
+class _State(object):
 
     def __init__(self):
 
-        self.reset()
-
-
-    def reset(self):
-
-        raise NotImplementedError()
-
-
-
-class _Tasks(_Base):
-
-    def reset(self):
+        # ---------------------------------------------------------------------
+        # Task state tracking.
 
         # The task given to the scheduler, to be run.
         self.top_task = None
@@ -36,59 +26,54 @@ class _Tasks(_Base):
         self.top_task_result = None
 
         # Runnable tasks queue.
-        self.runnable = collections.deque()
+        self.runnable_tasks = collections.deque()
 
-        # Terminated tasks will be here until their parent task waits on them.
-        self.terminated = []
+        # Completed tasks will be here until their parent task waits on them.
+        self.completed_tasks = []
 
         # Keys: Tasks, Values: Their parent Task.
-        self.parent = {}
+        self.parent_task = {}
         # Keys: Tasks, Values: List of child Tasks, if any.
-        self.children = collections.defaultdict(list)
+        self.child_tasks = collections.defaultdict(list)
 
         # Tasks waiting on children.
-        self.waiting_child = []
+        self.tasks_waiting_child = []
 
         # Tasks waiting on keyboard input, and the associated priority queue.
-        self.waiting_key = []
-        self.waiting_key_hq = []
+        self.tasks_waiting_key = []
+        self.tasks_waiting_key_hq = []
 
         # Tasks sleeping, and the associated priority queue.
-        self.waiting_time = []
-        self.waiting_time_hq = []
+        self.tasks_waiting_time = []
+        self.tasks_waiting_time_hq = []
+
+        # ---------------------------------------------------------------------
+        # Task trap tracking.
 
         # Keys: Tasks, Values: Their current trap, if any.
         self.trap_calls = {}
         # Keys: Tasks, Values: The value to return to the task, if any.
         self.trap_results = {}
 
+        # ---------------------------------------------------------------------
+        # Task owned objects.
+
         # Keys: Tasks, Values: List of Task created Windows.
-        self.windows = collections.defaultdict(list)
+        self.task_windows = collections.defaultdict(list)
 
+        # Task created Window list in back to front rendering order.
+        self.all_windows = []
 
+        # ---------------------------------------------------------------------
+        # I/O file descriptors.
 
-class _IOFDs(_Base):
+        self.in_fds = []
+        self.out_fds = []
+        self.user_in_fd = None
+        self.user_out_fd = None
 
-    def reset(self):
-
-        self.input = []
-        self.output = []
-        self.user_in = None
-        self.user_out = None
-
-
-    def set_user_io(self, in_fd, out_fd):
-
-        self.user_in = in_fd
-        self.input.append(in_fd)
-        self.user_out = out_fd
-        self.output.append(out_fd)
-
-
-
-class _State(_Base):
-
-    def reset(self):
+        # ---------------------------------------------------------------------
+        # Environment.
 
         # Global time.
         self.now = None
@@ -96,22 +81,22 @@ class _State(_Base):
         # Interactive input/output user terminal.
         self.terminal = None
 
-        # Task created Window list in back to front rendering order.
-        self.all_windows = []
+
+    def reset(self):
+
+        self.__init__()
+
+
+    def set_user_io(self, in_fd, out_fd):
+
+        self.user_in_fd = in_fd
+        self.in_fds.append(in_fd)
+        self.user_out_fd = out_fd
+        self.out_fds.append(out_fd)
 
 
 
-tasks = _Tasks()
-io_fds = _IOFDs()
 state = _State()
-
-
-
-def reset():
-
-    tasks.reset()
-    io_fds.reset()
-    state.reset()
 
 
 # ----------------------------------------------------------------------------
