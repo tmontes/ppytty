@@ -7,7 +7,7 @@
 
 import unittest
 
-from ppytty.kernel import state
+from ppytty.kernel.state import state
 
 
 
@@ -65,35 +65,29 @@ def _change_dict(object, attr_name):
 #   Keys: object attribute name
 #   Values: 2-tuple with (is_clear_assertion, change_its_value_callable)
 
-STATE_OBJECTS = {
-    'tasks': {
-        'top_task': (_assert_is_none, _change_scalar),
-        'top_task_success': (_assert_is_none, _change_scalar),
-        'top_task_result': (_assert_is_none, _change_scalar),
-        'runnable': (_assert_empty_list, _change_list),
-        'terminated': (_assert_empty_list, _change_list),
-        'parent': (_assert_empty_dict, _change_dict),
-        'children': (_assert_empty_dict, _change_dict),
-        'waiting_on_child': (_assert_empty_list, _change_list),
-        'waiting_on_key': (_assert_empty_list, _change_list),
-        'waiting_on_key_hq': (_assert_empty_list, _change_list),
-        'waiting_on_time': (_assert_empty_list, _change_list),
-        'waiting_on_time_hq': (_assert_empty_list, _change_list),
-        'trap_calls': (_assert_empty_dict, _change_dict),
-        'trap_results': (_assert_empty_dict, _change_dict),
-        'windows': (_assert_empty_dict, _change_dict),
-    },
-    'io_fds': {
-        'input': (_assert_empty_list, _change_list),
-        'output': (_assert_empty_list, _change_list),
-        'user_in': (_assert_is_none, _change_scalar),
-        'user_out': (_assert_is_none, _change_scalar),
-    },
-    'state': {
-        'now': (_assert_is_none, _change_scalar),
-        'terminal': (_assert_is_none, _change_scalar),
-        'all_windows': (_assert_empty_list, _change_list),
-    }
+STATE_ATTRS = {
+    'top_task': (_assert_is_none, _change_scalar),
+    'top_task_success': (_assert_is_none, _change_scalar),
+    'top_task_result': (_assert_is_none, _change_scalar),
+    'runnable_tasks': (_assert_empty_list, _change_list),
+    'completed_tasks': (_assert_empty_list, _change_list),
+    'parent_task': (_assert_empty_dict, _change_dict),
+    'child_tasks': (_assert_empty_dict, _change_dict),
+    'tasks_waiting_child': (_assert_empty_list, _change_list),
+    'tasks_waiting_key': (_assert_empty_list, _change_list),
+    'tasks_waiting_key_hq': (_assert_empty_list, _change_list),
+    'tasks_waiting_time': (_assert_empty_list, _change_list),
+    'tasks_waiting_time_hq': (_assert_empty_list, _change_list),
+    'trap_calls': (_assert_empty_dict, _change_dict),
+    'trap_results': (_assert_empty_dict, _change_dict),
+    'task_windows': (_assert_empty_dict, _change_dict),
+    'all_windows': (_assert_empty_list, _change_list),
+    'in_fds': (_assert_empty_list, _change_list),
+    'out_fds': (_assert_empty_list, _change_list),
+    'user_in_fd': (_assert_is_none, _change_scalar),
+    'user_out_fd': (_assert_is_none, _change_scalar),
+    'now': (_assert_is_none, _change_scalar),
+    'terminal': (_assert_is_none, _change_scalar),
 }
 
 
@@ -148,28 +142,19 @@ class TestRun(unittest.TestCase):
 
     def test_state_attrs_are_these(self):
 
-        for attr_name, attr_dict in STATE_OBJECTS.items():
-            state_object = getattr(state, attr_name)
-            with self.subTest(attr_name=attr_name):
-                _assert_attrs_are_these(attr_name, state_object, attr_dict.keys())
+        _assert_attrs_are_these('state', state, STATE_ATTRS.keys())
 
 
     def test_state_attrs_are_clean(self):
 
-        for attr_name, attr_dict in STATE_OBJECTS.items():
-            state_object = getattr(state, attr_name)
-            with self.subTest(attr_name=attr_name):
-                _assert_attrs_are_clean(attr_name, state_object, attr_dict)
+        _assert_attrs_are_clean('state', state, STATE_ATTRS)
 
 
     def test_state_reset(self):
 
-        for attr_name, attr_dict in STATE_OBJECTS.items():
-            state_object = getattr(state, attr_name)
-            with self.subTest(attr_name=attr_name):
-                _change_all_attrs(attr_name, state_object, attr_dict)
-                state.reset()
-                _assert_attrs_are_clean(attr_name, state_object, attr_dict)
+        _change_all_attrs('state', state, STATE_ATTRS)
+        state.reset()
+        _assert_attrs_are_clean('state', state, STATE_ATTRS)
 
 
 # ----------------------------------------------------------------------------

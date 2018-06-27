@@ -5,7 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from . state import tasks, state
+from . state import state
 
 
 
@@ -17,37 +17,37 @@ def runnable_task(task):
 
 def clear_tasks_children(task):
 
-    if not tasks.children[task]:
-        del tasks.children[task]
+    if not state.child_tasks[task]:
+        del state.child_tasks[task]
 
 
 
 def clear_tasks_traps(task):
 
-    for target in (tasks.trap_calls, tasks.trap_results):
+    for target in (state.trap_calls, state.trap_results):
         if task in target:
             del target[task]
 
 
 
-def clear_tasks_waiting_on_time_hq():
+def clear_tasks_waiting_time_hq():
 
-    if not tasks.waiting_on_time:
-        tasks.waiting_on_time_hq.clear()
+    if not state.tasks_waiting_time:
+        state.tasks_waiting_time_hq.clear()
 
 
 
-# TODO: Do we need a "clear_tasks_waiting_on_key_hq"? Probably.
+# TODO: Do we need a "clear_tasks_waiting_key_hq"? Probably.
 
 
 
 def destroy_task_windows(task):
 
-    need_rerender = bool(tasks.windows[task])
+    need_rerender = bool(state.task_windows[task])
 
-    for window in tasks.windows[task]:
+    for window in state.task_windows[task]:
         state.all_windows.remove(window)
-    del tasks.windows[task]
+    del state.task_windows[task]
 
     if need_rerender:
         rerender_all_windows()
