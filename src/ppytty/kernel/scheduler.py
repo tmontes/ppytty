@@ -30,8 +30,7 @@ class _SchedulerStop(Exception):
 def run(task, post_prompt=None):
 
     with Terminal() as t:
-        state.terminal = t
-        state.set_user_io(t.in_fd, t.out_fd)
+        state.reset_for_terminal(t)
         try:
             success, result = scheduler(task)
             while post_prompt:

@@ -87,12 +87,14 @@ class _State(object):
         self.__init__()
 
 
-    def set_user_io(self, in_fd, out_fd):
+    def reset_for_terminal(self, terminal):
 
-        self.user_in_fd = in_fd
-        self.in_fds.append(in_fd)
-        self.user_out_fd = out_fd
-        self.out_fds.append(out_fd)
+        self.__init__()
+        self.terminal = terminal
+        self.user_in_fd = terminal.in_fd
+        self.in_fds.append(terminal.in_fd)
+        self.user_out_fd = terminal.out_fd
+        self.out_fds.append(terminal.out_fd)
 
 
 
