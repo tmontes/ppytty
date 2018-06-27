@@ -13,19 +13,11 @@ def sleep_zero():
 
 
 
-def spawn_sleep_zero_gen_function():
+def spawn_wait(task):
 
-    generator_function = sleep_zero
-    yield ('task-spawn', generator_function)
-    yield ('task-wait',)
-
-
-
-def spawn_sleep_zero_gen_object():
-
-    generator_object = sleep_zero()
-    yield ('task-spawn', generator_object)
-    yield ('task-wait',)
+    yield ('task-spawn', task)
+    _, success, result = yield ('task-wait',)
+    return success, result
 
 
 
