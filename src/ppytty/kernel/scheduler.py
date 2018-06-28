@@ -7,6 +7,7 @@
 
 import contextlib
 import heapq
+import inspect
 import logging
 
 from . import hw
@@ -88,8 +89,19 @@ def process_task_trap(task, trap):
         try:
             trap_handler(task, *trap_args)
         except Exception as e:
-            log.error('%r call %r execution failed: %r', task, trap, e)
-            # TODO: inconsistent state? panic?
+            if isinstance(e, TypeError):
+                # TypeError may result from non-matching trap_args
+                handler_signature = inspect.signature(trap_handler)
+                try:
+                    handler_signature.bind(*trap_args)
+                except TypeError:
+                    # trap_args does not match trap_handle signature
+                    log.error('%r bad trap args: %r', task, trap)
+                    common.trap_will_throw(task, exceptions.TrapArgCountWrong)
+                    state.runnable_tasks.append(task)
+                    return
+            log.error('%r trap %r execution failed: %r', task, trap, e)
+            # TODO: trap handler execution failed: inconsistent state? panic?
 
 
 
