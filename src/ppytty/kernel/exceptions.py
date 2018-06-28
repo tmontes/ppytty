@@ -5,7 +5,16 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from . scheduler import run
-from . exceptions import TrapException, TrapDoesNotExist
+
+class TrapException(Exception):
+
+    pass
+
+
+
+class TrapDoesNotExist(TrapException):
+
+    pass
+
 
 # ----------------------------------------------------------------------------

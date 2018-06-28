@@ -46,7 +46,7 @@ def window_create(task, left, top, width, height, bg=None):
         state.task_windows[task].append(w)
         state.all_windows.append(w)
 
-    state.trap_results[task] = w
+    common.trap_will_return(task, w)
     state.runnable_tasks.append(task)
 
 
@@ -138,7 +138,7 @@ def task_wait(task):
             child = candidate
             break
     if child is not None:
-        state.trap_results[task] = (child, success, result)
+        common.trap_will_return(task, (child, success, result))
         del state.parent_task[child]
         state.child_tasks[task].remove(child)
         common.clear_tasks_children(task)

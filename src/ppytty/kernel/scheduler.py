@@ -10,6 +10,7 @@ import heapq
 import logging
 
 from . import hw
+from . import exceptions
 from . import trap_handlers
 from . import common
 from . state import state
@@ -74,14 +75,15 @@ def scheduler(top_task):
 def process_task_trap(task, trap):
 
     log.debug('%r trap: %r', task, trap)
-    state.trap_calls[task] = trap
+    state.trap_call[task] = trap
     trap_name, *trap_args = trap
     trap_handler_name = trap_name.replace("-", "_")
     try:
         trap_handler = getattr(trap_handlers, trap_handler_name)
     except AttributeError:
-        log.error('%r invalid trap: %r', task, trap)
-        # TODO: terminate task somewhat like StopIteration?
+        log.error('%r trap does not exist: %r', task, trap)
+        common.trap_will_throw(task, exceptions.TrapDoesNotExist)
+        state.runnable_tasks.append(task)
     else:
         try:
             trap_handler(task, *trap_args)
@@ -93,8 +95,9 @@ def process_task_trap(task, trap):
 
 def run_task_until_trap(task):
 
-    prev_trap_call = state.trap_calls.get(task)
-    prev_trap_result = state.trap_results.get(task)
+    prev_trap_call = state.trap_call.get(task)
+    prev_trap_success = state.trap_success.get(task)
+    prev_trap_result = state.trap_result.get(task)
     if prev_trap_call is not None:
         log.debug('%r trap %r result: %r', task, prev_trap_call, prev_trap_result)
     elif prev_trap_result is not None:
@@ -102,12 +105,10 @@ def run_task_until_trap(task):
     else:
         log.debug('%r running', task)
     try:
-        return task.send(prev_trap_result)
+        run_task = task.throw if prev_trap_success is False else task.send
+        return run_task(prev_trap_result)
     finally:
-        if prev_trap_call:
-            del state.trap_calls[task]
-        if prev_trap_result:
-            del state.trap_results[task]
+        common.clear_tasks_traps(task)
 
 
 
@@ -121,7 +122,7 @@ def process_tasks_waiting_key(keyboard_byte=None):
             _, _, key_waiter = heapq.heappop(state.tasks_waiting_key_hq)
             if key_waiter in state.tasks_waiting_key:
                 state.tasks_waiting_key.remove(key_waiter)
-                state.trap_results[key_waiter] = keyboard_byte
+                common.trap_will_return(key_waiter, keyboard_byte)
                 state.runnable_tasks.append(key_waiter)
                 log.info('%r getting key %r', key_waiter, keyboard_byte)
                 break
@@ -147,7 +148,7 @@ def process_task_completion(task, success, result):
     if not candidate_parent and task is not state.top_task:
         log.error('%r completed with no parent', task)
     if candidate_parent in state.tasks_waiting_child:
-        state.trap_results[candidate_parent] = (task, success, result)
+        common.trap_will_return(candidate_parent, (task, success, result))
         del state.parent_task[task]
         state.child_tasks[candidate_parent].remove(task)
         common.clear_tasks_children(candidate_parent)
