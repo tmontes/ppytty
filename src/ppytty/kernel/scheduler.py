@@ -10,6 +10,7 @@ import heapq
 import logging
 
 from . import hw
+from . import exceptions
 from . import trap_handlers
 from . import common
 from . state import state
@@ -80,8 +81,10 @@ def process_task_trap(task, trap):
     try:
         trap_handler = getattr(trap_handlers, trap_handler_name)
     except AttributeError:
-        log.error('%r invalid trap: %r', task, trap)
-        # TODO: terminate task somewhat like StopIteration?
+        log.error('%r trap does not exist: %r', task, trap)
+        state.trap_success[task] = False
+        state.trap_results[task] = exceptions.TrapDoesNotExist
+        state.runnable_tasks.append(task)
     else:
         try:
             trap_handler(task, *trap_args)
@@ -94,6 +97,7 @@ def process_task_trap(task, trap):
 def run_task_until_trap(task):
 
     prev_trap_call = state.trap_calls.get(task)
+    prev_trap_success = state.trap_success.get(task)
     prev_trap_result = state.trap_results.get(task)
     if prev_trap_call is not None:
         log.debug('%r trap %r result: %r', task, prev_trap_call, prev_trap_result)
@@ -102,12 +106,10 @@ def run_task_until_trap(task):
     else:
         log.debug('%r running', task)
     try:
-        return task.send(prev_trap_result)
+        run_task = task.throw if prev_trap_success is False else task.send
+        return run_task(prev_trap_result)
     finally:
-        if prev_trap_call:
-            del state.trap_calls[task]
-        if prev_trap_result:
-            del state.trap_results[task]
+        common.clear_tasks_traps(task)
 
 
 

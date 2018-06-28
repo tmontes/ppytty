@@ -24,7 +24,7 @@ def clear_tasks_children(task):
 
 def clear_tasks_traps(task):
 
-    for target in (state.trap_calls, state.trap_results):
+    for target in (state.trap_calls, state.trap_success, state.trap_results):
         if task in target:
             del target[task]
 
