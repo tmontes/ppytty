@@ -41,7 +41,7 @@ from . lib import (
     Label,
     Widget,
 )
-from . kernel import run
+from . kernel import run, TrapException, TrapDoesNotExist
 
 __all__ = [
     'OuterSequenceKeyboard',
@@ -58,6 +58,8 @@ __all__ = [
     'KeyboardAction',
     'Loop',
     'run',
+    'TrapException',
+    'TrapDoesNotExist',
 ]
 
 # ----------------------------------------------------------------------------
