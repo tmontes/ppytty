@@ -166,11 +166,12 @@ def process_task_completion(task, success, result):
         common.clear_tasks_children(candidate_parent)
         state.tasks_waiting_child.remove(candidate_parent)
         state.runnable_tasks.append(candidate_parent)
-    elif task is not state.top_task:
+    elif task is not state.top_task and task in state.parent_task:
         state.completed_tasks.append((task, success, result))
-    else:
+    elif task is state.top_task:
         state.top_task_success = success
         state.top_task_result = result
+    common.clear_task_parenthood(task)
     common.clear_tasks_traps(task)
     common.destroy_task_windows(task)
 
