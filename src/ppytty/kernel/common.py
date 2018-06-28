@@ -22,6 +22,13 @@ def clear_tasks_children(task):
 
 
 
+def clear_task_parenthood(parent_task):
+
+    for child_task in state.child_tasks[parent_task]:
+        del state.parent_task[child_task]
+
+
+
 def trap_will_return(task, result):
 
     state.trap_success[task] = True

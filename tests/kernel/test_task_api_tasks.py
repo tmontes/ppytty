@@ -97,5 +97,88 @@ class TestWaitChildException(io_bypass.NoOutputTestCase):
 
 
 
+class TestSpawnDontWait(io_bypass.NoOutputTestCase):
+
+    def test_parent_spawn_crash_no_child_wait_parent_completes_1st(self):
+
+        def child():
+            yield ('sleep', 0)
+            return 42
+
+        def parent():
+            child_task = child()
+            yield ('task-spawn', child_task)
+            raise RuntimeError('parent crashing before child task-wait')
+
+        success, result = run(parent)
+        self.assertFalse(success)
+        self.assertIsInstance(result, RuntimeError)
+
+
+    def test_parent_spawn_crash_no_child_wait_parent_completes_2nd(self):
+
+        def child():
+            yield ('sleep', 0)
+            return 42
+
+        def parent():
+            child_task = child()
+            yield ('task-spawn', child_task)
+            yield ('sleep', 0)
+            raise RuntimeError('parent crashing before child task-wait')
+
+        success, result = run(parent)
+        self.assertFalse(success)
+        self.assertIsInstance(result, RuntimeError)
+
+
+    def test_child_spawn_crash_no_grand_child_wait_child_completes_1st(self):
+
+        def grand_child():
+            yield ('sleep', 0)
+
+        def child():
+            grand_child_task = grand_child()
+            yield ('task-spawn', grand_child_task)
+            raise RuntimeError('child crashing before grand child task-wait')
+
+        def parent():
+            child_task = child()
+            yield ('task-spawn', child_task)
+            completed_task, child_success, child_result = yield ('task-wait',)
+            return completed_task is child_task, child_success, child_result
+
+        success, result = run(parent)
+        self.assertTrue(success)
+        expected_task_completed, child_task_success, child_task_result = result
+        self.assertTrue(expected_task_completed)
+        self.assertFalse(child_task_success)
+        self.assertIsInstance(child_task_result, RuntimeError)
+
+
+    def test_child_spawn_crash_no_grand_child_wait_child_completes_2nd(self):
+
+        def grand_child():
+            yield ('sleep', 0)
+
+        def child():
+            grand_child_task = grand_child()
+            yield ('task-spawn', grand_child_task)
+            yield ('sleep', 0)
+            raise RuntimeError('child crashing before grand child task-wait')
+
+        def parent():
+            child_task = child()
+            yield ('task-spawn', child_task)
+            completed_task, child_success, child_result = yield ('task-wait',)
+            return completed_task is child_task, child_success, child_result
+
+        success, result = run(parent)
+        self.assertTrue(success)
+        expected_task_completed, child_task_success, child_task_result = result
+        self.assertTrue(expected_task_completed)
+        self.assertFalse(child_task_success)
+        self.assertIsInstance(child_task_result, RuntimeError)
+
 
 # ----------------------------------------------------------------------------
