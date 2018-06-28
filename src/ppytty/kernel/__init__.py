@@ -6,6 +6,6 @@
 # ----------------------------------------------------------------------------
 
 from . scheduler import run
-from . exceptions import TrapException, TrapDoesNotExist
+from . exceptions import TrapException, TrapDoesNotExist, TrapArgCountWrong
 
 # ----------------------------------------------------------------------------

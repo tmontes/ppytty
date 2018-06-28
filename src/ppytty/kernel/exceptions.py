@@ -17,4 +17,10 @@ class TrapDoesNotExist(TrapException):
     pass
 
 
+
+class TrapArgCountWrong(TrapException):
+
+    pass
+
+
 # ----------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty import run, TrapDoesNotExist
+from ppytty import run, TrapDoesNotExist, TrapArgCountWrong
 
 from . import io_bypass
 
@@ -29,6 +29,29 @@ class Test(io_bypass.NoOutputTestCase):
             try:
                 yield ('this-trap-does-not-exist',)
             except TrapDoesNotExist:
+                yield ('sleep', 0)
+
+        success, result = run(task)
+        self.assertTrue(success)
+        self.assertIsNone(result)
+
+
+    def test_wrong_trap_arg_count_raises_exception(self):
+
+        def task():
+            yield ('sleep',)
+
+        success, result = run(task)
+        self.assertFalse(success)
+        self.assertIsInstance(result, TrapArgCountWrong)
+
+
+    def test_task_catches_wrong_trap_arg_count_exception(self):
+
+        def task():
+            try:
+                yield ('sleep', 1, 2, 3)
+            except TrapArgCountWrong:
                 yield ('sleep', 0)
 
         success, result = run(task)
