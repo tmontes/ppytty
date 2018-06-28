@@ -53,11 +53,11 @@ class _State(object):
         # The self.trap_... dicts have Tasks as their keys.
 
         # Values: Current trap, if any.
-        self.trap_calls = {}
+        self.trap_call = {}
         # Values: True means trap completed, False means trap failed.
         self.trap_success = {}
         # Values: Return values if success, Exception to throw otherwise.
-        self.trap_results = {}
+        self.trap_result = {}
 
         # ---------------------------------------------------------------------
         # Task owned objects.

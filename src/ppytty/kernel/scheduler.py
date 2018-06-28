@@ -75,7 +75,7 @@ def scheduler(top_task):
 def process_task_trap(task, trap):
 
     log.debug('%r trap: %r', task, trap)
-    state.trap_calls[task] = trap
+    state.trap_call[task] = trap
     trap_name, *trap_args = trap
     trap_handler_name = trap_name.replace("-", "_")
     try:
@@ -95,9 +95,9 @@ def process_task_trap(task, trap):
 
 def run_task_until_trap(task):
 
-    prev_trap_call = state.trap_calls.get(task)
+    prev_trap_call = state.trap_call.get(task)
     prev_trap_success = state.trap_success.get(task)
-    prev_trap_result = state.trap_results.get(task)
+    prev_trap_result = state.trap_result.get(task)
     if prev_trap_call is not None:
         log.debug('%r trap %r result: %r', task, prev_trap_call, prev_trap_result)
     elif prev_trap_result is not None:

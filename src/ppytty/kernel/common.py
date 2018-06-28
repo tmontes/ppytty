@@ -25,20 +25,20 @@ def clear_tasks_children(task):
 def trap_will_return(task, result):
 
     state.trap_success[task] = True
-    state.trap_results[task] = result
+    state.trap_result[task] = result
 
 
 
 def trap_will_throw(task, exception_class):
 
     state.trap_success[task] = False
-    state.trap_results[task] = exception_class
+    state.trap_result[task] = exception_class
 
 
 
 def clear_tasks_traps(task):
 
-    for target in (state.trap_calls, state.trap_success, state.trap_results):
+    for target in (state.trap_call, state.trap_success, state.trap_result):
         if task in target:
             del target[task]
 
