@@ -154,6 +154,8 @@ def process_tasks_waiting_time():
 
 
 
+_NOT_THERE = object()
+
 def process_task_completion(task, success, result):
 
     candidate_parent = state.parent_task.get(task)
@@ -166,11 +168,19 @@ def process_task_completion(task, success, result):
         common.clear_tasks_children(candidate_parent)
         state.tasks_waiting_child.remove(candidate_parent)
         state.runnable_tasks.append(candidate_parent)
-    elif task is not state.top_task:
-        state.completed_tasks.append((task, success, result))
-    else:
+    elif task is not state.top_task and task in state.parent_task:
+        state.completed_tasks[task] = (success, result)
+    elif task is state.top_task:
         state.top_task_success = success
         state.top_task_result = result
+    if success is False:
+        # Prevent kernel hang by cleaning up completed child results, if any.
+        # We no longer have a parent to wait for them.
+        for child_task in state.child_tasks[task]:
+            child_result = state.completed_tasks.pop(child_task, _NOT_THERE)
+            if child_result is not _NOT_THERE:
+                log.warning('%r dropping completed child result: %r', task, child_result)
+    common.clear_task_parenthood(task)
     common.clear_tasks_traps(task)
     common.destroy_task_windows(task)
 
