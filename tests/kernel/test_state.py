@@ -70,7 +70,7 @@ STATE_ATTRS = {
     'top_task_success': (_assert_is_none, _change_scalar),
     'top_task_result': (_assert_is_none, _change_scalar),
     'runnable_tasks': (_assert_empty_list, _change_list),
-    'completed_tasks': (_assert_empty_list, _change_list),
+    'completed_tasks': (_assert_empty_dict, _change_dict),
     'parent_task': (_assert_empty_dict, _change_dict),
     'child_tasks': (_assert_empty_dict, _change_dict),
     'tasks_waiting_child': (_assert_empty_list, _change_list),
