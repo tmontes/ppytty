@@ -97,5 +97,22 @@ class TestWaitChildException(io_bypass.NoOutputTestCase):
 
 
 
+class TestSpawnDontWait(io_bypass.NoOutputTestCase):
+
+    def test_parent_spawn_and_crash_before_child_wait(self):
+
+        def child():
+            yield ('sleep', 0)
+            return 42
+
+        def parent():
+            child_task = child()
+            yield ('task-spawn', child_task)
+            raise RuntimeError('parent crashing before child task-wait')
+
+        success, result = run(parent)
+        self.assertFalse(success)
+        self.assertIsInstance(result, RuntimeError)
+
 
 # ----------------------------------------------------------------------------
