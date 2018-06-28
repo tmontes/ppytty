@@ -29,7 +29,8 @@ class _State(object):
         self.runnable_tasks = collections.deque()
 
         # Completed tasks will be here until their parent task waits on them.
-        self.completed_tasks = []
+        # Keys: Tasks, Values: (success, result) tuple.
+        self.completed_tasks = {}
 
         # Keys: Tasks, Values: Their parent Task.
         self.parent_task = {}

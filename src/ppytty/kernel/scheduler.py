@@ -167,7 +167,7 @@ def process_task_completion(task, success, result):
         state.tasks_waiting_child.remove(candidate_parent)
         state.runnable_tasks.append(candidate_parent)
     elif task is not state.top_task:
-        state.completed_tasks.append((task, success, result))
+        state.completed_tasks[task] = (success, result)
     else:
         state.top_task_success = success
         state.top_task_result = result
