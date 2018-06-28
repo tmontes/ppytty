@@ -82,8 +82,7 @@ def process_task_trap(task, trap):
         trap_handler = getattr(trap_handlers, trap_handler_name)
     except AttributeError:
         log.error('%r trap does not exist: %r', task, trap)
-        state.trap_success[task] = False
-        state.trap_results[task] = exceptions.TrapDoesNotExist
+        common.trap_will_throw(task, exceptions.TrapDoesNotExist)
         state.runnable_tasks.append(task)
     else:
         try:
@@ -123,7 +122,7 @@ def process_tasks_waiting_key(keyboard_byte=None):
             _, _, key_waiter = heapq.heappop(state.tasks_waiting_key_hq)
             if key_waiter in state.tasks_waiting_key:
                 state.tasks_waiting_key.remove(key_waiter)
-                state.trap_results[key_waiter] = keyboard_byte
+                common.trap_will_return(key_waiter, keyboard_byte)
                 state.runnable_tasks.append(key_waiter)
                 log.info('%r getting key %r', key_waiter, keyboard_byte)
                 break
@@ -149,7 +148,7 @@ def process_task_completion(task, success, result):
     if not candidate_parent and task is not state.top_task:
         log.error('%r completed with no parent', task)
     if candidate_parent in state.tasks_waiting_child:
-        state.trap_results[candidate_parent] = (task, success, result)
+        common.trap_will_return(candidate_parent, (task, success, result))
         del state.parent_task[task]
         state.child_tasks[candidate_parent].remove(task)
         common.clear_tasks_children(candidate_parent)
