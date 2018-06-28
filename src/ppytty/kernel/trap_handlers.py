@@ -133,9 +133,10 @@ def task_spawn(task, child_task):
 def task_wait(task):
 
     child = None
-    for candidate, success, result in state.completed_tasks:
+    for candidate in state.completed_tasks:
         if state.parent_task[candidate] is task:
             child = candidate
+            success, result = state.completed_tasks[child]
             break
     if child is not None:
         common.trap_will_return(task, (child, success, result))
@@ -143,7 +144,7 @@ def task_wait(task):
         state.child_tasks[task].remove(child)
         common.clear_tasks_children(task)
         state.runnable_tasks.append(task)
-        state.completed_tasks.remove((child, success, result))
+        del state.completed_tasks[child]
         common.clear_tasks_traps(child)
     else:
         state.tasks_waiting_child.append(task)
@@ -170,16 +171,15 @@ def task_destroy(task, child_task, keep_running=True):
     elif child_task in state.tasks_waiting_time:
         state.tasks_waiting_time.remove(child_task)
         common.clear_tasks_waiting_time_hq()
+    elif child_task in state.completed_tasks:
+        log.error('%r will not stop completed task %r', task, child_task)
     else:
-        terminated = [t for (t, _, _) in state.completed_tasks if t is child_task]
-        if terminated:
-            log.error('%r will not stop terminated task %r', task, child_task)
         return
 
     common.clear_tasks_traps(child_task)
     common.destroy_task_windows(child_task)
     if keep_running:
-        state.completed_tasks.append((child_task, False, ('destroyed-by', task)))
+        state.completed_tasks[child_task]  = (False, ('destroyed-by', task))
         state.runnable_tasks.append(task)
         log.info('%r destroyed by %r', child_task, task)
     else:
@@ -200,7 +200,7 @@ def state_dump(task, tag=''):
             return 'WK'
         if task in state.tasks_waiting_time:
             return 'WT'
-        if task in (t for (t, _, _) in state.completed_tasks):
+        if task in state.completed_tasks:
             return 'TT'
         return '??'
 
