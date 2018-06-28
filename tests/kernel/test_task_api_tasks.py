@@ -115,4 +115,28 @@ class TestSpawnDontWait(io_bypass.NoOutputTestCase):
         self.assertIsInstance(result, RuntimeError)
 
 
+    def test_child_spawn_and_crash_before_grand_child_wait(self):
+
+        def grand_child():
+            yield ('sleep', 0)
+
+        def child():
+            grand_child_task = grand_child()
+            yield ('task-spawn', grand_child_task)
+            raise RuntimeError('child crashing before grand child task-wait')
+
+        def parent():
+            child_task = child()
+            yield ('task-spawn', child_task)
+            completed_task, child_success, child_result = yield ('task-wait',)
+            return completed_task is child_task, child_success, child_result
+
+        success, result = run(parent)
+        self.assertTrue(success)
+        expected_task_completed, child_task_success, child_task_result = result
+        self.assertTrue(expected_task_completed)
+        self.assertFalse(child_task_success)
+        self.assertIsInstance(child_task_result, RuntimeError)
+
+
 # ----------------------------------------------------------------------------
