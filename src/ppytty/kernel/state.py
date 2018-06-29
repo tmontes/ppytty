@@ -40,6 +40,9 @@ class _State(object):
         # Tasks waiting on children.
         self.tasks_waiting_child = []
 
+        # Tasks waiting on their inbox.
+        self.tasks_waiting_inbox = []
+
         # Tasks waiting on keyboard input, and the associated priority queue.
         self.tasks_waiting_key = []
         self.tasks_waiting_key_hq = []
@@ -62,6 +65,9 @@ class _State(object):
 
         # ---------------------------------------------------------------------
         # Task owned objects.
+
+        # Keys: Tasks, Values: Ordered queue of (sender, message) tuples.
+        self.task_inbox = collections.defaultdict(collections.deque)
 
         # Keys: Tasks, Values: List of Task created Windows.
         self.task_windows = collections.defaultdict(list)

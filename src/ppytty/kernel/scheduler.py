@@ -50,8 +50,8 @@ def scheduler(top_task):
     state.top_task = top_task
     state.runnable_tasks.append(top_task)
 
-    while (state.runnable_tasks or state.tasks_waiting_child or state.tasks_waiting_key or
-           state.tasks_waiting_time or state.completed_tasks):
+    while (state.runnable_tasks or state.tasks_waiting_child or state.tasks_waiting_inbox or
+           state.tasks_waiting_key or state.tasks_waiting_time or state.completed_tasks):
         state.now = hw.time_monotonic()
         if not state.runnable_tasks:
             process_tasks_waiting_key()
