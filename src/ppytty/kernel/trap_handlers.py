@@ -228,6 +228,8 @@ def state_dump(task, tag=''):
             return 'RR'
         if task in state.tasks_waiting_child:
             return 'WC'
+        if task in state.tasks_waiting_inbox:
+            return 'WM'
         if task in state.tasks_waiting_key:
             return 'WK'
         if task in state.tasks_waiting_time:
