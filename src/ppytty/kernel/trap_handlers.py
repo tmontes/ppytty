@@ -187,6 +187,31 @@ def task_destroy(task, child_task, keep_running=True):
 
 
 
+def message_send(task, to_task, message):
+
+    if to_task in state.tasks_waiting_inbox:
+        state.tasks_waiting_inbox.remove(to_task)
+        common.trap_will_return(to_task, (task, message))
+        state.runnable_tasks.append(to_task)
+    else:
+        state.task_inbox[to_task].append((task, message))
+
+    state.runnable_tasks.append(task)
+
+
+
+def message_wait(task):
+
+    task_inbox = state.task_inbox[task]
+    if task_inbox:
+        sender_task, message = task_inbox.popleft()
+        common.trap_will_return(task, (sender_task, message))
+        state.runnable_tasks.append(task)
+    else:
+        state.tasks_waiting_inbox.append(task)
+
+
+
 _SEPARATOR = '-' * 60
 
 def state_dump(task, tag=''):
