@@ -11,7 +11,9 @@ from . state import state
 
 def runnable_task(task):
 
-    return task() if callable(task) else task
+    runnable = task() if callable(task) else task
+    state.spawned_objects[runnable] = task
+    return runnable
 
 
 

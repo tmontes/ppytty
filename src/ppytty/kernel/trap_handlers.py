@@ -139,7 +139,9 @@ def task_wait(task):
             success, result = state.completed_tasks[child]
             break
     if child is not None:
-        common.trap_will_return(task, (child, success, result))
+        spawned_object = state.spawned_objects[child]
+        common.trap_will_return(task, (spawned_object, success, result))
+        del state.spawned_objects[child]
         del state.parent_task[child]
         state.child_tasks[task].remove(child)
         common.clear_tasks_children(task)
