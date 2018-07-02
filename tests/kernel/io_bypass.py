@@ -6,6 +6,8 @@
 # ----------------------------------------------------------------------------
 
 
+from ppytty.kernel import hw
+
 from unittest import TestCase, mock
 
 
@@ -42,6 +44,37 @@ class NoOutputTestCase(TestCase):
 
         for patch in cls._mock_patches:
             patch.stop()
+
+
+
+class _AutoTime(object):
+
+    def __init__(self):
+        self._monotonic = 0
+
+    def time_monotonic(self):
+        return self._monotonic
+
+    def select_select(self, rlist, wlist, xlist, timeout):
+        self._monotonic += timeout
+        return (), None, None
+
+
+
+class NoOutputAutoTimeTestCase(NoOutputTestCase):
+
+    def setUp(self):
+
+        self._auto_time = _AutoTime()
+        self._save_time_monotonic = hw.time_monotonic
+        self._save_select_select = hw.select_select
+        hw.time_monotonic = self._auto_time.time_monotonic
+        hw.select_select = self._auto_time.select_select
+
+    def tearDown(self):
+
+        hw.time_monotonic = self._save_time_monotonic
+        hw.select_select = self._save_select_select
 
 
 # ----------------------------------------------------------------------------
