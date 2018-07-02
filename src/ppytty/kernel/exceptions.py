@@ -12,6 +12,12 @@ class TrapException(Exception):
 
 
 
+class TrapDestroyed(TrapException):
+
+    pass
+
+
+
 class TrapDoesNotExist(TrapException):
 
     pass
