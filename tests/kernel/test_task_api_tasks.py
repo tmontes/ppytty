@@ -14,20 +14,54 @@ from . import tasks
 
 
 
-class TestSpawn(io_bypass.NoOutputTestCase):
+class TestSpawnWaitObjects(io_bypass.NoOutputTestCase):
 
-    def test_spawn_gen_function(self):
+    def test_spawn_wait_gen_function_child_completes_1st(self):
 
         generator_function = tasks.sleep_zero
         task = tasks.spawn_wait(generator_function)
-        run(task)
+        success, result = run(task)
+        self.assertTrue(success)
+        completed_child, child_success, child_result = result
+        self.assertIs(completed_child, generator_function)
+        self.assertTrue(child_success)
+        self.assertIsNone(child_result)
 
 
-    def test_spawn_gen_object(self):
+    def test_spawn_wait_gen_object_child_completes_1st(self):
 
         generator_object = tasks.sleep_zero()
         task = tasks.spawn_wait(generator_object)
-        run(task)
+        success, result = run(task)
+        self.assertTrue(success)
+        completed_child, child_success, child_result = result
+        self.assertIs(completed_child, generator_object)
+        self.assertTrue(child_success)
+        self.assertIsNone(child_result)
+
+
+    def test_spawn_wait_gen_function_child_completes_2nd(self):
+
+        generator_function = tasks.sleep_zero
+        task = tasks.spawn_wait(generator_function, sleep_before_wait=True)
+        success, result = run(task)
+        self.assertTrue(success)
+        completed_child, child_success, child_result = result
+        self.assertIs(completed_child, generator_function)
+        self.assertTrue(child_success)
+        self.assertIsNone(child_result)
+
+
+    def test_spawn_wait_gen_object_child_completes_2nd(self):
+
+        generator_object = tasks.sleep_zero()
+        task = tasks.spawn_wait(generator_object, sleep_before_wait=True)
+        success, result = run(task)
+        self.assertTrue(success)
+        completed_child, child_success, child_result = result
+        self.assertIs(completed_child, generator_object)
+        self.assertTrue(child_success)
+        self.assertIsNone(child_result)
 
 
 
@@ -38,7 +72,7 @@ class TestWait(io_bypass.NoOutputTestCase):
         task = tasks.spawn_wait(tasks.sleep_zero_return_42_idiv_arg(42))
         parent_sucess, parent_result = run(task)
         self.assertTrue(parent_sucess)
-        child_success, child_result = parent_result
+        _completed_child, child_success, child_result = parent_result
         self.assertTrue(child_success)
         self.assertEqual(child_result, 1)
 
@@ -48,7 +82,7 @@ class TestWait(io_bypass.NoOutputTestCase):
         task = tasks.spawn_wait(tasks.sleep_zero_return_42_idiv_arg(0))
         parent_success, parent_result = run(task)
         self.assertTrue(parent_success)
-        child_success, child_result = parent_result
+        _completed_child, child_success, child_result = parent_result
         self.assertFalse(child_success)
         self.assertIsInstance(child_result, ZeroDivisionError)
 
@@ -58,15 +92,10 @@ class TestWaitChildException(io_bypass.NoOutputTestCase):
 
     def parent_spawn_wait_child_exception(self, child_task, expected_exc_class):
 
-        def parent():
-            yield ('task-spawn', child_task)
-            completed_task, child_success, child_result = yield ('task-wait',)
-            return completed_task is child_task, child_success, child_result
-
-        success, result = run(parent)
+        success, result = run(tasks.spawn_wait(child_task))
         self.assertTrue(success)
-        correct_task_completed, child_task_success, child_task_result = result
-        self.assertTrue(correct_task_completed)
+        completed_child, child_task_success, child_task_result = result
+        self.assertIs(completed_child, child_task)
         self.assertFalse(child_task_success)
         self.assertIsInstance(child_task_result, expected_exc_class)
 

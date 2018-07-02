@@ -139,7 +139,9 @@ def task_wait(task):
             success, result = state.completed_tasks[child]
             break
     if child is not None:
-        common.trap_will_return(task, (child, success, result))
+        spawned_object = state.spawned_objects[child]
+        common.trap_will_return(task, (spawned_object, success, result))
+        del state.spawned_objects[child]
         del state.parent_task[child]
         state.child_tasks[task].remove(child)
         common.clear_tasks_children(task)
@@ -198,7 +200,8 @@ def message_send(task, to_task, message):
 
     if to_task in state.tasks_waiting_inbox:
         state.tasks_waiting_inbox.remove(to_task)
-        common.trap_will_return(to_task, (task, message))
+        spawned_object = state.spawned_objects[task]
+        common.trap_will_return(to_task, (spawned_object, message))
         state.runnable_tasks.append(to_task)
     else:
         state.task_inbox[to_task].append((task, message))
@@ -212,7 +215,8 @@ def message_wait(task):
     task_inbox = state.task_inbox[task]
     if task_inbox:
         sender_task, message = task_inbox.popleft()
-        common.trap_will_return(task, (sender_task, message))
+        spawned_object = state.spawned_objects[sender_task]
+        common.trap_will_return(task, (spawned_object, message))
         state.runnable_tasks.append(task)
     else:
         state.tasks_waiting_inbox.append(task)

@@ -119,4 +119,72 @@ class TestChildToParent(io_bypass.NoOutputTestCase):
         self.assertEqual(result['received-message'], 'child-to-parent-message')
 
 
+
+class TestSenderTaskIsChildTask(io_bypass.NoOutputTestCase):
+
+    def _fast_child(self):
+
+        yield ('message-send', None, 'hi-from-child')
+
+
+    def _slow_child(self):
+
+        yield ('sleep', 0)
+        yield ('message-send', None, 'hi-from-child')
+
+
+    def _parent(self, child_object):
+
+        yield ('task-spawn', child_object)
+        sender_task, message = yield ('message-wait',)
+        completed_child, child_success, child_result = yield ('task-wait',)
+        return sender_task, message, completed_child, child_success, child_result
+
+
+    def _assert_parent_result(self, child_object, result):
+
+        sender_task, message, completed_child, child_success, child_result = result
+        self.assertIs(sender_task, child_object)
+        self.assertEqual(message, 'hi-from-child')
+        self.assertIs(completed_child, child_object)
+        self.assertTrue(child_success)
+        self.assertIsNone(child_result)
+
+
+    def test_gen_function_child_parent_waits_1st(self):
+
+        child_gen_function = self._slow_child
+        parent = self._parent(child_gen_function)
+        success, result = run(parent)
+        self.assertTrue(success)
+        self._assert_parent_result(child_gen_function, result)
+
+
+    def test_gen_function_child_parent_waits_2nd(self):
+
+        child_gen_function = self._fast_child
+        parent = self._parent(child_gen_function)
+        success, result = run(parent)
+        self.assertTrue(success)
+        self._assert_parent_result(child_gen_function, result)
+
+
+    def test_gen_object_child_parent_waits_1st(self):
+
+        child_gen_object = self._slow_child()
+        parent = self._parent(child_gen_object)
+        success, result = run(parent)
+        self.assertTrue(success)
+        self._assert_parent_result(child_gen_object, result)
+
+
+    def test_gen_object_child_parent_waits_2nd(self):
+
+        child_gen_object = self._fast_child()
+        parent = self._parent(child_gen_object)
+        success, result = run(parent)
+        self.assertTrue(success)
+        self._assert_parent_result(child_gen_object, result)
+
+
 # ----------------------------------------------------------------------------

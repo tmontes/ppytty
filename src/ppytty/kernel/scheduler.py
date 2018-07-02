@@ -162,7 +162,9 @@ def process_task_completion(task, success, result):
     if not candidate_parent and task is not state.top_task:
         log.error('%r completed with no parent', task)
     if candidate_parent in state.tasks_waiting_child:
-        common.trap_will_return(candidate_parent, (task, success, result))
+        spawned_object = state.spawned_objects[task]
+        common.trap_will_return(candidate_parent, (spawned_object, success, result))
+        del state.spawned_objects[task]
         del state.parent_task[task]
         state.child_tasks[candidate_parent].remove(task)
         common.clear_tasks_children(candidate_parent)

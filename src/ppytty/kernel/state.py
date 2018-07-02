@@ -52,6 +52,12 @@ class _State(object):
         self.tasks_waiting_time_hq = []
 
         # ---------------------------------------------------------------------
+        # Spawned objects
+
+        # Maps running tasks to objects passed to scheduler.run / task-spawn.
+        self.spawned_objects = {}
+
+        # ---------------------------------------------------------------------
         # Task trap tracking.
 
         # The self.trap_... dicts have Tasks as their keys.
