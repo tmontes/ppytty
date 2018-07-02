@@ -16,8 +16,8 @@ def sleep_zero():
 def spawn_wait(task):
 
     yield ('task-spawn', task)
-    _, success, result = yield ('task-wait',)
-    return success, result
+    completed_task, success, result = yield ('task-wait',)
+    return completed_task, success, result
 
 
 
