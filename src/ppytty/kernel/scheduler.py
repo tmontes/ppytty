@@ -144,7 +144,7 @@ def process_tasks_waiting_key(keyboard_byte=None):
 def process_tasks_waiting_time():
 
     if state.tasks_waiting_time:
-        while state.tasks_waiting_time_hq and state.tasks_waiting_time_hq[0][0] < state.now:
+        while state.tasks_waiting_time_hq and state.tasks_waiting_time_hq[0][0] <= state.now:
             _, _, time_waiter = heapq.heappop(state.tasks_waiting_time_hq)
             if time_waiter in state.tasks_waiting_time:
                 state.tasks_waiting_time.remove(time_waiter)
