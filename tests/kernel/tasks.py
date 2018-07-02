@@ -13,9 +13,11 @@ def sleep_zero():
 
 
 
-def spawn_wait(task):
+def spawn_wait(task, sleep_before_wait=False):
 
     yield ('task-spawn', task)
+    if sleep_before_wait:
+        yield ('sleep', 0)
     completed_task, success, result = yield ('task-wait',)
     return completed_task, success, result
 
