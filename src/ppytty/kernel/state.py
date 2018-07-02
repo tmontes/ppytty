@@ -55,7 +55,10 @@ class _State(object):
         # Spawned objects
 
         # Maps running tasks to objects passed to scheduler.run / task-spawn.
-        self.spawned_objects = {}
+        self.user_space_tasks = {}
+
+        # Maps user space tasks (passed to run/task-spawn) to running tasks.
+        self.kernel_space_tasks = {}
 
         # ---------------------------------------------------------------------
         # Task trap tracking.

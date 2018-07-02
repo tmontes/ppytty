@@ -71,6 +71,13 @@ class NoOutputAutoTimeTestCase(NoOutputTestCase):
         hw.time_monotonic = self._auto_time.time_monotonic
         hw.select_select = self._auto_time.select_select
 
+
+    @property
+    def auto_time_monotonic(self):
+
+        return self._auto_time._monotonic
+
+
     def tearDown(self):
 
         hw.time_monotonic = self._save_time_monotonic

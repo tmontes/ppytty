@@ -46,7 +46,7 @@ def run(task, post_prompt=None):
 
 def scheduler(top_task):
 
-    top_task = common.runnable_task(top_task)
+    top_task = common.kernel_task(top_task)
     state.top_task = top_task
     state.runnable_tasks.append(top_task)
 
@@ -162,9 +162,9 @@ def process_task_completion(task, success, result):
     if not candidate_parent and task is not state.top_task:
         log.error('%r completed with no parent', task)
     if candidate_parent in state.tasks_waiting_child:
-        spawned_object = state.spawned_objects[task]
-        common.trap_will_return(candidate_parent, (spawned_object, success, result))
-        del state.spawned_objects[task]
+        user_space_task = state.user_space_tasks[task]
+        common.trap_will_return(candidate_parent, (user_space_task, success, result))
+        common.clear_user_kernel_task_mapping(task, user_space_task)
         del state.parent_task[task]
         state.child_tasks[candidate_parent].remove(task)
         common.clear_tasks_children(candidate_parent)
