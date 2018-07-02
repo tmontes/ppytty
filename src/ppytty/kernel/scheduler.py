@@ -83,7 +83,7 @@ def process_task_trap(task, trap):
         trap_handler = getattr(trap_handlers, trap_handler_name)
     except AttributeError:
         log.error('%r trap does not exist: %r', task, trap)
-        common.trap_will_throw(task, exceptions.TrapDoesNotExist)
+        common.trap_will_throw(task, exceptions.TrapDoesNotExist(trap_name))
         state.runnable_tasks.append(task)
     else:
         try:
@@ -94,10 +94,10 @@ def process_task_trap(task, trap):
                 handler_signature = inspect.signature(trap_handler)
                 try:
                     handler_signature.bind(*trap_args)
-                except TypeError:
+                except TypeError as te:
                     # trap_args does not match trap_handle signature
                     log.error('%r bad trap args: %r', task, trap)
-                    common.trap_will_throw(task, exceptions.TrapArgCountWrong)
+                    common.trap_will_throw(task, exceptions.TrapArgCountWrong(*te.args))
                     state.runnable_tasks.append(task)
                     return
             log.error('%r trap %r execution failed: %r', task, trap, e)
