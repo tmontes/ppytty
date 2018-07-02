@@ -46,7 +46,7 @@ def run(task, post_prompt=None):
 
 def scheduler(top_task):
 
-    top_task = common.runnable_task(top_task)
+    top_task = common.kernel_task(top_task)
     state.top_task = top_task
     state.runnable_tasks.append(top_task)
 

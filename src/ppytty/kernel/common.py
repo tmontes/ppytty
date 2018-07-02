@@ -9,12 +9,12 @@ from . state import state
 
 
 
-def runnable_task(task):
+def kernel_task(user_task):
 
-    runnable = task() if callable(task) else task
-    state.user_space_tasks[runnable] = task
-    state.kernel_space_tasks[task] = runnable
-    return runnable
+    kernel_task = user_task() if callable(user_task) else user_task
+    state.user_space_tasks[kernel_task] = user_task
+    state.kernel_space_tasks[user_task] = kernel_task
+    return kernel_task
 
 
 

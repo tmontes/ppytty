@@ -121,9 +121,9 @@ def put_key(task, pushed_back_key):
 
 
 
-def task_spawn(task, child_task):
+def task_spawn(task, user_child_task):
 
-    child_task = common.runnable_task(child_task)
+    child_task = common.kernel_task(user_child_task)
     state.parent_task[child_task] = task
     state.child_tasks[task].append(child_task)
     state.runnable_tasks.append(child_task)
@@ -154,9 +154,9 @@ def task_wait(task):
 
 
 
-def task_destroy(task, child_task, keep_running=True):
+def task_destroy(task, user_child_task, keep_running=True):
 
-    child_task = state.kernel_space_tasks[child_task]
+    child_task = state.kernel_space_tasks[user_child_task]
 
     if state.parent_task[child_task] is not task:
         raise RuntimeError('cannot kill non-child tasks')
