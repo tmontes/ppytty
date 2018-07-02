@@ -9,6 +9,7 @@ import collections
 import heapq
 import logging
 
+from . import exceptions
 from . import common
 from . import scheduler
 from . state import state
@@ -139,9 +140,9 @@ def task_wait(task):
             success, result = state.completed_tasks[child]
             break
     if child is not None:
-        spawned_object = state.spawned_objects[child]
-        common.trap_will_return(task, (spawned_object, success, result))
-        del state.spawned_objects[child]
+        user_space_task = state.user_space_tasks[child]
+        common.trap_will_return(task, (user_space_task, success, result))
+        common.clear_user_kernel_task_mapping(child, user_space_task)
         del state.parent_task[child]
         state.child_tasks[task].remove(child)
         common.clear_tasks_children(task)
@@ -154,6 +155,8 @@ def task_wait(task):
 
 
 def task_destroy(task, child_task, keep_running=True):
+
+    child_task = state.kernel_space_tasks[child_task]
 
     if state.parent_task[child_task] is not task:
         raise RuntimeError('cannot kill non-child tasks')
@@ -181,7 +184,7 @@ def task_destroy(task, child_task, keep_running=True):
     common.clear_tasks_traps(child_task)
     common.destroy_task_windows(child_task)
     if keep_running:
-        state.completed_tasks[child_task]  = (False, ('destroyed-by', task))
+        state.completed_tasks[child_task]  = (False, exceptions.TrapDestroyed(task))
         state.runnable_tasks.append(task)
         log.info('%r destroyed by %r', child_task, task)
     else:
@@ -200,8 +203,8 @@ def message_send(task, to_task, message):
 
     if to_task in state.tasks_waiting_inbox:
         state.tasks_waiting_inbox.remove(to_task)
-        spawned_object = state.spawned_objects[task]
-        common.trap_will_return(to_task, (spawned_object, message))
+        user_space_task = state.user_space_tasks[task]
+        common.trap_will_return(to_task, (user_space_task, message))
         state.runnable_tasks.append(to_task)
     else:
         state.task_inbox[to_task].append((task, message))
@@ -215,8 +218,8 @@ def message_wait(task):
     task_inbox = state.task_inbox[task]
     if task_inbox:
         sender_task, message = task_inbox.popleft()
-        spawned_object = state.spawned_objects[sender_task]
-        common.trap_will_return(task, (spawned_object, message))
+        user_space_task = state.user_space_tasks[sender_task]
+        common.trap_will_return(task, (user_space_task, message))
         state.runnable_tasks.append(task)
     else:
         state.tasks_waiting_inbox.append(task)

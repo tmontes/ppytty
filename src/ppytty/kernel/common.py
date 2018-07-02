@@ -12,8 +12,16 @@ from . state import state
 def runnable_task(task):
 
     runnable = task() if callable(task) else task
-    state.spawned_objects[runnable] = task
+    state.user_space_tasks[runnable] = task
+    state.kernel_space_tasks[task] = runnable
     return runnable
+
+
+
+def clear_user_kernel_task_mapping(kernel_task, user_task):
+
+    del state.user_space_tasks[kernel_task]
+    del state.kernel_space_tasks[user_task]
 
 
 
