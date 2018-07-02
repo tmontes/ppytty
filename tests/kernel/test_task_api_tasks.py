@@ -98,6 +98,7 @@ class TestWaitChildException(io_bypass.NoOutputTestCase):
         self.assertIs(completed_child, child_task)
         self.assertFalse(child_task_success)
         self.assertIsInstance(child_task_result, expected_exc_class)
+        return child_task_result
 
 
     def test_parent_spawn_wait_child_exception(self):
@@ -114,7 +115,10 @@ class TestWaitChildException(io_bypass.NoOutputTestCase):
         def child():
             yield ('this-trap-does-not-exist',)
 
-        self.parent_spawn_wait_child_exception(child(), TrapDoesNotExist)
+        exc = self.parent_spawn_wait_child_exception(child(), TrapDoesNotExist)
+        self.assertEqual(len(exc.args), 1)
+        # Exception "message" should include the trap name.
+        self.assertIn('this-trap-does-not-exist', exc.args[0])
 
 
     def test_parent_spawn_wait_child_trap_arg_count_wrong_exception(self):
@@ -122,7 +126,10 @@ class TestWaitChildException(io_bypass.NoOutputTestCase):
         def child():
             yield ('sleep', 1, 2, 3)
 
-        self.parent_spawn_wait_child_exception(child(), TrapArgCountWrong)
+        exc = self.parent_spawn_wait_child_exception(child(), TrapArgCountWrong)
+        self.assertEqual(len(exc.args), 1)
+        # Exception "message" should include 'argument', somehow.
+        self.assertIn('argument', exc.args[0])
 
 
 
