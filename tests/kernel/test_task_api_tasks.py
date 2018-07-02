@@ -14,20 +14,30 @@ from . import tasks
 
 
 
-class TestSpawn(io_bypass.NoOutputTestCase):
+class TestSpawnWaitObjects(io_bypass.NoOutputTestCase):
 
-    def test_spawn_gen_function(self):
+    def test_spawn_wait_gen_function(self):
 
         generator_function = tasks.sleep_zero
         task = tasks.spawn_wait(generator_function)
-        run(task)
+        success, result = run(task)
+        self.assertTrue(success)
+        completed_child, child_success, child_result = result
+        self.assertIs(completed_child, generator_function)
+        self.assertTrue(child_success)
+        self.assertIsNone(child_result)
 
 
-    def test_spawn_gen_object(self):
+    def test_spawn_wait_gen_object(self):
 
         generator_object = tasks.sleep_zero()
         task = tasks.spawn_wait(generator_object)
-        run(task)
+        success, result = run(task)
+        self.assertTrue(success)
+        completed_child, child_success, child_result = result
+        self.assertIs(completed_child, generator_object)
+        self.assertTrue(child_success)
+        self.assertIsNone(child_result)
 
 
 
