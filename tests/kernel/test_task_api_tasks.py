@@ -7,7 +7,7 @@
 
 import unittest
 
-from ppytty import run, TrapDoesNotExist, TrapArgCountWrong
+from ppytty import run, TrapDoesNotExist, TrapArgCountWrong, TrapDestroyed
 
 from . import io_bypass
 from . import tasks
@@ -215,6 +215,46 @@ class TestSpawnDontWait(io_bypass.NoOutputTestCase):
         self.assertTrue(expected_task_completed)
         self.assertFalse(child_task_success)
         self.assertIsInstance(child_task_result, RuntimeError)
+
+
+
+class TestSpawnDestroy(io_bypass.NoOutputAutoTimeTestCase):
+
+    def _test_spawn_child_then_destroy(self, running):
+
+        def child():
+            yield ('sleep', 42)
+
+        def parent(child_task):
+            yield ('task-spawn', child_task)
+            yield ('task-destroy', child_task)
+            completed_task, child_success, child_result = yield ('task-wait',)
+            return completed_task, child_success, child_result
+
+        child_task = child() if running else child
+        parent_task = parent(child_task)
+        success, result = run(parent_task)
+        self.assertTrue(success)
+
+        completed_task, child_success, child_result = result
+        self.assertIs(completed_task, child_task)
+        self.assertFalse(child_success)
+        self.assertIsInstance(child_result, TrapDestroyed)
+        self.assertEqual(len(child_result.args), 1)
+        self.assertIs(child_result.args[0], parent_task)
+
+        # Time hasn't passed
+        self.assertEqual(self.auto_time_monotonic, 0)
+
+
+    def test_spawn_child_then_destroy_gen_object(self):
+
+        self._test_spawn_child_then_destroy(running=True)
+
+
+    def test_spawn_child_then_destroy_gen_function(self):
+
+        self._test_spawn_child_then_destroy(running=False)
 
 
 # ----------------------------------------------------------------------------
