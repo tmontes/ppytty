@@ -86,6 +86,40 @@ class Test(io_bypass.NoOutputAutoTimeControlledInputTestCase):
         self.assertIs(destroyed_task, lo_pri_reader)
 
 
+    def test_put_key(self):
+
+        def hi_pri_child():
+            byte_key = yield ('read-key', 100)
+            yield ('put-key', byte_key)
+            yield ('sleep', 42)
+
+        def lo_pri_child():
+            byte_key = yield ('read-key', 1000)
+            return byte_key
+
+        def parent(hi_pri_reader, lo_pri_reader):
+            all_tasks = {hi_pri_reader, lo_pri_reader}
+            yield ('task-spawn', lo_pri_reader)
+            yield ('task-spawn', hi_pri_reader)
+            yield ('sleep', 1)
+            self.input_control.feed_data(b't')
+            completed_task, child_success, child_result = yield ('task-wait',)
+            all_tasks.remove(completed_task)
+            other_task = all_tasks.pop()
+            yield ('task-destroy', other_task)
+            destroyed_task, _, _ = yield ('task-wait',)
+            return completed_task, child_success, child_result, destroyed_task
+
+        success, result = run(parent(hi_pri_child, lo_pri_child))
+
+        self.assertTrue(success)
+        completed_task, child_success, child_result, destroyed_task = result
+        self.assertIs(completed_task, lo_pri_child)
+        self.assertTrue(child_success)
+        self.assertEqual(child_result, b't')
+        self.assertIs(destroyed_task, hi_pri_child)
+
+
     def test_kernel_run_stops_with_double_q_input(self):
 
         def task():
