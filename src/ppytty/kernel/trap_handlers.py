@@ -159,7 +159,10 @@ def task_destroy(task, user_child_task, keep_running=True):
     child_task = state.kernel_space_tasks[user_child_task]
 
     if state.parent_task[child_task] is not task:
-        raise RuntimeError('cannot kill non-child tasks')
+        exc = exceptions.TrapException('cannot destroy non-child tasks')
+        common.trap_will_throw(task, exc)
+        state.runnable_tasks.append(task)
+        return
 
     if child_task in state.child_tasks:
         for grand_child_task in state.child_tasks[child_task]:
