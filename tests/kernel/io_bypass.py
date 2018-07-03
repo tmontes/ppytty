@@ -55,7 +55,9 @@ class _AutoTime(object):
     def time_monotonic(self):
         return self._monotonic
 
-    def select_select(self, rlist, wlist, xlist, timeout):
+    def select_select(self, rlist, wlist, xlist, timeout=None):
+        # timeout=None means forever, for now assume 42
+        timeout = 42 if timeout is None else timeout
         self._monotonic += timeout
         return (), None, None
 
