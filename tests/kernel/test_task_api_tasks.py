@@ -343,4 +343,30 @@ class TestSpawnDestroy(io_bypass.NoOutputAutoTimeTestCase,
         self.assertIsNone(result)
 
 
+    def test_destroy_running_child(self):
+
+        def child():
+            while True:
+                yield ('sleep', 0)
+
+        def parent(child_task):
+            yield ('task-spawn', child_task)
+            yield ('task-destroy', child_task)
+            completed_task, child_success, child_result = yield ('task-wait',)
+            return completed_task, child_success, child_result
+
+        parent_task = parent(child)
+        success, result = run(parent_task)
+
+        self.assertTrue(success)
+        completed_task, child_success, child_result = result
+        self.assertIs(completed_task, child)
+        self.assertFalse(child_success)
+        self.assertIsInstance(child_result, TrapDestroyed)
+        self.assertGreaterEqual(len(child_result.args), 1)
+        self.assertIs(child_result.args[0], parent_task)
+
+        self.assert_no_tasks()
+
+
 # ----------------------------------------------------------------------------
