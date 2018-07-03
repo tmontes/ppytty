@@ -14,16 +14,16 @@ class Handler(logging.Handler):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        self._ppytty_records = []
+        self.messages = []
 
 
     def emit(self, record):
 
-        self._ppytty_records.append(record)
+        self.messages.append(self.format(record))
 
 
 
-def setup_handler(level):
+def create_and_add_handler(level=logging.WARNING):
 
     handler = Handler()
 
@@ -32,6 +32,13 @@ def setup_handler(level):
     root_logger.setLevel(level)
 
     return handler
+
+
+
+def remove_handler(h):
+
+    root_logger = logging.getLogger()
+    root_logger.removeHandler(h)
 
 
 # ----------------------------------------------------------------------------

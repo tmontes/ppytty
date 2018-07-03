@@ -261,7 +261,8 @@ def state_dump(task, tag=''):
     def _log_task_lines(task, level=0):
         indent = ' ' * 4 * level
         status = _task_status(task)
-        log.critical(f'{status} {indent}{task}')
+        user_space_task = state.user_space_tasks[task]
+        log.critical(f'{status} {indent}{user_space_task}')
         if task in state.child_tasks:
             for child in state.child_tasks[task]:
                 _log_task_lines(child, level+1)
