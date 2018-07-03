@@ -68,10 +68,20 @@ class NoOutputAutoTimeTestCase(NoOutputTestCase):
     def setUp(self):
 
         self._auto_time = _AutoTime()
-        self._save_time_monotonic = hw.time_monotonic
-        self._save_select_select = hw.select_select
-        hw.time_monotonic = self._auto_time.time_monotonic
-        hw.select_select = self._auto_time.select_select
+
+        _patches = [
+            # Patch ppytty.kernel.hw output related attributes.
+            ('ppytty.kernel.hw.time_monotonic', self._auto_time.time_monotonic),
+            ('ppytty.kernel.hw.select_select', self._auto_time.select_select),
+        ]
+
+        self._mock_patches = [
+            mock.patch(what, new=rv)
+            for what, rv in _patches
+        ]
+
+        for patch in self._mock_patches:
+            patch.start()
 
 
     @property
@@ -82,8 +92,8 @@ class NoOutputAutoTimeTestCase(NoOutputTestCase):
 
     def tearDown(self):
 
-        hw.time_monotonic = self._save_time_monotonic
-        hw.select_select = self._save_select_select
+        for patch in self._mock_patches:
+            patch.stop()
 
 
 # ----------------------------------------------------------------------------
