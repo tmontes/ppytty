@@ -197,14 +197,16 @@ def task_destroy(task, user_child_task, keep_running=True):
 
 
 
-def message_send(task, to_task, message):
+def message_send(task, to_user_task, message):
 
-    if to_task is None:
+    if to_user_task is None:
         to_task = state.parent_task.get(task)
         if to_task is None:
             log.warning('%r no parent task for message send', task)
             # TODO: throw an exception into the calling task?
             return
+    else:
+        to_task = state.kernel_space_tasks[to_user_task]
 
     if to_task in state.tasks_waiting_inbox:
         state.tasks_waiting_inbox.remove(to_task)
