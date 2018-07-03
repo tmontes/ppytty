@@ -8,7 +8,6 @@
 from ppytty import run, TrapException
 
 from . import io_bypass
-from . import log_helper
 
 
 
