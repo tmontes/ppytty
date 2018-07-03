@@ -93,9 +93,9 @@ class NoOutputTestCase(TestCase):
 
 
 
-class _NoOutputExtraPatchingTestCase(NoOutputTestCase):
+class _ExtraPatchingMixin(object):
 
-    # Derived class objects must set self._patches before calling this setUp().
+    # Mixed classes must set self._patches before calling this setUp().
 
     def setUp(self):
 
@@ -111,7 +111,7 @@ class _NoOutputExtraPatchingTestCase(NoOutputTestCase):
 
 
 
-class NoOutputAutoTimeTestCase(_NoOutputExtraPatchingTestCase):
+class NoOutputAutoTimeTestCase(_ExtraPatchingMixin, NoOutputTestCase):
 
     def setUp(self):
 
@@ -125,7 +125,7 @@ class NoOutputAutoTimeTestCase(_NoOutputExtraPatchingTestCase):
 
 
 
-class NoOutputAutoTimeControlledInputTestCase(_NoOutputExtraPatchingTestCase):
+class NoOutputAutoTimeControlledInputTestCase(_ExtraPatchingMixin, NoOutputTestCase):
 
     def setUp(self):
 
