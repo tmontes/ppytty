@@ -7,9 +7,12 @@
 
 import unittest
 
-from ppytty import run, TrapDoesNotExist, TrapArgCountWrong, TrapDestroyed
+from ppytty import (
+    run, TrapException, TrapDoesNotExist, TrapArgCountWrong, TrapDestroyed,
+)
 
 from . import io_bypass
+from . import state_helper
 from . import tasks
 
 
@@ -218,7 +221,8 @@ class TestSpawnDontWait(io_bypass.NoOutputTestCase):
 
 
 
-class TestSpawnDestroy(io_bypass.NoOutputAutoTimeTestCase):
+class TestSpawnDestroy(io_bypass.NoOutputAutoTimeTestCase,
+                       state_helper.StateAssertionsMixin):
 
     def _test_spawn_child_then_destroy(self, running):
 
@@ -255,6 +259,88 @@ class TestSpawnDestroy(io_bypass.NoOutputAutoTimeTestCase):
     def test_spawn_child_then_destroy_gen_function(self):
 
         self._test_spawn_child_then_destroy(running=False)
+
+
+    def test_spawn_child_subchildren_destroy(self):
+
+        def sub_child_sleep(sleep_duration):
+            yield ('sleep', sleep_duration)
+
+        def sub_child_task_wait():
+            yield ('task-wait',)
+
+        def child():
+            sub_child_task1 = sub_child_sleep(0)
+            sub_child_task2 = sub_child_sleep(1)
+            sub_child_task3 = sub_child_sleep(42)
+            sub_child_task4 = sub_child_task_wait()
+            yield ('task-spawn', sub_child_task1)
+            yield ('task-spawn', sub_child_task2)
+            yield ('task-spawn', sub_child_task3)
+            yield ('task-spawn', sub_child_task4)
+            _ = yield ('task-wait',)
+            yield ('sleep', 420)
+
+        def parent(child_task):
+            yield ('task-spawn', child_task)
+            yield ('sleep', 2)
+            yield ('task-destroy', child_task)
+            completed_task, child_success, child_result = yield ('task-wait',)
+            return completed_task, child_success, child_result
+
+        child_task = child()
+        parent_task = parent(child_task)
+        success, result = run(parent_task)
+
+        self.assertTrue(success)
+        completed_task, child_success, child_result = result
+        self.assertIs(completed_task, child_task)
+        self.assertEqual(child_success, False)
+        self.assertIsInstance(child_result, TrapDestroyed)
+        self.assertEqual(len(child_result.args), 1)
+        self.assertIs(child_result.args[0], parent_task)
+
+        self.assert_no_tasks()
+
+
+    def test_cannot_destroy_sibling(self):
+
+        def sleeping_sibling():
+            yield ('sleep', 42)
+
+        def destroyer_sibling():
+            _, my_sibling = yield ('message-wait',)
+            yield ('task-destroy', my_sibling)
+
+        def parent(sleeper, destroyer):
+            yield ('task-spawn', sleeper)
+            yield ('task-spawn', destroyer)
+            yield ('message-send', destroyer, sleeper)
+            task_wait_1 = yield ('task-wait',)
+            task_wait_2 = yield ('task-wait',)
+            return task_wait_1, task_wait_2
+
+        sleep_task = sleeping_sibling()
+        destroyer_task = destroyer_sibling()
+
+        success, result = run(parent(sleep_task, destroyer_task))
+        self.assertTrue(success)
+
+        task_wait_1, task_wait_2 = result
+
+        # destroyer_task completes first (sleep_task is sleeping) and fails with
+        # a TrapException mentioning 'child'.
+        completed, success, result = task_wait_1
+        self.assertIs(completed, destroyer_task)
+        self.assertFalse(success)
+        self.assertIsInstance(result, TrapException)
+        self.assertGreaterEqual(len(result.args), 1)
+        self.assertIn('child', result.args[0])
+
+        completed, success, result = task_wait_2
+        self.assertIs(completed, sleep_task)
+        self.assertTrue(success)
+        self.assertIsNone(result)
 
 
 # ----------------------------------------------------------------------------
