@@ -101,6 +101,10 @@ def window_render(task, window, full=False):
 
 def sleep(task, seconds):
 
+    if seconds <= 0:
+        state.runnable_tasks.append(task)
+        return
+
     wake_at = state.now + seconds
     state.tasks_waiting_time.append(task)
     heapq.heappush(state.tasks_waiting_time_hq, (wake_at, id(task), task))
