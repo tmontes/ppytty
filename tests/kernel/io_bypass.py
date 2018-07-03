@@ -96,25 +96,35 @@ class NoOutputTestCase(TestCase):
 
 
 
-class NoOutputAutoTimeTestCase(NoOutputTestCase):
+class _NoOutputExtraPatchingTestCase(NoOutputTestCase):
+
+    # Derived class objects must set self._patches before calling this setUp().
+
+    def setUp(self):
+
+        self._mock_patches = [mock.patch(w, new=r) for w, r in self._patches]
+        for patch in self._mock_patches:
+            patch.start()
+
+
+    def tearDown(self):
+
+        for patch in self._mock_patches:
+            patch.stop()
+
+
+
+class NoOutputAutoTimeTestCase(_NoOutputExtraPatchingTestCase):
 
     def setUp(self):
 
         self._auto_time = _AutoTimeFakeInputController()
-
-        _patches = [
+        self._patches = [
             # Patch ppytty.kernel.hw output related attributes.
             ('ppytty.kernel.hw.time_monotonic', self._auto_time.time_monotonic),
             ('ppytty.kernel.hw.select_select', self._auto_time.select_select),
         ]
-
-        self._mock_patches = [
-            mock.patch(what, new=rv)
-            for what, rv in _patches
-        ]
-
-        for patch in self._mock_patches:
-            patch.start()
+        super().setUp()
 
 
     @property
@@ -123,41 +133,22 @@ class NoOutputAutoTimeTestCase(NoOutputTestCase):
         return self._auto_time._monotonic
 
 
-    def tearDown(self):
 
-        for patch in self._mock_patches:
-            patch.stop()
-
-
-
-class NoOutputAutoTimeControlledInputTestCase(NoOutputTestCase):
+class NoOutputAutoTimeControlledInputTestCase(_NoOutputExtraPatchingTestCase):
 
     def setUp(self):
 
         self.fake_stdin = _FakeInputFile(fd=0)
         self.input_control = _AutoTimeFakeInputController(self.fake_stdin)
 
-        _patches = [
+        self._patches = [
             # Patch ppytty.kernel.hw output related attributes.
             ('ppytty.kernel.hw.sys_stdin', self.fake_stdin),
             ('ppytty.kernel.hw.time_monotonic', self.input_control.time_monotonic),
             ('ppytty.kernel.hw.select_select', self.input_control.select_select),
             ('ppytty.kernel.hw.os_read', self.input_control.os_read),
         ]
-
-        self._mock_patches = [
-            mock.patch(what, new=rv)
-            for what, rv in _patches
-        ]
-
-        for patch in self._mock_patches:
-            patch.start()
-
-
-    def tearDown(self):
-
-        for patch in self._mock_patches:
-            patch.stop()
+        super().setUp()
 
 
 # ----------------------------------------------------------------------------
