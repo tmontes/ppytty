@@ -17,18 +17,15 @@ from unittest import TestCase, mock
 class _FakeInputFile(object):
 
     def __init__(self, fd=0):
-
         self.fd = fd
         self.buffer = collections.deque()
 
 
     def fileno(self):
-
         return self.fd
 
 
     def feed_data(self, some_bytes):
-
         for i in range(len(some_bytes)):
             self.buffer.append(some_bytes[i:i+1])
 
@@ -37,27 +34,27 @@ class _FakeInputFile(object):
 class _AutoTimeFakeInputController(object):
 
     def __init__(self, fake_input=None):
-        self._monotonic = 0
-        self._fake_input = fake_input
+        self.monotonic = 0
+        self.fake_input = fake_input
 
     def time_monotonic(self):
-        return self._monotonic
+        return self.monotonic
 
     def select_select(self, rlist, wlist, xlist, timeout=None):
         # timeout=None means forever, for now assume 42
         timeout = 42 if timeout is None else timeout
-        self._monotonic += timeout
-        if self._fake_input and self._fake_input.buffer:
-            read_fds = (self._fake_input.fileno(),)
+        self.monotonic += timeout
+        if self.fake_input and self.fake_input.buffer:
+            read_fds = (self.fake_input.fileno(),)
         else:
             read_fds = ()
         return read_fds, None, None
 
     def os_read(self, *args):
-        return self._fake_input.buffer.popleft()
+        return self.fake_input.buffer.popleft()
 
-    def time_monotonic(self):
-        return self._monotonic
+    def feed_data(self, some_bytes):
+        self.fake_input.feed_data(some_bytes)
 
 
 
@@ -118,19 +115,13 @@ class NoOutputAutoTimeTestCase(_NoOutputExtraPatchingTestCase):
 
     def setUp(self):
 
-        self._auto_time = _AutoTimeFakeInputController()
+        self.auto_time = _AutoTimeFakeInputController()
         self._patches = [
             # Patch ppytty.kernel.hw output related attributes.
-            ('ppytty.kernel.hw.time_monotonic', self._auto_time.time_monotonic),
-            ('ppytty.kernel.hw.select_select', self._auto_time.select_select),
+            ('ppytty.kernel.hw.time_monotonic', self.auto_time.time_monotonic),
+            ('ppytty.kernel.hw.select_select', self.auto_time.select_select),
         ]
         super().setUp()
-
-
-    @property
-    def auto_time_monotonic(self):
-
-        return self._auto_time._monotonic
 
 
 
@@ -138,12 +129,12 @@ class NoOutputAutoTimeControlledInputTestCase(_NoOutputExtraPatchingTestCase):
 
     def setUp(self):
 
-        self.fake_stdin = _FakeInputFile(fd=0)
-        self.input_control = _AutoTimeFakeInputController(self.fake_stdin)
+        fake_stdin = _FakeInputFile(fd=0)
+        self.input_control = _AutoTimeFakeInputController(fake_stdin)
 
         self._patches = [
             # Patch ppytty.kernel.hw output related attributes.
-            ('ppytty.kernel.hw.sys_stdin', self.fake_stdin),
+            ('ppytty.kernel.hw.sys_stdin', fake_stdin),
             ('ppytty.kernel.hw.time_monotonic', self.input_control.time_monotonic),
             ('ppytty.kernel.hw.select_select', self.input_control.select_select),
             ('ppytty.kernel.hw.os_read', self.input_control.os_read),

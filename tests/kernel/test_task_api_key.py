@@ -19,7 +19,7 @@ class Test(io_bypass.NoOutputAutoTimeControlledInputTestCase):
             result = yield ('read-key', 100)
             return result
 
-        self.fake_stdin.feed_data(b'x')
+        self.input_control.feed_data(b'x')
 
         success, result = run(task)
 
