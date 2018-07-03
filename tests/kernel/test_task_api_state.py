@@ -5,6 +5,8 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
+import unittest
+
 from ppytty import run
 
 from . import io_bypass
@@ -13,7 +15,15 @@ from . import state_helper
 
 
 
-class Test(io_bypass.NoOutputTestCase):
+class Test(unittest.TestCase):
+
+    # Using io_bypass.NoOutputTestCase makes this test fail.
+    # Motive:
+    # - state.user_out_fd would be a callable mock.
+    # - The trap implementation excludes any callable attribute.
+
+    # TODO: Maybe we can get back to a no-output producing test when the
+    # input tests and associated input fakes are created.
 
     def test_state_dump_logs_all_state_fields(self):
 
