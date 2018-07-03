@@ -56,6 +56,10 @@ class _AutoTimeFakeInputController(object):
     def feed_data(self, some_bytes):
         self.fake_input.feed_data(some_bytes)
 
+    @property
+    def buffer(self):
+        return self.fake_input.buffer
+
 
 
 class NoOutputTestCase(TestCase):
