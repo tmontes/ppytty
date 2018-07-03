@@ -200,10 +200,12 @@ def task_destroy(task, user_child_task, keep_running=True):
 def message_send(task, to_user_task, message):
 
     if to_user_task is None:
-        to_task = state.parent_task.get(task)
-        if to_task is None:
-            log.warning('%r no parent task for message send', task)
-            # TODO: throw an exception into the calling task?
+        try:
+            to_task = state.parent_task[task]
+        except KeyError:
+            exc = exceptions.TrapException('no parent task for message send')
+            common.trap_will_throw(task, exc)
+            state.runnable_tasks.append(task)
             return
     else:
         to_task = state.kernel_space_tasks[to_user_task]
