@@ -6,9 +6,55 @@
 # ----------------------------------------------------------------------------
 
 
+import collections
+
 from ppytty.kernel import hw
 
 from unittest import TestCase, mock
+
+
+
+class _FakeInputFile(object):
+
+    def __init__(self, fd=0):
+        self.fd = fd
+        self.buffer = collections.deque()
+
+
+    def fileno(self):
+        return self.fd
+
+
+    def feed_data(self, some_bytes):
+        for i in range(len(some_bytes)):
+            self.buffer.append(some_bytes[i:i+1])
+
+
+
+class _AutoTimeFakeInputController(object):
+
+    def __init__(self, fake_input=None):
+        self.monotonic = 0
+        self.fake_input = fake_input
+
+    def time_monotonic(self):
+        return self.monotonic
+
+    def select_select(self, rlist, wlist, xlist, timeout=None):
+        # timeout=None means forever, for now assume 42
+        timeout = 42 if timeout is None else timeout
+        self.monotonic += timeout
+        if self.fake_input and self.fake_input.buffer:
+            read_fds = (self.fake_input.fileno(),)
+        else:
+            read_fds = ()
+        return read_fds, None, None
+
+    def os_read(self, *args):
+        return self.fake_input.buffer.popleft()
+
+    def feed_data(self, some_bytes):
+        self.fake_input.feed_data(some_bytes)
 
 
 
@@ -47,53 +93,53 @@ class NoOutputTestCase(TestCase):
 
 
 
-class _AutoTime(object):
+class _ExtraPatchingMixin(object):
 
-    def __init__(self):
-        self._monotonic = 0
-
-    def time_monotonic(self):
-        return self._monotonic
-
-    def select_select(self, rlist, wlist, xlist, timeout=None):
-        # timeout=None means forever, for now assume 42
-        timeout = 42 if timeout is None else timeout
-        self._monotonic += timeout
-        return (), None, None
-
-
-
-class NoOutputAutoTimeTestCase(NoOutputTestCase):
+    # Mixed classes must set self._patches before calling this setUp().
 
     def setUp(self):
 
-        self._auto_time = _AutoTime()
-
-        _patches = [
-            # Patch ppytty.kernel.hw output related attributes.
-            ('ppytty.kernel.hw.time_monotonic', self._auto_time.time_monotonic),
-            ('ppytty.kernel.hw.select_select', self._auto_time.select_select),
-        ]
-
-        self._mock_patches = [
-            mock.patch(what, new=rv)
-            for what, rv in _patches
-        ]
-
+        self._mock_patches = [mock.patch(w, new=r) for w, r in self._patches]
         for patch in self._mock_patches:
             patch.start()
-
-
-    @property
-    def auto_time_monotonic(self):
-
-        return self._auto_time._monotonic
 
 
     def tearDown(self):
 
         for patch in self._mock_patches:
             patch.stop()
+
+
+
+class NoOutputAutoTimeTestCase(_ExtraPatchingMixin, NoOutputTestCase):
+
+    def setUp(self):
+
+        self.auto_time = _AutoTimeFakeInputController()
+        self._patches = [
+            # Patch ppytty.kernel.hw output related attributes.
+            ('ppytty.kernel.hw.time_monotonic', self.auto_time.time_monotonic),
+            ('ppytty.kernel.hw.select_select', self.auto_time.select_select),
+        ]
+        super().setUp()
+
+
+
+class NoOutputAutoTimeControlledInputTestCase(_ExtraPatchingMixin, NoOutputTestCase):
+
+    def setUp(self):
+
+        fake_stdin = _FakeInputFile(fd=0)
+        self.input_control = _AutoTimeFakeInputController(fake_stdin)
+
+        self._patches = [
+            # Patch ppytty.kernel.hw output related attributes.
+            ('ppytty.kernel.hw.sys_stdin', fake_stdin),
+            ('ppytty.kernel.hw.time_monotonic', self.input_control.time_monotonic),
+            ('ppytty.kernel.hw.select_select', self.input_control.select_select),
+            ('ppytty.kernel.hw.os_read', self.input_control.os_read),
+        ]
+        super().setUp()
 
 
 # ----------------------------------------------------------------------------

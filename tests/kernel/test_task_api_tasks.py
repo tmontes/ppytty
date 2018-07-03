@@ -235,6 +235,9 @@ class TestSpawnDestroy(io_bypass.NoOutputAutoTimeTestCase,
             completed_task, child_success, child_result = yield ('task-wait',)
             return completed_task, child_success, child_result
 
+        # Time starts at 0.
+        self.assertEqual(self.auto_time.monotonic, 0)
+
         child_task = child() if running else child
         parent_task = parent(child_task)
         success, result = run(parent_task)
@@ -247,8 +250,8 @@ class TestSpawnDestroy(io_bypass.NoOutputAutoTimeTestCase,
         self.assertEqual(len(child_result.args), 1)
         self.assertIs(child_result.args[0], parent_task)
 
-        # Time hasn't passed
-        self.assertEqual(self.auto_time_monotonic, 0)
+        # Time hasn't passed.
+        self.assertEqual(self.auto_time.monotonic, 0)
 
 
     def test_spawn_child_then_destroy_gen_object(self):
