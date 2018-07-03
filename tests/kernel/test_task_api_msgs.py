@@ -5,7 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty import run
+from ppytty import run, TrapException
 
 from . import io_bypass
 from . import log_helper
@@ -186,5 +186,20 @@ class TestSenderTaskIsChildTask(io_bypass.NoOutputTestCase):
         self.assertTrue(success)
         self._assert_parent_result(child_gen_object, result)
 
+
+
+class TestTrapExceptions(io_bypass.NoOutputTestCase):
+
+    def test_top_task_message_parent_fails(self):
+
+        def top_task():
+            yield ('message-send', None, 'goes-nowhere')
+
+        success, result = run(top_task)
+
+        self.assertFalse(success)
+        self.assertIsInstance(result, TrapException)
+        self.assertGreaterEqual(len(result.args), 1)
+        self.assertIn('parent', result.args[0])
 
 # ----------------------------------------------------------------------------
