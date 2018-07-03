@@ -177,8 +177,10 @@ def task_destroy(task, user_child_task, keep_running=True):
         state.tasks_waiting_time.remove(child_task)
         common.clear_tasks_waiting_time_hq()
     elif child_task in state.completed_tasks:
-        log.error('%r will not stop completed task %r', task, child_task)
+        del state.completed_tasks[child_task]
     else:
+        # TODO: Should not happen. Should the kernel panic?
+        log.error('%r cannot destroy non-found task %r', task, child_task)
         return
 
     common.clear_tasks_traps(child_task)
