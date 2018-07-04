@@ -106,7 +106,7 @@ class _SelfBlessingsTerminal(object):
 
 class Window(object):
 
-    def __init__(self, left, top, width, height, bg=None):
+    def __init__(self, left, top, width, height, bg=None, no_cursor=True):
 
         self._left = left
         self._top = top
@@ -117,6 +117,7 @@ class Window(object):
         self._screen = pyte.Screen(width, height)
         self._stream = pyte.ByteStream(self._screen)
 
+        self._screen.cursor.hidden = no_cursor
 
     def __repr__(self):
 
