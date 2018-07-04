@@ -170,7 +170,8 @@ def task_destroy(task, user_child_task, keep_running=True):
 
     if child_task in state.child_tasks:
         for grand_child_task in state.child_tasks[child_task]:
-            task_destroy(child_task, grand_child_task, keep_running=False)
+            user_grand_child_task = state.user_space_tasks[grand_child_task]
+            task_destroy(child_task, user_grand_child_task, keep_running=False)
             del state.parent_task[grand_child_task]
         del state.child_tasks[child_task]
 
