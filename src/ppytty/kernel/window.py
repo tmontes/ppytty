@@ -106,7 +106,7 @@ class _SelfBlessingsTerminal(object):
 
 class Window(object):
 
-    def __init__(self, left, top, width, height, bg=None):
+    def __init__(self, left, top, width, height, bg=None, no_cursor=True):
 
         self._left = left
         self._top = top
@@ -117,6 +117,7 @@ class Window(object):
         self._screen = pyte.Screen(width, height)
         self._stream = pyte.ByteStream(self._screen)
 
+        self._screen.cursor.hidden = no_cursor
 
     def __repr__(self):
 
@@ -187,11 +188,15 @@ class Window(object):
         bt_move = bt.move
         self_char_format = self._char_format
 
-        payload = [bt.hide_cursor]
+        payload = []
         payload_append = payload.append
 
         prev_char_format = ''
         line_numbers = range(height) if full else screen_dirty
+
+        if line_numbers and not screen_cursor.hidden:
+            payload_append(bt.hide_cursor)
+
         for line_no in line_numbers:
             line_data = screen_buffer[line_no]
             payload_append(bt_move(top+line_no, left))
@@ -206,10 +211,11 @@ class Window(object):
                     prev_char_format = char_format
                 payload_append(char_data)
 
-        payload_append(bt.normal)
-        payload_append(bt_move(top+screen_cursor.y, left+screen_cursor.x))
-        if not screen_cursor.hidden:
-            payload_append(bt.normal_cursor)
+        if line_numbers:
+            payload_append(bt.normal)
+            payload_append(bt_move(top+screen_cursor.y, left+screen_cursor.x))
+            if not screen_cursor.hidden:
+                payload_append(bt.normal_cursor)
         screen_dirty.clear()
         return ''.join(payload).encode(encoding)
 
