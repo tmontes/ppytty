@@ -160,7 +160,12 @@ def task_wait(task):
 
 def task_destroy(task, user_child_task, keep_running=True):
 
-    child_task = state.kernel_space_tasks[user_child_task]
+    try:
+        child_task = state.kernel_space_tasks[user_child_task]
+    except KeyError:
+        common.trap_will_throw(task, exceptions.TrapException('no such task'))
+        state.runnable_tasks.append(task)
+        return
 
     if state.parent_task[child_task] is not task:
         exc = exceptions.TrapException('cannot destroy non-child tasks')
