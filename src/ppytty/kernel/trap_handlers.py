@@ -160,7 +160,12 @@ def task_wait(task):
 
 def task_destroy(task, user_child_task, keep_running=True):
 
-    child_task = state.kernel_space_tasks[user_child_task]
+    try:
+        child_task = state.kernel_space_tasks[user_child_task]
+    except KeyError:
+        common.trap_will_throw(task, exceptions.TrapException('no such task'))
+        state.runnable_tasks.append(task)
+        return
 
     if state.parent_task[child_task] is not task:
         exc = exceptions.TrapException('cannot destroy non-child tasks')
@@ -170,7 +175,8 @@ def task_destroy(task, user_child_task, keep_running=True):
 
     if child_task in state.child_tasks:
         for grand_child_task in state.child_tasks[child_task]:
-            task_destroy(child_task, grand_child_task, keep_running=False)
+            user_grand_child_task = state.user_space_tasks[grand_child_task]
+            task_destroy(child_task, user_grand_child_task, keep_running=False)
             del state.parent_task[grand_child_task]
         del state.child_tasks[child_task]
 
@@ -183,6 +189,8 @@ def task_destroy(task, user_child_task, keep_running=True):
     elif child_task in state.tasks_waiting_time:
         state.tasks_waiting_time.remove(child_task)
         common.clear_tasks_waiting_time_hq()
+    elif child_task in state.tasks_waiting_inbox:
+        state.tasks_waiting_inbox.remove(child_task)
     elif child_task in state.completed_tasks:
         del state.completed_tasks[child_task]
     else:
@@ -245,7 +253,7 @@ def state_dump(task, tag=''):
 
     def _task_status(task):
         if task in state.runnable_tasks:
-            return 'RR'
+            return 'RN'
         if task in state.tasks_waiting_child:
             return 'WC'
         if task in state.tasks_waiting_inbox:
@@ -255,8 +263,8 @@ def state_dump(task, tag=''):
         if task in state.tasks_waiting_time:
             return 'WT'
         if task in state.completed_tasks:
-            return 'TT'
-        return '??'
+            return 'CC'
+        return 'RR'
 
     def _log_task_lines(task, level=0):
         indent = ' ' * 4 * level
