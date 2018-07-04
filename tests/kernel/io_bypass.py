@@ -72,6 +72,16 @@ class _Fake_tigetstr(object):
 
 
 
+class _Fake_tparm(object):
+
+    def __init__(self, *args):
+        self._args = args
+
+    def decode(self, *_args):
+        return f'<fake_tparm{self._args}>'
+
+
+
 class NoOutputTestCase(TestCase):
 
     _PATCHES = [
@@ -87,6 +97,7 @@ class NoOutputTestCase(TestCase):
 
         ('blessings.setupterm', None, mock.DEFAULT),
         ('blessings.tigetstr', _Fake_tigetstr, None),
+        ('blessings.tparm', _Fake_tparm, None),
     ]
 
     @classmethod
