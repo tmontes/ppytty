@@ -245,7 +245,7 @@ def state_dump(task, tag=''):
 
     def _task_status(task):
         if task in state.runnable_tasks:
-            return 'RR'
+            return 'RN'
         if task in state.tasks_waiting_child:
             return 'WC'
         if task in state.tasks_waiting_inbox:
@@ -255,8 +255,8 @@ def state_dump(task, tag=''):
         if task in state.tasks_waiting_time:
             return 'WT'
         if task in state.completed_tasks:
-            return 'TT'
-        return '??'
+            return 'CC'
+        return 'RR'
 
     def _log_task_lines(task, level=0):
         indent = ' ' * 4 * level
