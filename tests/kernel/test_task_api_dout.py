@@ -38,4 +38,32 @@ class Test(io_bypass.NoOutputTestCase):
         self.assertEqual(written_bytes, b'this is the output message\n')
 
 
+    def test_direct_clear(self):
+
+        os_write_mock = self.output_mocks['ppytty.kernel.hw.os_write']
+
+        def task():
+            # discard any previously emmited output
+            os_write_mock.reset_mock()
+            yield ('direct-clear', )
+            # return a copy of all calls to our mocked os.write
+            # (motive: on exiting, run outputs terminal escapes)
+            return os_write_mock.call_args_list[:]
+
+        success, os_write_mock_calls = run(task)
+        self.assertTrue(success)
+
+        # os.write was called at least once
+        self.assertGreaterEqual(len(os_write_mock_calls), 1)
+
+        # c[0] is the call args tuple; c[0][1] is the 2nd arg to os.write
+        written_bytes = b''.join(c[0][1] for c in os_write_mock_calls)
+
+        # `direct-clear` depends on blessings which depends on curses
+        # this test runs under a mocked curses.tigetstr such that we
+        # get a fake terminfo entry, for the "clear" entry which should
+        # have been requested by blessings
+        self.assertEqual(written_bytes, b"<fake_tigetstr('clear',)>")
+
+
 # ----------------------------------------------------------------------------
