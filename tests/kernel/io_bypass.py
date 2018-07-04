@@ -62,37 +62,58 @@ class _AutoTimeFakeInputController(object):
 
 
 
+class _Fake_tigetstr(object):
+
+    def __init__(self, *args):
+        self._args = args
+
+    def decode(self, *_args):
+        return f'<fake_tigetstr{self._args}>'
+
+
+
 class NoOutputTestCase(TestCase):
 
     _PATCHES = [
         # Patch ppytty.kernel.hw output related attributes.
-        ('ppytty.kernel.hw.os_write', mock.DEFAULT),
-        ('ppytty.kernel.hw.termios_tcgetattr', mock.DEFAULT),
-        ('ppytty.kernel.hw.termios_tcsetattr', mock.DEFAULT),
-        ('ppytty.kernel.hw.sys_stdout', mock.DEFAULT),
+        ('ppytty.kernel.hw.os_write', None, mock.DEFAULT),
+        ('ppytty.kernel.hw.termios_tcgetattr', None, mock.DEFAULT),
+        ('ppytty.kernel.hw.termios_tcsetattr', None, mock.DEFAULT),
+        ('ppytty.kernel.hw.sys_stdout', None, mock.DEFAULT),
 
         # Patch blessings usage of ioctl to return an 80x25 terminal size.
         # (it would otherwise fail when given the above mocked stdout)
-        ('blessings.ioctl', b'\x19\x00P\x00\x00\x00\x00\x00'),
+        ('blessings.ioctl', None, b'\x19\x00P\x00\x00\x00\x00\x00'),
+
+        ('blessings.setupterm', None, mock.DEFAULT),
+        ('blessings.tigetstr', _Fake_tigetstr, None),
     ]
 
     @classmethod
     def setUpClass(cls):
 
-        cls._mock_patches = [
-            mock.patch(what, return_value=rv)
-            for what, rv in cls._PATCHES
-        ]
+        cls._output_mock_patches = {}
+        for what, new_value, ret_value in cls._PATCHES:
+            kwargs = {}
+            if new_value is not None:
+                kwargs['new'] = new_value
+            if ret_value is not None:
+                kwargs['return_value'] = ret_value
+            patch = mock.patch(what, **kwargs)
+            cls._output_mock_patches[what] = patch
+            # what: mock.patch(what, return_value=rv) for what, rv in cls._PATCHES
 
-        for patch in cls._mock_patches:
-            patch.start()
+        cls.output_mocks = {
+            what: patch.start()
+            for what, patch in cls._output_mock_patches.items()
+        }
 
 
 
     @classmethod
     def tearDownClass(cls):
 
-        for patch in cls._mock_patches:
+        for patch in cls._output_mock_patches.values():
             patch.stop()
 
 
@@ -103,14 +124,18 @@ class _ExtraPatchingMixin(object):
 
     def setUp(self):
 
-        self._mock_patches = [mock.patch(w, new=r) for w, r in self._patches]
-        for patch in self._mock_patches:
-            patch.start()
+        self._extra_mock_patches = {
+            what: mock.patch(what, new=nv) for what, nv in self._patches
+        }
+        self.extra_mocks = {
+            what: patch.start()
+            for what, patch in self._extra_mock_patches.items()
+        }
 
 
     def tearDown(self):
 
-        for patch in self._mock_patches:
+        for patch in self._extra_mock_patches.values():
             patch.stop()
 
 
