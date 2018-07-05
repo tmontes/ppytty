@@ -7,11 +7,11 @@
 
 from ppytty import run
 
-from . import io_bypass
+from . import helper_io
 
 
 
-class Test(io_bypass.NoOutputTestCase):
+class Test(helper_io.NoOutputTestCase):
 
     # These tests are somewhat crazy and, effectively, going way over what
     # they should in the sense that they are also verifying the behavior of

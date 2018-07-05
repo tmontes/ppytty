@@ -9,7 +9,7 @@ import unittest
 
 from ppytty.kernel import window
 
-from . import io_bypass
+from . import helper_io
 
 
 
@@ -57,7 +57,7 @@ class TestNonRenderingAspects(unittest.TestCase):
                 self.assertEqual(expect_overlap, w1overlap, 'overlap')
 
 
-class TestWithHiddenCursor(io_bypass.NoOutputTestCase):
+class TestWithHiddenCursor(helper_io.NoOutputTestCase):
 
     # Inheriting from NoOutputTestCase just for the bytes_match method.
 

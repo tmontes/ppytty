@@ -7,11 +7,11 @@
 
 from ppytty import run, TrapDoesNotExist, TrapArgCountWrong
 
-from . import io_bypass
+from . import helper_io
 
 
 
-class Test(io_bypass.NoOutputTestCase):
+class Test(helper_io.NoOutputTestCase):
 
     def test_non_existing_trap_raises_exception(self):
 
