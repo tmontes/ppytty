@@ -31,12 +31,20 @@ class Test(io_bypass.NoOutputTestCase):
         self.reset_os_written_bytes()
 
 
+    def _assert_blank_terminal_rendered(self, written_bytes):
+
+        prefixes = [
+            self.fake_tparm(self.fake_tigetstr('cup'), 0, 0),
+        ]
+        payload = b' ' * 80 * 25
+        self.bytes_match(written_bytes, prefixes, [], payload, strict=False)
+
+
     def test_render(self):
 
         self.t.render()
         written_bytes = self.get_os_written_bytes()
-        payload_bytes = self.strip_fake_curses_entries(written_bytes)
-        self.assertEqual(payload_bytes, 80 * 25 * b' ')
+        self._assert_blank_terminal_rendered(written_bytes)
 
 
     def _discard_first_render(self):
@@ -60,8 +68,7 @@ class Test(io_bypass.NoOutputTestCase):
 
         self.t.render(full=True)
         written_bytes = self.get_os_written_bytes()
-        payload_bytes = self.strip_fake_curses_entries(written_bytes)
-        self.assertEqual(payload_bytes, 80 * 25 * b' ')
+        self._assert_blank_terminal_rendered(written_bytes)
 
 
     def test_feed_text_then_render(self):
@@ -124,5 +131,23 @@ class Test(io_bypass.NoOutputTestCase):
         # Non-strict means: accept that after validating prefixs and suffixes,
         # the remaining bytes may contain additional fake tigetstr/tparm parts.
         self.bytes_match(written_bytes, prefixes, suffixes, payload, strict=False)
+
+
+    def test_clear_then_render(self):
+
+        self._discard_first_render()
+
+        # Incremental rendering with not output produces no bytes.
+        self.t.render()
+        written_bytes = self.get_os_written_bytes()
+        self.assertEqual(written_bytes, b'', 'no bytes written on re-render')
+
+        # clear will force next render to output a fully blank terminal.
+        self.t.clear()
+        self.t.render()
+        written_bytes = self.get_os_written_bytes()
+
+        self._assert_blank_terminal_rendered(written_bytes)
+
 
 # ----------------------------------------------------------------------------
