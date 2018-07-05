@@ -5,10 +5,56 @@
 # See LICENSE for deatils.
 # ----------------------------------------------------------------------------
 
+import unittest
+
 from ppytty.kernel import window
 
 from . import io_bypass
 
+
+
+class TestNonRenderingAspects(unittest.TestCase):
+
+    def test_sbt_too_large_fg_color(self):
+
+        sbt = window._SelfBlessingsTerminal
+        with self.assertRaises(ValueError):
+            sbt.color(256)
+
+
+    def test_sbt_too_large_bg_color(self):
+
+        sbt = window._SelfBlessingsTerminal
+        with self.assertRaises(ValueError):
+            sbt.on_color(256)
+
+
+    def test_window_overlaps(self):
+
+        tests = [
+            # self overlap
+            [(0, 0, 80, 25), (0, 0, 80, 25), True,],
+            # second inside first
+            [(0, 0, 80, 25), (10, 5, 50, 15), True,],
+            # side by side, touching
+            [(0, 0, 40, 25), (40, 0, 40, 25), False,],
+            # one on top of the other, touching
+            [(0, 0, 80, 15), (0, 15, 80, 10), False,],
+            # second top-left corner inside first
+            [(0, 0, 40, 20), (20, 10, 40, 20), True,],
+            # first bottom-right touching second top-left
+            [(0, 0, 20, 10), (20, 10, 20, 10), False,],
+        ]
+        for w1args, w2args, expect_overlap in tests:
+            with self.subTest(w1args=w1args, w2args=w2args, eo=expect_overlap):
+                w1 = window.Window(*w1args)
+                w2 = window.Window(*w2args)
+                w1overlap = w1.overlaps(w2)
+                w2overlap = w2.overlaps(w1)
+                # The overlap operation is cummutative.
+                self.assertEqual(w1overlap, w2overlap, 'overlap disagreement')
+                # Does it match what we expect?
+                self.assertEqual(expect_overlap, w1overlap, 'overlap')
 
 
 class TestWithHiddenCursor(io_bypass.NoOutputTestCase):
