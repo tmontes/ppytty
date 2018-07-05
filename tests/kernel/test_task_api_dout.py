@@ -21,25 +21,16 @@ class Test(io_bypass.NoOutputTestCase):
 
     def _drive_output_test(self, trap, prefixes, payload, suffixes):
 
-        os_write_mock = self.output_mocks['ppytty.kernel.hw.os_write']
-
         def task():
             # Discard any previously emmited output.
-            os_write_mock.reset_mock()
+            self.reset_os_written_bytes()
             yield trap
-            # Return a copy of all calls to the mocked hw.os_write. Motive: on
-            # stopping, run() outputs terminal "cleanup" escapes which end up
-            # on the original mock.
-            return os_write_mock.call_args_list[:]
+            # Return written bytes now. Motive: on stopping, run() outputs
+            # terminal "cleanup" escapes which end up as written bytes.
+            return self.get_os_written_bytes()
 
-        success, os_write_mock_calls = run(task)
+        success, written_bytes = run(task)
         self.assertTrue(success)
-
-        # os.write was called at least once
-        self.assertGreaterEqual(len(os_write_mock_calls), 1)
-
-        # c[0] is the call args tuple; c[0][1] is the 2nd arg to os.write
-        written_bytes = b''.join(c[0][1] for c in os_write_mock_calls)
 
         for expected_prefix in prefixes:
             actual_prefix = written_bytes[:len(expected_prefix)]

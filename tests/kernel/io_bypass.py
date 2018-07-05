@@ -119,6 +119,35 @@ class NoOutputTestCase(TestCase):
             for what, patch in cls._output_mock_patches.items()
         }
 
+        cls.os_write_mock = cls.output_mocks['ppytty.kernel.hw.os_write']
+
+
+    def reset_os_written_bytes(self):
+
+        self.os_write_mock.reset_mock()
+
+
+    def get_os_written_bytes(self):
+
+        return b''.join(
+            call[0][1] for call in self.os_write_mock.call_args_list
+        )
+
+
+    @staticmethod
+    def strip_fake_curses_entries(byte_string):
+
+        open_fake, close_fake = b'<>'
+        depth = 0
+        result_bytes = []
+        for byte_value in byte_string:
+            if byte_value == open_fake:
+                depth += 1
+            elif byte_value == close_fake:
+                depth -= 1
+            elif depth == 0:
+                result_bytes.append(byte_value)
+        return bytes(result_bytes)
 
 
     @classmethod
