@@ -7,11 +7,23 @@
 
 from ppytty.kernel import terminal
 
+# For an explanation of what _SlefBlessingsTerminal is, refer to its comment.
+from ppytty.kernel.window import _SelfBlessingsTerminal as sbt
+
 from . import io_bypass
 
 
 
 class Test(io_bypass.NoOutputTestCase):
+
+    # Much like the direct-output trap tests, these tests are checking the
+    # behaviour of more things than the actual terminal itself. In particular
+    # they verify the actual bytes sent to os.write which, with the current
+    # terminal implementation, end up exercising (and verifying) the wrapped
+    # pyte.Screen/ByteStream implementations.
+    #
+    # This makes the tests slower (and maybe more fragile) but also helps
+    # making sure that the terminal actually produces correct output.
 
     def setUp(self):
 
