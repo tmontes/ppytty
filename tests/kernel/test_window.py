@@ -11,7 +11,7 @@ from . import io_bypass
 
 
 
-class Test(io_bypass.NoOutputTestCase):
+class TestWithHiddenCursor(io_bypass.NoOutputTestCase):
 
     # Inheriting from NoOutputTestCase just for the bytes_match method.
 
@@ -138,4 +138,55 @@ class Test(io_bypass.NoOutputTestCase):
         self.bytes_match(rendered_bytes, expected_prefixes, expected_suffixes, expected_bytes)
 
 
+    def _assert_render_positioned_colored_print(self, column, row, fg, bg):
+
+        _ = self.w.render()
+
+        plain_text = 'text in window'
+        self.w.print(plain_text, x=column, y=row, fg=fg, bg=bg)
+        rendered_bytes = self.w.render()
+
+
+        expected_prefixes = [
+            # Cursor should be moved row=2, col=0 + normal text attributes.
+            self.sbt.move(row, 0).encode('latin1'),
+            self.sbt.normal.encode('latin1'),
+        ]
+
+        # Payload is a full line of text:
+        expected = [
+            # Spaces before
+            ' ' * column,
+            # Set formatting (always starts with normal)
+            self.sbt.normal,
+            self.sbt.color(fg),
+            self.sbt.on_color(bg),
+            plain_text,
+            # Reset formatting
+            self.sbt.normal,
+            # Spaces after
+            ' ' * (self.WIDTH - len(plain_text) - column),
+        ]
+        expected_bytes = ''.join(expected).encode('latin1')
+
+        expected_suffixes = [
+            # Normal text attributes expected and curser right after plain_text.
+            self.sbt.normal.encode('latin1'),
+            self.sbt.move(row, column+len(plain_text)).encode('latin1'),
+        ]
+        self.bytes_match(rendered_bytes, expected_prefixes, expected_suffixes, expected_bytes)
+
+
+    def test_print_positioned_and_colored_then_render(self):
+
+        positions_and_colors = [
+            (4, 2, 254, 31),
+            (2, 4, 7, 4),
+            # These fg/gb vales were carefully selected as >=8 <5 with no
+            # repeated RGB entries in pyte FG_BG_256 table.
+            (7, 10, 8, 12),
+        ]
+        for column, row, fg, bg in positions_and_colors:
+            with self.subTest(column=column, row=row, fg=fg, bg=bg):
+                self._assert_render_positioned_colored_print(column, row, fg, bg)
 # ----------------------------------------------------------------------------
