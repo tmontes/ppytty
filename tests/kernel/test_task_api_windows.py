@@ -110,4 +110,95 @@ class Test(io_bypass.NoOutputTestCase):
         self.assertIn('window', result.args[0])
 
 
+    def test_single_window_print_and_render(self):
+
+        def task():
+            w = yield ('window-create', 0, 0, 40, 20)
+            w.print('text-in-the-window')
+            yield ('window-render', w)
+            yield ('window-destroy', w)
+
+        success, result = run(task)
+        self.assertTrue(success)
+        self.assertIsNone(result)
+
+        # Very simplified test: our window printed string was os.written.
+        written_bytes = self.get_os_written_bytes()
+        self.assertIn(b'text-in-the-window ', written_bytes)
+
+
+    def test_complex_windows_print_and_render(self):
+
+        #   top_win
+        #   +-----------------------+                     oth_win
+        #   |(0, 0)                 | bot_win   +---------------+
+        #   |       +-  -  -  -  -  |-------+   |(50,3)         |
+        #   |       .(10, 5)        |       |   |               |
+        #   |       .               |       |   +---------------+
+        #   +-----------------------+       |
+        #           |                       |
+        #           +-----------------------+
+
+        def task():
+            # created first to exercise rendering optimizations
+            oth_win = yield ('window-create', 50, 3, 20, 5)
+            oth_win.print('oth-win-frst-line', 0, 0)
+            oth_win.print('oth-win-last-line', 0, 4)
+
+            bot_win = yield ('window-create', 10, 5, 30, 10)
+            bot_win.print('bot-win-frst-line', 0, 0)
+            bot_win.print('bot-win-last-line', 0, 9)
+
+            top_win = yield ('window-create', 0, 0, 30, 10)
+            top_win.print('top-win-frst-line', 0, 0)
+            top_win.print('top-win-last-line', 0, 9)
+
+            # top_win and bot_win must overlap
+            if not top_win.overlaps(bot_win):
+                return False, 'top_win/bot_win do not overlap'
+
+            # rendering bot_win forces the overlapped top_win to render as well
+            yield ('window-render', bot_win)
+
+            # rendering pseudo-assertions
+            written_bytes = self.get_os_written_bytes()
+            if b'bot-win-frst-line' in written_bytes:
+                return False, 'bot-win-frst-line should not be rendered'
+            for expected_render in (b'bot-win-last-line', b'top-win-frst-line',
+                                    b'top-win-last-line',):
+                if expected_render not in written_bytes:
+                    return False, f'{expected_render} not rendered'
+
+            # go for the non-overlapping window checks
+            if oth_win.overlaps(top_win):
+                return False, 'oth_win/top_win overlap'
+            if oth_win.overlaps(bot_win):
+                return False, 'oth_win/bot_win overlap'
+
+            # clear os_written bytes in preparation for another render test
+            self.reset_os_written_bytes()
+
+            # rendering oth_win should not re-render the other windows:
+            # even though they are on top, they do not overlap
+            yield ('window-render', oth_win)
+
+            # rendering pseudo-assertions
+            written_bytes = self.get_os_written_bytes()
+            for expected_render in (b'oth-win-frst-line', b'oth-win-last-line',):
+                if expected_render not in written_bytes:
+                    return False, f'{expected_render} not rendered'
+            for not_there in (b'bot-win-frst-line', b'bot-win-last-line',
+                              b'top-win-frst-line', b'top-win-last-line',):
+                if not_there in written_bytes:
+                    return False, f'{not_there} should not be rendered'
+
+            return True, None
+
+        success, result = run(task)
+        self.assertTrue(success)
+
+        pseudo_asserts_ok, failure_msg = result
+        self.assertTrue(pseudo_asserts_ok, failure_msg)
+
+
 # ----------------------------------------------------------------------------
