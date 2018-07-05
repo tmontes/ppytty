@@ -91,4 +91,38 @@ class Test(io_bypass.NoOutputTestCase):
         self.bytes_match(written_bytes, prefixes, suffixes, payload, strict=False)
 
 
+    def test_feed_positioned_text_then_render(self):
+
+        self._discard_first_render()
+
+        COLUMN, ROW = 4, 2
+        plain_text = b'positioned text'
+        data_to_feed = b''.join([
+            sbt.move(ROW, COLUMN).encode('latin1'),
+            plain_text,
+        ])
+        self.t.feed(data_to_feed)
+        self.t.render()
+        written_bytes = self.get_os_written_bytes()
+
+        # render should output the full 80 column terminal row.
+        prefixes = [
+            # Start by positioning the cursor at (col=0, row=2).
+            self.fake_tparm(self.fake_tigetstr('cup'), ROW, 0),
+        ]
+        suffixes = [
+            # End by positioning the cursor to the right of plain_text.
+            self.fake_tparm(self.fake_tigetstr('cup'), ROW, COLUMN+len(plain_text)),
+        ]
+        # Payload should be a full line (plain_text is shorter than that): the
+        # test terminal is 80 column wide, so the payload should start with
+        # COLUMN x b' ', then plain_text, then filled to the end with b' '.
+        spaces_before = b' ' * COLUMN
+        spaces_after = b' ' * (80 - len(plain_text) - COLUMN)
+        payload = spaces_before + plain_text + spaces_after
+
+        # Non-strict means: accept that after validating prefixs and suffixes,
+        # the remaining bytes may contain additional fake tigetstr/tparm parts.
+        self.bytes_match(written_bytes, prefixes, suffixes, payload, strict=False)
+
 # ----------------------------------------------------------------------------
