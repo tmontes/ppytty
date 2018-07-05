@@ -9,11 +9,11 @@ from ppytty import run, TrapException
 from ppytty.kernel import window
 from ppytty.kernel.state import state
 
-from . import io_bypass
+from . import helper_io
 
 
 
-class Test(io_bypass.NoOutputTestCase):
+class Test(helper_io.NoOutputTestCase):
 
     def test_window_create_returns_a_window(self):
 

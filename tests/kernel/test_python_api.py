@@ -9,12 +9,12 @@ import unittest
 
 from ppytty import run
 
-from . import io_bypass
+from . import helper_io
 from . import tasks
 
 
 
-class TestRun(io_bypass.NoOutputAutoTimeControlledInputTestCase):
+class TestRun(helper_io.NoOutputAutoTimeControlledInputTestCase):
 
     def test_gen_function(self):
 
@@ -40,7 +40,7 @@ class TestRun(io_bypass.NoOutputAutoTimeControlledInputTestCase):
 
 
 
-class TestReturns(io_bypass.NoOutputTestCase):
+class TestReturns(helper_io.NoOutputTestCase):
 
     def test_task_return(self):
 

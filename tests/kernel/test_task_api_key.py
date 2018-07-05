@@ -8,12 +8,12 @@
 from ppytty import run
 from ppytty.kernel import scheduler
 
-from . import io_bypass
-from . import log_helper
+from . import helper_io
+from . import helper_log
 
 
 
-class Test(io_bypass.NoOutputAutoTimeControlledInputTestCase):
+class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
 
     def test_read_key(self):
 
@@ -154,8 +154,8 @@ class Test(io_bypass.NoOutputAutoTimeControlledInputTestCase):
         def task():
             yield ('sleep', 1)
 
-        log_handler = log_helper.create_and_add_handler()
-        self.addCleanup(lambda: log_helper.remove_handler(log_handler))
+        log_handler = helper_log.create_and_add_handler()
+        self.addCleanup(lambda: helper_log.remove_handler(log_handler))
 
         self.input_control.feed_data(b'D')
 

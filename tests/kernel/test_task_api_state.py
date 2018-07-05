@@ -9,9 +9,9 @@ import unittest
 
 from ppytty import run, TrapException
 
-from . import io_bypass
-from . import log_helper
-from . import state_helper
+from . import helper_io
+from . import helper_log
+from . import helper_state
 
 
 
@@ -19,15 +19,15 @@ class TestNeedingOutput(unittest.TestCase):
 
     def setUp(self):
 
-        self.log_handler = log_helper.create_and_add_handler()
+        self.log_handler = helper_log.create_and_add_handler()
 
 
     def tearDown(self):
 
-        log_helper.remove_handler(self.log_handler)
+        helper_log.remove_handler(self.log_handler)
 
 
-    # Using io_bypass.NoOutputTestCase makes this test fail.
+    # Using helper_io.NoOutputTestCase makes this test fail.
     # Motive:
     # - state.user_out_fd would be a callable mock.
     # - The trap implementation excludes any callable attribute.
@@ -45,7 +45,7 @@ class TestNeedingOutput(unittest.TestCase):
         self.assertTrue(success)
         self.assertIsNone(result)
 
-        for state_attr in state_helper.STATE_ATTRS:
+        for state_attr in helper_state.STATE_ATTRS:
             with self.subTest(state_attr=state_attr):
                 expected_pattern = f'state.{state_attr}='
                 for message in self.log_handler.messages:
@@ -55,17 +55,17 @@ class TestNeedingOutput(unittest.TestCase):
                     raise AssertionError(f'{expected_pattern!r} not found')
 
 
-class Test(io_bypass.NoOutputAutoTimeTestCase):
+class Test(helper_io.NoOutputAutoTimeTestCase):
 
     def setUp(self):
 
         super().setUp()
-        self.log_handler = log_helper.create_and_add_handler()
+        self.log_handler = helper_log.create_and_add_handler()
 
 
     def tearDown(self):
 
-        log_helper.remove_handler(self.log_handler)
+        helper_log.remove_handler(self.log_handler)
         super().tearDown()
 
 

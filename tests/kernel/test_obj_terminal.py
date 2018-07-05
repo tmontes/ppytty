@@ -10,11 +10,11 @@ from ppytty.kernel import terminal
 # For an explanation of what _SlefBlessingsTerminal is, refer to its comment.
 from ppytty.kernel.window import _SelfBlessingsTerminal as sbt
 
-from . import io_bypass
+from . import helper_io
 
 
 
-class Test(io_bypass.NoOutputTestCase):
+class Test(helper_io.NoOutputTestCase):
 
     # Much like the direct-output trap tests, these tests are checking the
     # behaviour of more things than the actual terminal itself. In particular

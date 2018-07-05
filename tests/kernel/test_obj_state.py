@@ -9,7 +9,7 @@ import unittest
 
 from ppytty.kernel.state import state
 
-from . import state_helper
+from . import helper_state
 
 
 
@@ -63,19 +63,19 @@ class TestRun(unittest.TestCase):
 
     def test_state_attrs_are_these(self):
 
-        _assert_attrs_are_these('state', state, state_helper.STATE_ATTRS.keys())
+        _assert_attrs_are_these('state', state, helper_state.STATE_ATTRS.keys())
 
 
     def test_state_attrs_are_clean(self):
 
-        _assert_attrs_are_clean('state', state, state_helper.STATE_ATTRS)
+        _assert_attrs_are_clean('state', state, helper_state.STATE_ATTRS)
 
 
     def test_state_reset(self):
 
-        _change_all_attrs('state', state, state_helper.STATE_ATTRS)
+        _change_all_attrs('state', state, helper_state.STATE_ATTRS)
         state.reset()
-        _assert_attrs_are_clean('state', state, state_helper.STATE_ATTRS)
+        _assert_attrs_are_clean('state', state, helper_state.STATE_ATTRS)
 
 
 # ----------------------------------------------------------------------------

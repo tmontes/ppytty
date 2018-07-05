@@ -11,13 +11,13 @@ from ppytty import (
     run, TrapException, TrapDoesNotExist, TrapArgCountWrong, TrapDestroyed,
 )
 
-from . import io_bypass
-from . import state_helper
+from . import helper_io
+from . import helper_state
 from . import tasks
 
 
 
-class TestSpawnWaitObjects(io_bypass.NoOutputTestCase):
+class TestSpawnWaitObjects(helper_io.NoOutputTestCase):
 
     def test_spawn_wait_gen_function_child_completes_1st(self):
 
@@ -68,7 +68,7 @@ class TestSpawnWaitObjects(io_bypass.NoOutputTestCase):
 
 
 
-class TestWait(io_bypass.NoOutputTestCase):
+class TestWait(helper_io.NoOutputTestCase):
 
     def test_wait_child_success(self):
 
@@ -91,7 +91,7 @@ class TestWait(io_bypass.NoOutputTestCase):
 
 
 
-class TestWaitChildException(io_bypass.NoOutputTestCase):
+class TestWaitChildException(helper_io.NoOutputTestCase):
 
     def parent_spawn_wait_child_exception(self, child_task, expected_exc_class):
 
@@ -136,7 +136,7 @@ class TestWaitChildException(io_bypass.NoOutputTestCase):
 
 
 
-class TestSpawnDontWait(io_bypass.NoOutputTestCase):
+class TestSpawnDontWait(helper_io.NoOutputTestCase):
 
     def test_parent_spawn_crash_no_child_wait_parent_completes_1st(self):
 
@@ -221,8 +221,8 @@ class TestSpawnDontWait(io_bypass.NoOutputTestCase):
 
 
 
-class TestSpawnDestroy(io_bypass.NoOutputAutoTimeTestCase,
-                       state_helper.StateAssertionsMixin):
+class TestSpawnDestroy(helper_io.NoOutputAutoTimeTestCase,
+                       helper_state.StateAssertionsMixin):
 
     def _test_spawn_child_then_destroy(self, running):
 

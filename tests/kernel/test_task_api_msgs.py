@@ -7,11 +7,11 @@
 
 from ppytty import run, TrapException
 
-from . import io_bypass
+from . import helper_io
 
 
 
-class TestParentToChild(io_bypass.NoOutputTestCase):
+class TestParentToChild(helper_io.NoOutputTestCase):
 
     def _child(self, sleep_first):
         if sleep_first:
@@ -63,7 +63,7 @@ class TestParentToChild(io_bypass.NoOutputTestCase):
 
 
 
-class TestChildToParent(io_bypass.NoOutputTestCase):
+class TestChildToParent(helper_io.NoOutputTestCase):
 
     def _child(self, sleep_first):
         if sleep_first:
@@ -119,7 +119,7 @@ class TestChildToParent(io_bypass.NoOutputTestCase):
 
 
 
-class TestSenderTaskIsChildTask(io_bypass.NoOutputTestCase):
+class TestSenderTaskIsChildTask(helper_io.NoOutputTestCase):
 
     def _fast_child(self):
 
@@ -187,7 +187,7 @@ class TestSenderTaskIsChildTask(io_bypass.NoOutputTestCase):
 
 
 
-class TestTrapExceptions(io_bypass.NoOutputTestCase):
+class TestTrapExceptions(helper_io.NoOutputTestCase):
 
     def test_top_task_message_parent_fails(self):
 

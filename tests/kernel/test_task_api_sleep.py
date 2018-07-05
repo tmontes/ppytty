@@ -9,11 +9,11 @@ import itertools as it
 
 from ppytty.kernel import run, hw
 
-from . import io_bypass
+from . import helper_io
 
 
 
-class TestSleep(io_bypass.NoOutputAutoTimeTestCase):
+class TestSleep(helper_io.NoOutputAutoTimeTestCase):
 
     def _sleeper(self, sleep_time):
 
