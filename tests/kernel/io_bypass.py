@@ -119,19 +119,31 @@ class NoOutputTestCase(TestCase):
             for what, patch in cls._output_mock_patches.items()
         }
 
-        cls.os_write_mock = cls.output_mocks['ppytty.kernel.hw.os_write']
+        cls._os_write_mock = cls.output_mocks['ppytty.kernel.hw.os_write']
+        cls._tigetstr_mock = cls.output_mocks['blessings.tigetstr']
+        cls._tparm_mock = cls.output_mocks['blessings.tparm']
 
 
     def reset_os_written_bytes(self):
 
-        self.os_write_mock.reset_mock()
+        self._os_write_mock.reset_mock()
 
 
     def get_os_written_bytes(self):
 
         return b''.join(
-            call[0][1] for call in self.os_write_mock.call_args_list
+            call[0][1] for call in self._os_write_mock.call_args_list
         )
+
+
+    def fake_tigetstr(self, *args):
+
+        return self._tigetstr_mock(*args).decode().encode('latin1')
+
+
+    def fake_tparm(self, *args):
+
+        return self._tparm_mock(*args).decode().encode('latin1')
 
 
     @staticmethod

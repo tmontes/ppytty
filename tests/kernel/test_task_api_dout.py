@@ -63,7 +63,7 @@ class Test(io_bypass.NoOutputTestCase):
         # Expect curses.tigetstr('cup'), then passed to curses.tparm(..., 2, 4)
         # to position the cusor; tparm args are (row, col), ours are (col, row).
         out_prefixes = [
-            b'<fake_tparm(b"<fake_tigetstr(\'cup\',)>", 2, 4)>',
+            self.fake_tparm(self.fake_tigetstr('cup'), 2, 4),
         ]
         out_suffixes = []
         out_payload = b'this is the output message'
@@ -77,12 +77,12 @@ class Test(io_bypass.NoOutputTestCase):
         # Expect curses.tigetstr('sc') prefix to save the cursor position,
         # followed by the same cursor positioning as in the previous test.
         out_prefixes = [
-            b'<fake_tigetstr(\'sc\',)>',
-            b'<fake_tparm(b"<fake_tigetstr(\'cup\',)>", 2, 4)>',
+            self.fake_tigetstr('sc'),
+            self.fake_tparm(self.fake_tigetstr('cup'), 2, 4),
         ]
         # Expect curses.tigetstr('rc') suffix to restore the cursor position.
         out_suffixes = [
-            b'<fake_tigetstr(\'rc\',)>',
+            self.fake_tigetstr('rc'),
         ]
         out_payload = b'this is the output message'
         self._drive_output_test(trap, out_prefixes, out_payload, out_suffixes)
@@ -95,7 +95,7 @@ class Test(io_bypass.NoOutputTestCase):
         out_prefixes = []
         out_suffixes = []
         # Expect curses.tigetstr('clear') to clear the output terminal.
-        out_payload =  b'<fake_tigetstr(\'clear\',)>'
+        out_payload = self.fake_tigetstr('clear')
         self._drive_output_test(trap, out_prefixes, out_payload, out_suffixes)
 
 
