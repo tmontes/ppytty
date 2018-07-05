@@ -124,26 +124,30 @@ class NoOutputTestCase(TestCase):
         cls._tparm_mock = cls.output_mocks['blessings.tparm']
 
 
-    def reset_os_written_bytes(self):
+    @classmethod
+    def reset_os_written_bytes(cls):
 
-        self._os_write_mock.reset_mock()
+        cls._os_write_mock.reset_mock()
 
 
-    def get_os_written_bytes(self):
+    @classmethod
+    def get_os_written_bytes(cls):
 
         return b''.join(
-            call[0][1] for call in self._os_write_mock.call_args_list
+            call[0][1] for call in cls._os_write_mock.call_args_list
         )
 
 
-    def fake_tigetstr(self, *args):
+    @classmethod
+    def fake_tigetstr(cls, *args):
 
-        return self._tigetstr_mock(*args).decode().encode('latin1')
+        return cls._tigetstr_mock(*args).decode().encode('latin1')
 
 
-    def fake_tparm(self, *args):
+    @classmethod
+    def fake_tparm(cls, *args):
 
-        return self._tparm_mock(*args).decode().encode('latin1')
+        return cls._tparm_mock(*args).decode().encode('latin1')
 
 
     def bytes_match(self, bytes_, prefixes, suffixes, payload, strict=True):
