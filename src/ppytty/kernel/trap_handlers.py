@@ -55,7 +55,9 @@ def window_create(task, left, top, width, height, bg=None):
 def window_destroy(task, window):
 
     if not window in state.task_windows[task]:
-        raise RuntimeError('cannot destroy non-owned windows')
+        common.trap_will_throw(task, exceptions.TrapException('no such window'))
+        state.runnable_tasks.append(task)
+        return
 
     state.task_windows[task].remove(window)
     state.all_windows.remove(window)
@@ -73,7 +75,9 @@ def window_destroy(task, window):
 def window_render(task, window, full=False):
 
     if not window in state.task_windows[task]:
-        raise RuntimeError('cannot render non-owned windows')
+        common.trap_will_throw(task, exceptions.TrapException('no such window'))
+        state.runnable_tasks.append(task)
+        return
 
     # Render `window` and all other windows that:
     # - Overlap with it.
