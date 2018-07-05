@@ -119,6 +119,65 @@ class NoOutputTestCase(TestCase):
             for what, patch in cls._output_mock_patches.items()
         }
 
+        cls._os_write_mock = cls.output_mocks['ppytty.kernel.hw.os_write']
+        cls._tigetstr_mock = cls.output_mocks['blessings.tigetstr']
+        cls._tparm_mock = cls.output_mocks['blessings.tparm']
+
+
+    def reset_os_written_bytes(self):
+
+        self._os_write_mock.reset_mock()
+
+
+    def get_os_written_bytes(self):
+
+        return b''.join(
+            call[0][1] for call in self._os_write_mock.call_args_list
+        )
+
+
+    def fake_tigetstr(self, *args):
+
+        return self._tigetstr_mock(*args).decode().encode('latin1')
+
+
+    def fake_tparm(self, *args):
+
+        return self._tparm_mock(*args).decode().encode('latin1')
+
+
+    def bytes_match(self, bytes_, prefixes, suffixes, payload, strict=True):
+
+        for expected_prefix in prefixes:
+            actual_prefix = bytes_[:len(expected_prefix)]
+            self.assertEqual(actual_prefix, expected_prefix, 'bad prefix')
+            bytes_ = bytes_[len(expected_prefix):]
+
+        for expected_suffix in reversed(suffixes):
+            actual_suffix = bytes_[-len(expected_suffix):]
+            self.assertEqual(expected_suffix, actual_suffix, 'bad suffix')
+            bytes_ = bytes_[:-len(expected_suffix)]
+
+        if not strict:
+            bytes_ = self.strip_fake_curses_entries(bytes_)
+
+        self.assertEqual(payload, bytes_, 'bad payload')
+
+
+    @staticmethod
+    def strip_fake_curses_entries(byte_string):
+
+        open_fake, close_fake = b'<>'
+        depth = 0
+        result_bytes = []
+        for byte_value in byte_string:
+            if byte_value == open_fake:
+                depth += 1
+            elif byte_value == close_fake:
+                depth -= 1
+            elif depth == 0:
+                result_bytes.append(byte_value)
+        return bytes(result_bytes)
 
 
     @classmethod

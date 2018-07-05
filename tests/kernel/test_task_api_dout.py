@@ -21,37 +21,18 @@ class Test(io_bypass.NoOutputTestCase):
 
     def _drive_output_test(self, trap, prefixes, payload, suffixes):
 
-        os_write_mock = self.output_mocks['ppytty.kernel.hw.os_write']
-
         def task():
             # Discard any previously emmited output.
-            os_write_mock.reset_mock()
+            self.reset_os_written_bytes()
             yield trap
-            # Return a copy of all calls to the mocked hw.os_write. Motive: on
-            # stopping, run() outputs terminal "cleanup" escapes which end up
-            # on the original mock.
-            return os_write_mock.call_args_list[:]
+            # Return written bytes now. Motive: on stopping, run() outputs
+            # terminal "cleanup" escapes which end up as written bytes.
+            return self.get_os_written_bytes()
 
-        success, os_write_mock_calls = run(task)
+        success, written_bytes = run(task)
         self.assertTrue(success)
 
-        # os.write was called at least once
-        self.assertGreaterEqual(len(os_write_mock_calls), 1)
-
-        # c[0] is the call args tuple; c[0][1] is the 2nd arg to os.write
-        written_bytes = b''.join(c[0][1] for c in os_write_mock_calls)
-
-        for expected_prefix in prefixes:
-            actual_prefix = written_bytes[:len(expected_prefix)]
-            self.assertEqual(actual_prefix, expected_prefix, 'bad prefix')
-            written_bytes = written_bytes[len(expected_prefix):]
-
-        for expected_suffix in reversed(suffixes):
-            actual_suffix = written_bytes[-len(expected_suffix):]
-            self.assertEqual(expected_suffix, actual_suffix, 'bad suffix')
-            written_bytes = written_bytes[:-len(expected_suffix)]
-
-        self.assertEqual(payload, written_bytes, 'bad payload')
+        self.bytes_match(written_bytes, prefixes, suffixes, payload, strict=True)
 
 
     def test_direct_print(self):
@@ -72,7 +53,7 @@ class Test(io_bypass.NoOutputTestCase):
         # Expect curses.tigetstr('cup'), then passed to curses.tparm(..., 2, 4)
         # to position the cusor; tparm args are (row, col), ours are (col, row).
         out_prefixes = [
-            b'<fake_tparm(b"<fake_tigetstr(\'cup\',)>", 2, 4)>',
+            self.fake_tparm(self.fake_tigetstr('cup'), 2, 4),
         ]
         out_suffixes = []
         out_payload = b'this is the output message'
@@ -86,12 +67,12 @@ class Test(io_bypass.NoOutputTestCase):
         # Expect curses.tigetstr('sc') prefix to save the cursor position,
         # followed by the same cursor positioning as in the previous test.
         out_prefixes = [
-            b'<fake_tigetstr(\'sc\',)>',
-            b'<fake_tparm(b"<fake_tigetstr(\'cup\',)>", 2, 4)>',
+            self.fake_tigetstr('sc'),
+            self.fake_tparm(self.fake_tigetstr('cup'), 2, 4),
         ]
         # Expect curses.tigetstr('rc') suffix to restore the cursor position.
         out_suffixes = [
-            b'<fake_tigetstr(\'rc\',)>',
+            self.fake_tigetstr('rc'),
         ]
         out_payload = b'this is the output message'
         self._drive_output_test(trap, out_prefixes, out_payload, out_suffixes)
@@ -104,7 +85,7 @@ class Test(io_bypass.NoOutputTestCase):
         out_prefixes = []
         out_suffixes = []
         # Expect curses.tigetstr('clear') to clear the output terminal.
-        out_payload =  b'<fake_tigetstr(\'clear\',)>'
+        out_payload = self.fake_tigetstr('clear')
         self._drive_output_test(trap, out_prefixes, out_payload, out_suffixes)
 
 
