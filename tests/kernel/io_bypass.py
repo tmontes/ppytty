@@ -146,6 +146,24 @@ class NoOutputTestCase(TestCase):
         return self._tparm_mock(*args).decode().encode('latin1')
 
 
+    def bytes_match(self, bytes_, prefixes, suffixes, payload, strict=True):
+
+        for expected_prefix in prefixes:
+            actual_prefix = bytes_[:len(expected_prefix)]
+            self.assertEqual(actual_prefix, expected_prefix, 'bad prefix')
+            bytes_ = bytes_[len(expected_prefix):]
+
+        for expected_suffix in reversed(suffixes):
+            actual_suffix = bytes_[-len(expected_suffix):]
+            self.assertEqual(expected_suffix, actual_suffix, 'bad suffix')
+            bytes_ = bytes_[:-len(expected_suffix)]
+
+        if not strict:
+            bytes_ = self.strip_fake_curses_entries(bytes_)
+
+        self.assertEqual(payload, bytes_, 'bad payload')
+
+
     @staticmethod
     def strip_fake_curses_entries(byte_string):
 

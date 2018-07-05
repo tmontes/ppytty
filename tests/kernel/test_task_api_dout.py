@@ -32,17 +32,7 @@ class Test(io_bypass.NoOutputTestCase):
         success, written_bytes = run(task)
         self.assertTrue(success)
 
-        for expected_prefix in prefixes:
-            actual_prefix = written_bytes[:len(expected_prefix)]
-            self.assertEqual(actual_prefix, expected_prefix, 'bad prefix')
-            written_bytes = written_bytes[len(expected_prefix):]
-
-        for expected_suffix in reversed(suffixes):
-            actual_suffix = written_bytes[-len(expected_suffix):]
-            self.assertEqual(expected_suffix, actual_suffix, 'bad suffix')
-            written_bytes = written_bytes[:-len(expected_suffix)]
-
-        self.assertEqual(payload, written_bytes, 'bad payload')
+        self.bytes_match(written_bytes, prefixes, suffixes, payload, strict=True)
 
 
     def test_direct_print(self):
