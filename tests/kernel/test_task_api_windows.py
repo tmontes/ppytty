@@ -201,4 +201,38 @@ class Test(io_bypass.NoOutputTestCase):
         self.assertTrue(pseudo_asserts_ok, failure_msg)
 
 
+    def test_task_termination_forces_all_other_windows_render(self):
+
+        def child():
+            w = yield ('window-create', 40, 0, 30, 10)
+            yield ('window-render', w)
+            yield ('message-send', None, 'child-rendered')
+            yield ('message-wait',)
+
+        def parent():
+            # setup our window
+            w = yield ('window-create', 0, 0, 30, 10)
+            w.print('parent-window-frst-line', 0, 0)
+            w.print('parent-window-last-line', 0, 9)
+            yield ('window-render', w)
+
+            # child will create a window and let parent know when it's rendered
+            yield ('task-spawn', child)
+            yield ('message-wait',)
+
+            # reset os written bytes and send message so that child terminates
+            self.reset_os_written_bytes()
+            yield ('message-send', child, 'you-can-terminate')
+            yield ('task-wait',)
+
+            # caller will assert that os written bytes include our window
+            return self.get_os_written_bytes()
+
+        success, written_bytes = run(parent)
+
+        self.assertTrue(success)
+        self.assertIn(b'parent-window-frst-line', written_bytes)
+        self.assertIn(b'parent-window-last-line', written_bytes)
+
+
 # ----------------------------------------------------------------------------
