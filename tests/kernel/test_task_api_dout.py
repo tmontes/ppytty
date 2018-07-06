@@ -5,7 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty import run
+from ppytty.kernel import run
 
 from . import helper_io
 

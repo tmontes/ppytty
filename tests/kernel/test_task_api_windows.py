@@ -5,8 +5,8 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty import run, TrapException
-from ppytty.kernel import window
+from ppytty.kernel import run, window
+from ppytty.kernel.exceptions import TrapException
 from ppytty.kernel.state import state
 
 from . import helper_io

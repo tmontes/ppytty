@@ -5,7 +5,8 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty import run, TrapDoesNotExist, TrapArgCountWrong
+from ppytty.kernel import run
+from ppytty.kernel.exceptions import TrapDoesNotExist, TrapArgCountWrong
 
 from . import helper_io
 

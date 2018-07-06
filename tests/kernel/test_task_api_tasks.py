@@ -7,8 +7,9 @@
 
 import unittest
 
-from ppytty import (
-    run, TrapException, TrapDoesNotExist, TrapArgCountWrong, TrapDestroyed,
+from ppytty.kernel import run
+from ppytty.kernel.exceptions import (
+    TrapException, TrapDoesNotExist, TrapArgCountWrong, TrapDestroyed,
 )
 
 from . import helper_io

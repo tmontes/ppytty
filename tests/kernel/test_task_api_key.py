@@ -5,8 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty import run
-from ppytty.kernel import scheduler
+from ppytty.kernel import run, scheduler
 
 from . import helper_io
 from . import helper_log
