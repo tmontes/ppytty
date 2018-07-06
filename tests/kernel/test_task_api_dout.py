@@ -5,7 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty.kernel import run
+from ppytty.kernel import run, api
 
 from . import helper_io
 
@@ -21,10 +21,10 @@ class Test(helper_io.NoOutputTestCase):
 
     def _drive_output_test(self, trap, prefixes, payload, suffixes):
 
-        def task():
+        async def task():
             # Discard any previously emmited output.
             self.reset_os_written_bytes()
-            yield trap
+            await trap
             # Return written bytes now. Motive: on stopping, run() outputs
             # terminal "cleanup" escapes which end up as written bytes.
             return self.get_os_written_bytes()
@@ -37,7 +37,7 @@ class Test(helper_io.NoOutputTestCase):
 
     def test_direct_print(self):
 
-        trap = ('direct-print', 'this is the output message')
+        trap = api.direct_print('this is the output message')
 
         out_prefixes = []
         out_suffixes = []
@@ -48,7 +48,7 @@ class Test(helper_io.NoOutputTestCase):
 
     def test_direct_print_with_position(self):
 
-        trap = ('direct-print', 'this is the output message', 4, 2)
+        trap = api.direct_print('this is the output message', 4, 2)
 
         # Expect curses.tigetstr('cup'), then passed to curses.tparm(..., 2, 4)
         # to position the cusor; tparm args are (row, col), ours are (col, row).
@@ -62,7 +62,7 @@ class Test(helper_io.NoOutputTestCase):
 
     def test_direct_print_with_position_and_cursor_restore(self):
 
-        trap = ('direct-print', 'this is the output message', 4, 2, True)
+        trap = api.direct_print('this is the output message', 4, 2, True)
 
         # Expect curses.tigetstr('sc') prefix to save the cursor position,
         # followed by the same cursor positioning as in the previous test.
@@ -80,7 +80,7 @@ class Test(helper_io.NoOutputTestCase):
 
     def test_direct_clear(self):
 
-        trap = ('direct-clear', )
+        trap = api.direct_clear()
 
         out_prefixes = []
         out_suffixes = []
