@@ -6,26 +6,29 @@
 # ----------------------------------------------------------------------------
 
 
-
-def sleep_zero():
-
-    yield ('sleep', 0)
+from ppytty.kernel import api
 
 
 
-def spawn_wait(task, sleep_before_wait=False):
+async def sleep_zero():
 
-    yield ('task-spawn', task)
+    await api.sleep(0)
+
+
+
+async def spawn_wait(task, sleep_before_wait=False):
+
+    await api.task_spawn(task)
     if sleep_before_wait:
-        yield ('sleep', 0)
-    completed_task, success, result = yield ('task-wait',)
+        await api.sleep(0)
+    completed_task, success, result = await api.task_wait()
     return completed_task, success, result
 
 
 
-def sleep_zero_return_42_idiv_arg(arg):
+async def sleep_zero_return_42_idiv_arg(arg):
 
-    yield ('sleep', 0)
+    await api.sleep(0)
     return 42 // arg
 
 

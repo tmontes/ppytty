@@ -5,7 +5,8 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty import run, TrapException
+from ppytty.kernel import run, api
+from ppytty.kernel.exceptions import TrapException
 
 from . import helper_io
 
@@ -13,18 +14,18 @@ from . import helper_io
 
 class TestParentToChild(helper_io.NoOutputTestCase):
 
-    def _child(self, sleep_first):
+    async def _child(self, sleep_first):
         if sleep_first:
-            yield ('sleep', 0)
-        sender, message = yield ('message-wait',)
+            await api.sleep(0)
+        sender, message = await api.message_wait()
         return ('child tag', sender, message)
 
 
-    def _parent(self, child_sleeps_first):
+    async def _parent(self, child_sleeps_first):
         child_task = self._child(child_sleeps_first)
-        yield ('task-spawn', child_task)
-        yield ('message-send', child_task, 'ping?')
-        completed_task, child_success, child_result = yield ('task-wait',)
+        await api.task_spawn(child_task)
+        await api.message_send(child_task, 'ping?')
+        completed_task, child_success, child_result = await api.task_wait()
         return completed_task is child_task, child_success, child_result
 
 
@@ -65,18 +66,18 @@ class TestParentToChild(helper_io.NoOutputTestCase):
 
 class TestChildToParent(helper_io.NoOutputTestCase):
 
-    def _child(self, sleep_first):
+    async def _child(self, sleep_first):
         if sleep_first:
-            yield ('sleep', 0)
-        yield ('message-send', None, 'child-to-parent-message')
+            await api.sleep(0)
+        await api.message_send(None, 'child-to-parent-message')
         return 'child-return-value'
 
 
-    def _parent(self, child_sleeps_first):
+    async def _parent(self, child_sleeps_first):
         child_task = self._child(child_sleeps_first)
-        yield ('task-spawn', child_task)
-        sender_task, message = yield ('message-wait',)
-        completed_task, child_success, child_result = yield ('task-wait',)
+        await api.task_spawn(child_task)
+        sender_task, message = await api.message_wait()
+        completed_task, child_success, child_result = await api.task_wait()
         return {
             'sender-task-correct': sender_task is child_task,
             'received-message': message,
@@ -121,22 +122,22 @@ class TestChildToParent(helper_io.NoOutputTestCase):
 
 class TestSenderTaskIsChildTask(helper_io.NoOutputTestCase):
 
-    def _fast_child(self):
+    async def _fast_child(self):
 
-        yield ('message-send', None, 'hi-from-child')
-
-
-    def _slow_child(self):
-
-        yield ('sleep', 0)
-        yield ('message-send', None, 'hi-from-child')
+        await api.message_send(None, 'hi-from-child')
 
 
-    def _parent(self, child_object):
+    async def _slow_child(self):
 
-        yield ('task-spawn', child_object)
-        sender_task, message = yield ('message-wait',)
-        completed_child, child_success, child_result = yield ('task-wait',)
+        await api.sleep(0)
+        await api.message_send(None, 'hi-from-child')
+
+
+    async def _parent(self, child_object):
+
+        await api.task_spawn(child_object)
+        sender_task, message = await api.message_wait()
+        completed_child, child_success, child_result = await api.task_wait()
         return sender_task, message, completed_child, child_success, child_result
 
 
@@ -191,8 +192,8 @@ class TestTrapExceptions(helper_io.NoOutputTestCase):
 
     def test_top_task_message_parent_fails(self):
 
-        def top_task():
-            yield ('message-send', None, 'goes-nowhere')
+        async def top_task():
+            await api.message_send(None, 'goes-nowhere')
 
         success, result = run(top_task)
 

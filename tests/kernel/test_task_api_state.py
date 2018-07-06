@@ -7,7 +7,8 @@
 
 import unittest
 
-from ppytty import run, TrapException
+from ppytty.kernel import run, api
+from ppytty.kernel.exceptions import TrapException
 
 from . import helper_io
 from . import helper_log
@@ -37,8 +38,8 @@ class TestNeedingOutput(unittest.TestCase):
 
     def test_state_dump_logs_all_state_fields(self):
 
-        def task():
-            yield ('state-dump',)
+        async def task():
+            await api.state_dump()
 
         success, result = run(task)
 
@@ -71,8 +72,8 @@ class Test(helper_io.NoOutputAutoTimeTestCase):
 
     def _assert_state_dump_logs_top_task(self, runnable=False):
 
-        def task():
-            yield('state-dump',)
+        async def task():
+            await api.state_dump()
 
         user_level_task = task() if runnable else task
         success, result = run(user_level_task)
@@ -103,43 +104,43 @@ class Test(helper_io.NoOutputAutoTimeTestCase):
 
     def test_state_dump_logs_correct_task_states(self):
 
-        def sleeping():
-            yield ('sleep', 42)
+        async def sleeping():
+            await api.sleep(42)
 
-        def wait_child():
-            yield ('task-spawn', sleeping)
-            yield ('task-wait',)
+        async def wait_child():
+            await api.task_spawn(sleeping)
+            await api.task_wait()
 
-        def wait_inbox():
-            yield ('message-wait',)
+        async def wait_inbox():
+            await api.message_wait()
 
-        def wait_key():
-            yield ('read-key', 1000)
+        async def wait_key():
+            await api.key_read(1000)
 
-        def completed():
-            yield ('sleep', 0)
+        async def completed():
+            await api.sleep(0)
 
-        def runnable():
-            yield ('sleep', 0)
+        async def runnable():
+            await api.sleep(0)
 
-        def parent():
+        async def parent():
             # Nuance: `runnable` spawned last means it will still be in the
             # runnable state when the `state-dump` trap is called.
             all_tasks = (wait_child, wait_inbox, wait_key, completed, runnable)
             for task in all_tasks:
-                yield ('task-spawn', task)
+                await api.task_spawn(task)
 
-            yield ('state-dump',)
+            await api.state_dump()
 
             for task in all_tasks:
                 try:
-                    yield ('task-destroy', task)
+                    await api.task_destroy(task)
                 except TrapException:
                     # the `completed` task triggers this: it was waited by one
                     # of the previous `task-waits` and it no longer exists.
                     pass
                 finally:
-                    yield ('task-wait',)
+                    await api.task_wait()
 
         success, result = run(parent)
 
