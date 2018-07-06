@@ -7,7 +7,7 @@
 
 import unittest
 
-from ppytty.kernel import run
+from ppytty.kernel import run, api
 from ppytty.kernel.exceptions import (
     TrapException, TrapDoesNotExist, TrapArgCountWrong, TrapDestroyed,
 )
@@ -107,8 +107,8 @@ class TestWaitChildException(helper_io.NoOutputTestCase):
 
     def test_parent_spawn_wait_child_exception(self):
 
-        def child():
-            yield ('sleep', 0)
+        async def child():
+            await api.sleep(0)
             return 1 // 0
 
         self.parent_spawn_wait_child_exception(child(), ZeroDivisionError)
@@ -141,13 +141,13 @@ class TestSpawnDontWait(helper_io.NoOutputTestCase):
 
     def test_parent_spawn_crash_no_child_wait_parent_completes_1st(self):
 
-        def child():
-            yield ('sleep', 0)
+        async def child():
+            await api.sleep(0)
             return 42
 
-        def parent():
+        async def parent():
             child_task = child()
-            yield ('task-spawn', child_task)
+            await api.task_spawn(child_task)
             raise RuntimeError('parent crashing before child task-wait')
 
         success, result = run(parent)
@@ -157,14 +157,14 @@ class TestSpawnDontWait(helper_io.NoOutputTestCase):
 
     def test_parent_spawn_crash_no_child_wait_parent_completes_2nd(self):
 
-        def child():
-            yield ('sleep', 0)
+        async def child():
+            await api.sleep(0)
             return 42
 
-        def parent():
+        async def parent():
             child_task = child()
-            yield ('task-spawn', child_task)
-            yield ('sleep', 0)
+            await api.task_spawn(child_task)
+            await api.sleep(0)
             raise RuntimeError('parent crashing before child task-wait')
 
         success, result = run(parent)
@@ -174,18 +174,18 @@ class TestSpawnDontWait(helper_io.NoOutputTestCase):
 
     def test_child_spawn_crash_no_grand_child_wait_child_completes_1st(self):
 
-        def grand_child():
-            yield ('sleep', 0)
+        async def grand_child():
+            await api.sleep(0)
 
-        def child():
+        async def child():
             grand_child_task = grand_child()
-            yield ('task-spawn', grand_child_task)
+            await api.task_spawn(grand_child_task)
             raise RuntimeError('child crashing before grand child task-wait')
 
-        def parent():
+        async def parent():
             child_task = child()
-            yield ('task-spawn', child_task)
-            completed_task, child_success, child_result = yield ('task-wait',)
+            await api.task_spawn(child_task)
+            completed_task, child_success, child_result = await api.task_wait()
             return completed_task is child_task, child_success, child_result
 
         success, result = run(parent)
@@ -198,19 +198,19 @@ class TestSpawnDontWait(helper_io.NoOutputTestCase):
 
     def test_child_spawn_crash_no_grand_child_wait_child_completes_2nd(self):
 
-        def grand_child():
-            yield ('sleep', 0)
+        async def grand_child():
+            await api.sleep(0)
 
-        def child():
+        async def child():
             grand_child_task = grand_child()
-            yield ('task-spawn', grand_child_task)
-            yield ('sleep', 0)
+            await api.task_spawn(grand_child_task)
+            await api.sleep(0)
             raise RuntimeError('child crashing before grand child task-wait')
 
-        def parent():
+        async def parent():
             child_task = child()
-            yield ('task-spawn', child_task)
-            completed_task, child_success, child_result = yield ('task-wait',)
+            await api.task_spawn(child_task)
+            completed_task, child_success, child_result = await api.task_wait()
             return completed_task is child_task, child_success, child_result
 
         success, result = run(parent)
@@ -227,13 +227,13 @@ class TestSpawnDestroy(helper_io.NoOutputAutoTimeTestCase,
 
     def _test_spawn_child_then_destroy(self, running):
 
-        def child():
-            yield ('sleep', 42)
+        async def child():
+            await api.sleep(42)
 
-        def parent(child_task):
-            yield ('task-spawn', child_task)
-            yield ('task-destroy', child_task)
-            completed_task, child_success, child_result = yield ('task-wait',)
+        async def parent(child_task):
+            await api.task_spawn(child_task)
+            await api.task_destroy(child_task)
+            completed_task, child_success, child_result = await api.task_wait()
             return completed_task, child_success, child_result
 
         # Time starts at 0.
@@ -267,29 +267,29 @@ class TestSpawnDestroy(helper_io.NoOutputAutoTimeTestCase,
 
     def test_spawn_child_subchildren_destroy(self):
 
-        def sub_child_sleep(sleep_duration):
-            yield ('sleep', sleep_duration)
+        async def sub_child_sleep(sleep_duration):
+            await api.sleep(sleep_duration)
 
-        def sub_child_task_wait():
-            yield ('task-wait',)
+        async def sub_child_task_wait():
+            await api.task_wait()
 
-        def child():
+        async def child():
             sub_child_task1 = sub_child_sleep(0)
             sub_child_task2 = sub_child_sleep(1)
             sub_child_task3 = sub_child_sleep(42)
             sub_child_task4 = sub_child_task_wait()
-            yield ('task-spawn', sub_child_task1)
-            yield ('task-spawn', sub_child_task2)
-            yield ('task-spawn', sub_child_task3)
-            yield ('task-spawn', sub_child_task4)
-            _ = yield ('task-wait',)
-            yield ('sleep', 420)
+            await api.task_spawn(sub_child_task1)
+            await api.task_spawn(sub_child_task2)
+            await api.task_spawn(sub_child_task3)
+            await api.task_spawn(sub_child_task4)
+            _ = await api.task_wait()
+            await api.sleep(420)
 
-        def parent(child_task):
-            yield ('task-spawn', child_task)
-            yield ('sleep', 2)
-            yield ('task-destroy', child_task)
-            completed_task, child_success, child_result = yield ('task-wait',)
+        async def parent(child_task):
+            await api.task_spawn(child_task)
+            await api.sleep(2)
+            await api.task_destroy(child_task)
+            completed_task, child_success, child_result = await api.task_wait()
             return completed_task, child_success, child_result
 
         child_task = child()
@@ -309,19 +309,19 @@ class TestSpawnDestroy(helper_io.NoOutputAutoTimeTestCase,
 
     def test_cannot_destroy_sibling(self):
 
-        def sleeping_sibling():
-            yield ('sleep', 42)
+        async def sleeping_sibling():
+            await api.sleep(42)
 
-        def destroyer_sibling():
-            _, my_sibling = yield ('message-wait',)
-            yield ('task-destroy', my_sibling)
+        async def destroyer_sibling():
+            _, my_sibling = await api.message_wait()
+            await api.task_destroy(my_sibling)
 
-        def parent(sleeper, destroyer):
-            yield ('task-spawn', sleeper)
-            yield ('task-spawn', destroyer)
-            yield ('message-send', destroyer, sleeper)
-            task_wait_1 = yield ('task-wait',)
-            task_wait_2 = yield ('task-wait',)
+        async def parent(sleeper, destroyer):
+            await api.task_spawn(sleeper)
+            await api.task_spawn(destroyer)
+            await api.message_send(destroyer, sleeper)
+            task_wait_1 = await api.task_wait()
+            task_wait_2 = await api.task_wait()
             return task_wait_1, task_wait_2
 
         sleep_task = sleeping_sibling()
@@ -349,14 +349,14 @@ class TestSpawnDestroy(helper_io.NoOutputAutoTimeTestCase,
 
     def test_destroy_running_child(self):
 
-        def child():
+        async def child():
             while True:
-                yield ('sleep', 0)
+                await api.sleep(0)
 
-        def parent(child_task):
-            yield ('task-spawn', child_task)
-            yield ('task-destroy', child_task)
-            completed_task, child_success, child_result = yield ('task-wait',)
+        async def parent(child_task):
+            await api.task_spawn(child_task)
+            await api.task_destroy(child_task)
+            completed_task, child_success, child_result = await api.task_wait()
             return completed_task, child_success, child_result
 
         parent_task = parent(child)
