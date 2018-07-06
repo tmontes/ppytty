@@ -31,6 +31,9 @@ __author__ = 'Tiago Montes'
 __email__ = 'tiago.montes@gmail.com'
 
 
+
+from . kernel import run
+
 from . lib import (
     Task,
     Parallel, Serial,
@@ -41,11 +44,10 @@ from . lib import (
     Label,
     Widget,
 )
-from . kernel import (
-    run, TrapException, TrapDestroyed, TrapDoesNotExist, TrapArgCountWrong,
-)
+
 
 __all__ = [
+    'run',
     'OuterSequenceKeyboard',
     'OuterSequenceTimed',
     'Slide',
@@ -59,11 +61,6 @@ __all__ = [
     'DelayReturn',
     'KeyboardAction',
     'Loop',
-    'run',
-    'TrapException',
-    'TrapDestroyed',
-    'TrapDoesNotExist',
-    'TrapArgCountWrong',
 ]
 
 # ----------------------------------------------------------------------------
