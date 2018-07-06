@@ -34,7 +34,7 @@ class Test(helper_io.NoOutputTestCase):
             try:
                 yield ('this-trap-does-not-exist',)
             except TrapDoesNotExist:
-                yield ('sleep', 0)
+                pass
 
         success, result = run(task)
         self.assertTrue(success)
@@ -61,7 +61,7 @@ class Test(helper_io.NoOutputTestCase):
             try:
                 yield ('sleep', 1, 2, 3)
             except TrapArgCountWrong:
-                yield ('sleep', 0)
+                pass
 
         success, result = run(task)
         self.assertTrue(success)
