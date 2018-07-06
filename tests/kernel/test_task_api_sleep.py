@@ -7,7 +7,7 @@
 
 import itertools as it
 
-from ppytty.kernel import run, hw
+from ppytty.kernel import run, api
 
 from . import helper_io
 
@@ -15,9 +15,9 @@ from . import helper_io
 
 class TestSleep(helper_io.NoOutputAutoTimeTestCase):
 
-    def _sleeper(self, sleep_time):
+    async def _sleeper(self, sleep_time):
 
-        yield ('sleep', sleep_time)
+        await api.sleep(sleep_time)
 
 
     def test_sleep(self):
@@ -30,12 +30,12 @@ class TestSleep(helper_io.NoOutputAutoTimeTestCase):
                 self.assertIsNone(result)
 
 
-    def _spawn_sleepers(self, sleeper1, sleeper2):
+    async def _spawn_sleepers(self, sleeper1, sleeper2):
 
-        yield ('task-spawn', sleeper1)
-        yield ('task-spawn', sleeper2)
-        completed_1st, _, _ = yield ('task-wait',)
-        completed_2nd, _, _ = yield ('task-wait',)
+        await api.task_spawn(sleeper1)
+        await api.task_spawn(sleeper2)
+        completed_1st, _, _ = await api.task_wait()
+        completed_2nd, _, _ = await api.task_wait()
         return completed_1st, completed_2nd
 
 
