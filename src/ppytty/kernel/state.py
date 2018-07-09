@@ -117,6 +117,18 @@ class _State(object):
         self.out_fds.append(terminal.out_fd)
 
 
+    def store_user_kernel_task_mapping(self, kernel_task, user_task):
+
+        self.user_space_tasks[kernel_task] = user_task
+        self.kernel_space_tasks[user_task] = kernel_task
+
+
+    def clear_user_kernel_task_mapping(self, kernel_task, user_task):
+
+        del self.user_space_tasks[kernel_task]
+        del self.kernel_space_tasks[user_task]
+
+
 
 state = _State()
 

@@ -44,9 +44,10 @@ def run(task, post_prompt=None):
 
 
 
-def scheduler(top_task):
+def scheduler(user_top_task):
 
-    top_task = common.kernel_task(top_task)
+    top_task = common.kernel_task(user_top_task)
+    state.store_user_kernel_task_mapping(top_task, user_top_task)
     state.top_task = top_task
     state.runnable_tasks.append(top_task)
 
@@ -164,7 +165,7 @@ def process_task_completion(task, success, result):
     if candidate_parent in state.tasks_waiting_child:
         user_space_task = state.user_space_tasks[task]
         common.trap_will_return(candidate_parent, (user_space_task, success, result))
-        common.clear_user_kernel_task_mapping(task, user_space_task)
+        state.clear_user_kernel_task_mapping(task, user_space_task)
         del state.parent_task[task]
         state.child_tasks[candidate_parent].remove(task)
         common.clear_tasks_children(candidate_parent)

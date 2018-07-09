@@ -11,17 +11,11 @@ from . state import state
 
 def kernel_task(user_task):
 
-    kernel_task = user_task() if callable(user_task) else user_task
-    state.user_space_tasks[kernel_task] = user_task
-    state.kernel_space_tasks[user_task] = kernel_task
+    try:
+        kernel_task = state.kernel_space_tasks[user_task]
+    except KeyError:
+        kernel_task = user_task() if callable(user_task) else user_task
     return kernel_task
-
-
-
-def clear_user_kernel_task_mapping(kernel_task, user_task):
-
-    del state.user_space_tasks[kernel_task]
-    del state.kernel_space_tasks[user_task]
 
 
 
