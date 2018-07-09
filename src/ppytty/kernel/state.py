@@ -129,6 +129,25 @@ class _State(object):
         del self.kernel_space_tasks[user_task]
 
 
+    def trap_will_return(self, task, result):
+
+        self.trap_success[task] = True
+        self.trap_result[task] = result
+
+
+    def trap_will_throw(self, task, exception):
+
+        self.trap_success[task] = False
+        self.trap_result[task] = exception
+
+
+    def clear_trap_info(self, task):
+
+        for target in (self.trap_call, self.trap_success, self.trap_result):
+            if task in target:
+                del target[task]
+
+
 
 state = _State()
 

@@ -84,7 +84,7 @@ def process_task_trap(task, trap):
         trap_handler = getattr(trap_handlers, trap_handler_name)
     except AttributeError:
         log.error('%r trap does not exist: %r', task, trap)
-        common.trap_will_throw(task, exceptions.TrapDoesNotExist(trap_name))
+        state.trap_will_throw(task, exceptions.TrapDoesNotExist(trap_name))
         state.runnable_tasks.append(task)
     else:
         try:
@@ -98,7 +98,7 @@ def process_task_trap(task, trap):
                 except TypeError as te:
                     # trap_args does not match trap_handle signature
                     log.error('%r bad trap args: %r', task, trap)
-                    common.trap_will_throw(task, exceptions.TrapArgCountWrong(*te.args))
+                    state.trap_will_throw(task, exceptions.TrapArgCountWrong(*te.args))
                     state.runnable_tasks.append(task)
                     return
             log.error('%r trap %r execution failed: %r', task, trap, e)
@@ -121,7 +121,7 @@ def run_task_until_trap(task):
         run_task = task.throw if prev_trap_success is False else task.send
         return run_task(prev_trap_result)
     finally:
-        common.clear_tasks_traps(task)
+        state.clear_trap_info(task)
 
 
 
@@ -135,7 +135,7 @@ def process_tasks_waiting_key(keyboard_byte=None):
             _, _, key_waiter = heapq.heappop(state.tasks_waiting_key_hq)
             if key_waiter in state.tasks_waiting_key:
                 state.tasks_waiting_key.remove(key_waiter)
-                common.trap_will_return(key_waiter, keyboard_byte)
+                state.trap_will_return(key_waiter, keyboard_byte)
                 state.runnable_tasks.append(key_waiter)
                 log.info('%r getting key %r', key_waiter, keyboard_byte)
                 break
@@ -164,7 +164,7 @@ def process_task_completion(task, success, result):
         log.error('%r completed with no parent', task)
     if candidate_parent in state.tasks_waiting_child:
         user_space_task = state.user_space_tasks[task]
-        common.trap_will_return(candidate_parent, (user_space_task, success, result))
+        state.trap_will_return(candidate_parent, (user_space_task, success, result))
         state.clear_user_kernel_task_mapping(task, user_space_task)
         del state.parent_task[task]
         state.child_tasks[candidate_parent].remove(task)
@@ -184,7 +184,7 @@ def process_task_completion(task, success, result):
             if child_result is not _NOT_THERE:
                 log.warning('%r dropping completed child result: %r', task, child_result)
     common.clear_task_parenthood(task)
-    common.clear_tasks_traps(task)
+    state.clear_trap_info(task)
     common.destroy_task_windows(task)
 
 

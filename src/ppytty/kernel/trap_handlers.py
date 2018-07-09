@@ -47,7 +47,7 @@ def window_create(task, left, top, width, height, bg=None):
         state.task_windows[task].append(w)
         state.all_windows.append(w)
 
-    common.trap_will_return(task, w)
+    state.trap_will_return(task, w)
     state.runnable_tasks.append(task)
 
 
@@ -55,7 +55,7 @@ def window_create(task, left, top, width, height, bg=None):
 def window_destroy(task, window):
 
     if not window in state.task_windows[task]:
-        common.trap_will_throw(task, exceptions.TrapException('no such window'))
+        state.trap_will_throw(task, exceptions.TrapException('no such window'))
         state.runnable_tasks.append(task)
         return
 
@@ -75,7 +75,7 @@ def window_destroy(task, window):
 def window_render(task, window, full=False):
 
     if not window in state.task_windows[task]:
-        common.trap_will_throw(task, exceptions.TrapException('no such window'))
+        state.trap_will_throw(task, exceptions.TrapException('no such window'))
         state.runnable_tasks.append(task)
         return
 
@@ -150,14 +150,14 @@ def task_wait(task):
             break
     if child is not None:
         user_space_task = state.user_space_tasks[child]
-        common.trap_will_return(task, (user_space_task, success, result))
+        state.trap_will_return(task, (user_space_task, success, result))
         state.clear_user_kernel_task_mapping(child, user_space_task)
         del state.parent_task[child]
         state.child_tasks[task].remove(child)
         common.clear_tasks_children(task)
         state.runnable_tasks.append(task)
         del state.completed_tasks[child]
-        common.clear_tasks_traps(child)
+        state.clear_trap_info(child)
     else:
         state.tasks_waiting_child.append(task)
 
@@ -168,13 +168,13 @@ def task_destroy(task, user_child_task, keep_running=True):
     try:
         child_task = state.kernel_space_tasks[user_child_task]
     except KeyError:
-        common.trap_will_throw(task, exceptions.TrapException('no such task'))
+        state.trap_will_throw(task, exceptions.TrapException('no such task'))
         state.runnable_tasks.append(task)
         return
 
     if state.parent_task[child_task] is not task:
         exc = exceptions.TrapException('cannot destroy non-child tasks')
-        common.trap_will_throw(task, exc)
+        state.trap_will_throw(task, exc)
         state.runnable_tasks.append(task)
         return
 
@@ -203,7 +203,7 @@ def task_destroy(task, user_child_task, keep_running=True):
         log.error('%r cannot destroy non-found task %r', task, child_task)
         return
 
-    common.clear_tasks_traps(child_task)
+    state.clear_trap_info(child_task)
     common.destroy_task_windows(child_task)
     if keep_running:
         state.completed_tasks[child_task]  = (False, exceptions.TrapDestroyed(task))
@@ -221,7 +221,7 @@ def message_send(task, to_user_task, message):
             to_task = state.parent_task[task]
         except KeyError:
             exc = exceptions.TrapException('no parent task for message send')
-            common.trap_will_throw(task, exc)
+            state.trap_will_throw(task, exc)
             state.runnable_tasks.append(task)
             return
     else:
@@ -230,7 +230,7 @@ def message_send(task, to_user_task, message):
     if to_task in state.tasks_waiting_inbox:
         state.tasks_waiting_inbox.remove(to_task)
         user_space_task = state.user_space_tasks[task]
-        common.trap_will_return(to_task, (user_space_task, message))
+        state.trap_will_return(to_task, (user_space_task, message))
         state.runnable_tasks.append(to_task)
     else:
         state.task_inbox[to_task].append((task, message))
@@ -245,7 +245,7 @@ def message_wait(task):
     if task_inbox:
         sender_task, message = task_inbox.popleft()
         user_space_task = state.user_space_tasks[sender_task]
-        common.trap_will_return(task, (user_space_task, message))
+        state.trap_will_return(task, (user_space_task, message))
         state.runnable_tasks.append(task)
     else:
         state.tasks_waiting_inbox.append(task)
