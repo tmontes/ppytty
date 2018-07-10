@@ -168,7 +168,7 @@ def process_task_completion(task, success, result):
         state.clear_user_kernel_task_mapping(task, user_space_task)
         del state.parent_task[task]
         state.child_tasks[candidate_parent].remove(task)
-        common.clear_tasks_children(candidate_parent)
+        state.cleanup_child_tasks(candidate_parent)
         state.tasks_waiting_child.remove(candidate_parent)
         state.runnable_tasks.append(candidate_parent)
     elif task is not state.top_task and task in state.parent_task:
@@ -183,7 +183,7 @@ def process_task_completion(task, success, result):
             child_result = state.completed_tasks.pop(child_task, _NOT_THERE)
             if child_result is not _NOT_THERE:
                 log.warning('%r dropping completed child result: %r', task, child_result)
-    common.clear_task_parenthood(task)
+    state.clear_task_parenthood(task)
     state.clear_trap_info(task)
     common.destroy_task_windows(task)
 

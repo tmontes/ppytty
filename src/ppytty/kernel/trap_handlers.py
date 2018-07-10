@@ -154,7 +154,7 @@ def task_wait(task):
         state.clear_user_kernel_task_mapping(child, user_space_task)
         del state.parent_task[child]
         state.child_tasks[task].remove(child)
-        common.clear_tasks_children(task)
+        state.cleanup_child_tasks(task)
         state.runnable_tasks.append(task)
         del state.completed_tasks[child]
         state.clear_trap_info(child)

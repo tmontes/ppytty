@@ -148,6 +148,18 @@ class _State(object):
                 del target[task]
 
 
+    def cleanup_child_tasks(self, task):
+
+        if not self.child_tasks[task]:
+            del self.child_tasks[task]
+
+
+    def clear_task_parenthood(self, parent_task):
+
+        for child_task in self.child_tasks[parent_task]:
+            del self.parent_task[child_task]
+
+
 
 state = _State()
 

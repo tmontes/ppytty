@@ -19,20 +19,6 @@ def kernel_task(user_task):
 
 
 
-def clear_tasks_children(task):
-
-    if not state.child_tasks[task]:
-        del state.child_tasks[task]
-
-
-
-def clear_task_parenthood(parent_task):
-
-    for child_task in state.child_tasks[parent_task]:
-        del state.parent_task[child_task]
-
-
-
 def clear_tasks_waiting_time_hq():
 
     if not state.tasks_waiting_time:
