@@ -5,7 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from . scheduler import run
+from . loop import run
 from . import api
 from . import exceptions
 

@@ -16,7 +16,7 @@ class _State(object):
         # ---------------------------------------------------------------------
         # Task state tracking.
 
-        # The task given to the scheduler, to be run.
+        # The task given to the loop, to be run.
         self.top_task = None
 
         # True if top_task completed, False otherwise (exception or interrupted).
@@ -54,7 +54,7 @@ class _State(object):
         # ---------------------------------------------------------------------
         # Spawned objects
 
-        # Maps running tasks to objects passed to scheduler.run / task-spawn.
+        # Maps running tasks to objects passed to loop.run / task-spawn.
         self.user_space_tasks = {}
 
         # Maps user space tasks (passed to run/task-spawn) to running tasks.
@@ -107,14 +107,80 @@ class _State(object):
         self.__init__()
 
 
-    def reset_for_terminal(self, terminal):
+    def prepare_to_run(self, task, terminal):
 
         self.__init__()
+
+        self.top_task = self.get_mapped_kernel_task(task)
+        self.runnable_tasks.append(self.top_task)
+
         self.terminal = terminal
         self.user_in_fd = terminal.in_fd
         self.in_fds.append(terminal.in_fd)
         self.user_out_fd = terminal.out_fd
         self.out_fds.append(terminal.out_fd)
+
+
+    def get_mapped_kernel_task(self, user_task):
+
+        try:
+            kernel_task = self.kernel_space_tasks[user_task]
+        except KeyError:
+            kernel_task = user_task() if callable(user_task) else user_task
+            self.user_space_tasks[kernel_task] = user_task
+            self.kernel_space_tasks[user_task] = kernel_task
+        return kernel_task
+
+
+    def clear_kernel_task_mapping(self, kernel_task):
+
+        user_task = self.user_space_tasks[kernel_task]
+        del self.user_space_tasks[kernel_task]
+        del self.kernel_space_tasks[user_task]
+
+
+    def trap_will_return(self, task, result):
+
+        self.trap_success[task] = True
+        self.trap_result[task] = result
+
+
+    def trap_will_throw(self, task, exception):
+
+        self.trap_success[task] = False
+        self.trap_result[task] = exception
+
+
+    def clear_trap_info(self, task):
+
+        for target in (self.trap_call, self.trap_success, self.trap_result):
+            if task in target:
+                del target[task]
+
+
+    def cleanup_child_tasks(self, task):
+
+        if not self.child_tasks[task]:
+            del self.child_tasks[task]
+
+
+    def clear_task_parenthood(self, parent_task):
+
+        for child_task in self.child_tasks[parent_task]:
+            del self.parent_task[child_task]
+
+
+    def cleanup_tasks_waiting_time_hq(self):
+
+        if not self.tasks_waiting_time:
+            self.tasks_waiting_time_hq.clear()
+
+
+
+    def cleanup_tasks_waiting_key_hq(self):
+
+        if not self.tasks_waiting_key:
+            self.tasks_waiting_key_hq.clear()
 
 
 

@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 
 
-class _SchedulerStop(Exception):
+class _ForcedStop(Exception):
 
     pass
 
@@ -32,23 +32,19 @@ class _SchedulerStop(Exception):
 def run(task, post_prompt=None):
 
     with Terminal() as t:
-        state.reset_for_terminal(t)
+        state.prepare_to_run(task, t)
         try:
-            success, result = scheduler(task)
+            success, result = loop()
             while post_prompt:
                 _ = _read_keyboard(prompt=post_prompt)
-        except _SchedulerStop as e:
+        except _ForcedStop as e:
             success, result = None, e
 
     return success, result
 
 
 
-def scheduler(top_task):
-
-    top_task = common.kernel_task(top_task)
-    state.top_task = top_task
-    state.runnable_tasks.append(top_task)
+def loop(once=False):
 
     while (state.runnable_tasks or state.tasks_waiting_child or state.tasks_waiting_inbox or
            state.tasks_waiting_key or state.tasks_waiting_time or state.completed_tasks):
@@ -56,18 +52,20 @@ def scheduler(top_task):
         if not state.runnable_tasks:
             process_tasks_waiting_key()
             process_tasks_waiting_time()
-            continue
-        task = state.runnable_tasks.popleft()
-        try:
-            trap = run_task_until_trap(task)
-        except StopIteration as return_:
-            log.info('%r completed with %r', task, return_.value)
-            process_task_completion(task, success=True, result=return_.value)
-        except Exception as e:
-            log.warning('%r crashed with %r', task, e)
-            process_task_completion(task, success=False, result=e)
         else:
-            process_task_trap(task, trap)
+            task = state.runnable_tasks.popleft()
+            try:
+                trap = run_task_until_trap(task)
+            except StopIteration as return_:
+                log.info('%r completed with %r', task, return_.value)
+                process_task_completion(task, success=True, result=return_.value)
+            except Exception as e:
+                log.warning('%r crashed with %r', task, e)
+                process_task_completion(task, success=False, result=e)
+            else:
+                process_task_trap(task, trap)
+        if once:
+            break
 
     return state.top_task_success, state.top_task_result
 
@@ -83,7 +81,7 @@ def process_task_trap(task, trap):
         trap_handler = getattr(trap_handlers, trap_handler_name)
     except AttributeError:
         log.error('%r trap does not exist: %r', task, trap)
-        common.trap_will_throw(task, exceptions.TrapDoesNotExist(trap_name))
+        state.trap_will_throw(task, exceptions.TrapDoesNotExist(trap_name))
         state.runnable_tasks.append(task)
     else:
         try:
@@ -97,7 +95,7 @@ def process_task_trap(task, trap):
                 except TypeError as te:
                     # trap_args does not match trap_handle signature
                     log.error('%r bad trap args: %r', task, trap)
-                    common.trap_will_throw(task, exceptions.TrapArgCountWrong(*te.args))
+                    state.trap_will_throw(task, exceptions.TrapArgCountWrong(*te.args))
                     state.runnable_tasks.append(task)
                     return
             log.error('%r trap %r execution failed: %r', task, trap, e)
@@ -120,7 +118,7 @@ def run_task_until_trap(task):
         run_task = task.throw if prev_trap_success is False else task.send
         return run_task(prev_trap_result)
     finally:
-        common.clear_tasks_traps(task)
+        state.clear_trap_info(task)
 
 
 
@@ -134,7 +132,8 @@ def process_tasks_waiting_key(keyboard_byte=None):
             _, _, key_waiter = heapq.heappop(state.tasks_waiting_key_hq)
             if key_waiter in state.tasks_waiting_key:
                 state.tasks_waiting_key.remove(key_waiter)
-                common.trap_will_return(key_waiter, keyboard_byte)
+                state.cleanup_tasks_waiting_key_hq()
+                state.trap_will_return(key_waiter, keyboard_byte)
                 state.runnable_tasks.append(key_waiter)
                 log.info('%r getting key %r', key_waiter, keyboard_byte)
                 break
@@ -148,7 +147,7 @@ def process_tasks_waiting_time():
             _, _, time_waiter = heapq.heappop(state.tasks_waiting_time_hq)
             if time_waiter in state.tasks_waiting_time:
                 state.tasks_waiting_time.remove(time_waiter)
-                common.clear_tasks_waiting_time_hq()
+                state.cleanup_tasks_waiting_time_hq()
                 state.runnable_tasks.append(time_waiter)
                 log.info('%r waking up', time_waiter)
 
@@ -163,11 +162,11 @@ def process_task_completion(task, success, result):
         log.error('%r completed with no parent', task)
     if candidate_parent in state.tasks_waiting_child:
         user_space_task = state.user_space_tasks[task]
-        common.trap_will_return(candidate_parent, (user_space_task, success, result))
-        common.clear_user_kernel_task_mapping(task, user_space_task)
+        state.trap_will_return(candidate_parent, (user_space_task, success, result))
+        state.clear_kernel_task_mapping(task)
         del state.parent_task[task]
         state.child_tasks[candidate_parent].remove(task)
-        common.clear_tasks_children(candidate_parent)
+        state.cleanup_child_tasks(candidate_parent)
         state.tasks_waiting_child.remove(candidate_parent)
         state.runnable_tasks.append(candidate_parent)
     elif task is not state.top_task and task in state.parent_task:
@@ -182,8 +181,8 @@ def process_task_completion(task, success, result):
             child_result = state.completed_tasks.pop(child_task, _NOT_THERE)
             if child_result is not _NOT_THERE:
                 log.warning('%r dropping completed child result: %r', task, child_result)
-    common.clear_task_parenthood(task)
-    common.clear_tasks_traps(task)
+    state.clear_task_parenthood(task)
+    state.clear_trap_info(task)
     common.destroy_task_windows(task)
 
 
@@ -225,7 +224,7 @@ def _read_keyboard(prompt=None):
             keyboard_byte = hw.os_read(state.user_in_fd, 1)
             if keyboard_byte == b'q':
                 if quit_in_progress:
-                    raise _SchedulerStop()
+                    raise _ForcedStop()
                 else:
                     quit_in_progress = True
                     timeout = None
