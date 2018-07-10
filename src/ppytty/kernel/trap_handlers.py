@@ -11,7 +11,7 @@ import logging
 
 from . import exceptions
 from . import common
-from . import scheduler
+from . import loop
 from . state import state
 from . window import Window
 
@@ -124,7 +124,7 @@ def read_key(task, priority):
 
 def put_key(task, pushed_back_key):
 
-    scheduler.process_tasks_waiting_key(pushed_back_key)
+    loop.process_tasks_waiting_key(pushed_back_key)
     state.runnable_tasks.append(task)
 
 

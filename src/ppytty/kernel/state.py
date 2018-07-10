@@ -16,7 +16,7 @@ class _State(object):
         # ---------------------------------------------------------------------
         # Task state tracking.
 
-        # The task given to the scheduler, to be run.
+        # The task given to the loop, to be run.
         self.top_task = None
 
         # True if top_task completed, False otherwise (exception or interrupted).
@@ -54,7 +54,7 @@ class _State(object):
         # ---------------------------------------------------------------------
         # Spawned objects
 
-        # Maps running tasks to objects passed to scheduler.run / task-spawn.
+        # Maps running tasks to objects passed to loop.run / task-spawn.
         self.user_space_tasks = {}
 
         # Maps user space tasks (passed to run/task-spawn) to running tasks.

@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 
 
-class _SchedulerStop(Exception):
+class _ForcedStop(Exception):
 
     pass
 
@@ -34,17 +34,17 @@ def run(task, post_prompt=None):
     with Terminal() as t:
         state.prepare_to_run(task, t)
         try:
-            success, result = scheduler()
+            success, result = loop()
             while post_prompt:
                 _ = _read_keyboard(prompt=post_prompt)
-        except _SchedulerStop as e:
+        except _ForcedStop as e:
             success, result = None, e
 
     return success, result
 
 
 
-def scheduler(loop_once=False):
+def loop(once=False):
 
     while (state.runnable_tasks or state.tasks_waiting_child or state.tasks_waiting_inbox or
            state.tasks_waiting_key or state.tasks_waiting_time or state.completed_tasks):
@@ -64,7 +64,7 @@ def scheduler(loop_once=False):
                 process_task_completion(task, success=False, result=e)
             else:
                 process_task_trap(task, trap)
-        if loop_once:
+        if once:
             break
 
     return state.top_task_success, state.top_task_result
@@ -224,7 +224,7 @@ def _read_keyboard(prompt=None):
             keyboard_byte = hw.os_read(state.user_in_fd, 1)
             if keyboard_byte == b'q':
                 if quit_in_progress:
-                    raise _SchedulerStop()
+                    raise _ForcedStop()
                 else:
                     quit_in_progress = True
                     timeout = None

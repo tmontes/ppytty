@@ -5,7 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty.kernel import run, api, scheduler
+from ppytty.kernel import run, api, loop
 
 from . import helper_io
 from . import helper_log
@@ -130,7 +130,7 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
         success, result = run(task)
 
         self.assertIsNone(success)
-        self.assertIsInstance(result, scheduler._SchedulerStop)
+        self.assertIsInstance(result, loop._ForcedStop)
 
 
     def test_kernel_run_does_not_stop_with_q_and_something_else(self):
@@ -144,7 +144,7 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
         success, result = run(task)
 
         self.assertTrue(success)
-        self.assertNotIsInstance(result, scheduler._SchedulerStop)
+        self.assertNotIsInstance(result, loop._ForcedStop)
         self.assertEqual(result, 'confirming-regular-completion')
 
 

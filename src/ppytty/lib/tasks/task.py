@@ -12,7 +12,7 @@ import logging
 
 class Task(object):
 
-    # Kernel scheduler runs either generator functions or generator objects.
+    # Kernel loop runs either generator functions or generator objects.
     # When given a callable, it will call it, and use the result as a generator
     # object, with its .send method to make it progress.
     #
@@ -48,7 +48,7 @@ class Task(object):
 
     def send(self, *args, **kwargs):
 
-        # The kernel scheduler calls this to make the Task progress.
+        # The kernel loop calls this to make the Task progress.
 
         if self._running is None:
             self._start_running()
