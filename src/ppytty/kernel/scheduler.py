@@ -135,6 +135,7 @@ def process_tasks_waiting_key(keyboard_byte=None):
             _, _, key_waiter = heapq.heappop(state.tasks_waiting_key_hq)
             if key_waiter in state.tasks_waiting_key:
                 state.tasks_waiting_key.remove(key_waiter)
+                state.cleanup_tasks_waiting_key_hq()
                 state.trap_will_return(key_waiter, keyboard_byte)
                 state.runnable_tasks.append(key_waiter)
                 log.info('%r getting key %r', key_waiter, keyboard_byte)
@@ -149,7 +150,7 @@ def process_tasks_waiting_time():
             _, _, time_waiter = heapq.heappop(state.tasks_waiting_time_hq)
             if time_waiter in state.tasks_waiting_time:
                 state.tasks_waiting_time.remove(time_waiter)
-                common.clear_tasks_waiting_time_hq()
+                state.cleanup_tasks_waiting_time_hq()
                 state.runnable_tasks.append(time_waiter)
                 log.info('%r waking up', time_waiter)
 

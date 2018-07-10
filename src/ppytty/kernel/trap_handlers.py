@@ -191,9 +191,10 @@ def task_destroy(task, user_child_task, keep_running=True):
         state.tasks_waiting_child.remove(child_task)
     elif child_task in state.tasks_waiting_key:
         state.tasks_waiting_key.remove(child_task)
+        state.cleanup_tasks_waiting_key_hq()
     elif child_task in state.tasks_waiting_time:
         state.tasks_waiting_time.remove(child_task)
-        common.clear_tasks_waiting_time_hq()
+        state.cleanup_tasks_waiting_time_hq()
     elif child_task in state.tasks_waiting_inbox:
         state.tasks_waiting_inbox.remove(child_task)
     elif child_task in state.completed_tasks:

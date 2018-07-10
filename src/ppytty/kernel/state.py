@@ -160,6 +160,19 @@ class _State(object):
             del self.parent_task[child_task]
 
 
+    def cleanup_tasks_waiting_time_hq(self):
+
+        if not self.tasks_waiting_time:
+            self.tasks_waiting_time_hq.clear()
+
+
+
+    def cleanup_tasks_waiting_key_hq(self):
+
+        if not self.tasks_waiting_key:
+            self.tasks_waiting_key_hq.clear()
+
+
 
 state = _State()
 

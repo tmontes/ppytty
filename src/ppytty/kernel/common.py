@@ -19,17 +19,6 @@ def kernel_task(user_task):
 
 
 
-def clear_tasks_waiting_time_hq():
-
-    if not state.tasks_waiting_time:
-        state.tasks_waiting_time_hq.clear()
-
-
-
-# TODO: Do we need a "clear_tasks_waiting_key_hq"? Probably.
-
-
-
 def destroy_task_windows(task):
 
     need_rerender = bool(state.task_windows[task])
