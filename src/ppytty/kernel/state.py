@@ -107,9 +107,13 @@ class _State(object):
         self.__init__()
 
 
-    def reset_for_terminal(self, terminal):
+    def prepare_to_run(self, task, terminal):
 
         self.__init__()
+
+        self.top_task = self.get_mapped_kernel_task(task)
+        self.runnable_tasks.append(self.top_task)
+
         self.terminal = terminal
         self.user_in_fd = terminal.in_fd
         self.in_fds.append(terminal.in_fd)

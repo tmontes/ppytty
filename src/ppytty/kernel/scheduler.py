@@ -32,9 +32,9 @@ class _SchedulerStop(Exception):
 def run(task, post_prompt=None):
 
     with Terminal() as t:
-        state.reset_for_terminal(t)
+        state.prepare_to_run(task, t)
         try:
-            success, result = scheduler(task)
+            success, result = scheduler()
             while post_prompt:
                 _ = _read_keyboard(prompt=post_prompt)
         except _SchedulerStop as e:
@@ -44,11 +44,7 @@ def run(task, post_prompt=None):
 
 
 
-def scheduler(user_top_task):
-
-    top_task = state.get_mapped_kernel_task(user_top_task)
-    state.top_task = top_task
-    state.runnable_tasks.append(top_task)
+def scheduler():
 
     while (state.runnable_tasks or state.tasks_waiting_child or state.tasks_waiting_inbox or
            state.tasks_waiting_key or state.tasks_waiting_time or state.completed_tasks):
