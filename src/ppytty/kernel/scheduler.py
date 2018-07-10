@@ -44,7 +44,7 @@ def run(task, post_prompt=None):
 
 
 
-def scheduler():
+def scheduler(loop_once=False):
 
     while (state.runnable_tasks or state.tasks_waiting_child or state.tasks_waiting_inbox or
            state.tasks_waiting_key or state.tasks_waiting_time or state.completed_tasks):
@@ -52,18 +52,20 @@ def scheduler():
         if not state.runnable_tasks:
             process_tasks_waiting_key()
             process_tasks_waiting_time()
-            continue
-        task = state.runnable_tasks.popleft()
-        try:
-            trap = run_task_until_trap(task)
-        except StopIteration as return_:
-            log.info('%r completed with %r', task, return_.value)
-            process_task_completion(task, success=True, result=return_.value)
-        except Exception as e:
-            log.warning('%r crashed with %r', task, e)
-            process_task_completion(task, success=False, result=e)
         else:
-            process_task_trap(task, trap)
+            task = state.runnable_tasks.popleft()
+            try:
+                trap = run_task_until_trap(task)
+            except StopIteration as return_:
+                log.info('%r completed with %r', task, return_.value)
+                process_task_completion(task, success=True, result=return_.value)
+            except Exception as e:
+                log.warning('%r crashed with %r', task, e)
+                process_task_completion(task, success=False, result=e)
+            else:
+                process_task_trap(task, trap)
+        if loop_once:
+            break
 
     return state.top_task_success, state.top_task_result
 
