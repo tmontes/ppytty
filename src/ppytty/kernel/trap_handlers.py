@@ -131,8 +131,7 @@ def put_key(task, pushed_back_key):
 
 def task_spawn(task, user_child_task):
 
-    child_task = common.kernel_task(user_child_task)
-    state.store_user_kernel_task_mapping(child_task, user_child_task)
+    child_task = state.get_mapped_kernel_task(user_child_task)
     state.parent_task[child_task] = task
     state.child_tasks[task].append(child_task)
     state.runnable_tasks.append(child_task)
@@ -151,7 +150,7 @@ def task_wait(task):
     if child is not None:
         user_space_task = state.user_space_tasks[child]
         state.trap_will_return(task, (user_space_task, success, result))
-        state.clear_user_kernel_task_mapping(child, user_space_task)
+        state.clear_kernel_task_mapping(child)
         del state.parent_task[child]
         state.child_tasks[task].remove(child)
         state.cleanup_child_tasks(task)

@@ -9,16 +9,6 @@ from . state import state
 
 
 
-def kernel_task(user_task):
-
-    try:
-        kernel_task = state.kernel_space_tasks[user_task]
-    except KeyError:
-        kernel_task = user_task() if callable(user_task) else user_task
-    return kernel_task
-
-
-
 def destroy_task_windows(task):
 
     need_rerender = bool(state.task_windows[task])
