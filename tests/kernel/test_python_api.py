@@ -30,9 +30,9 @@ class TestRun(helper_io.NoOutputAutoTimeControlledInputTestCase):
 
     def test_run_with_prompt_needs_double_q_to_complete(self):
 
-        self.input_control.feed_data(b'qq!')
+        pre_callable = lambda: self.input_control.feed_data(b'qq!')
 
-        run(tasks.sleep_zero, post_prompt='[COMPLETED]')
+        run(tasks.sleep_zero(pre_callable), post_prompt='[COMPLETED]')
 
         # Check first two b'q' in the input were consumed: buffer holds b'!'.
         self.assertTrue(len(self.input_control.buffer), 1)

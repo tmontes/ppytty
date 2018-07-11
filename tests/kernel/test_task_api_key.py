@@ -89,10 +89,9 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
     def test_kernel_run_stops_with_double_q_input(self):
 
         async def task():
+            self.input_control.feed_data(b'qq')
             while True:
                 await api.sleep(42)
-
-        self.input_control.feed_data(b'qq')
 
         success, result = run(task)
 

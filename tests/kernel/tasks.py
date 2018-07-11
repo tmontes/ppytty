@@ -10,8 +10,10 @@ from ppytty.kernel import api
 
 
 
-async def sleep_zero():
+async def sleep_zero(pre_callable=None):
 
+    if pre_callable:
+        pre_callable()
     await api.sleep(0)
 
 
