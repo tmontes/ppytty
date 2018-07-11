@@ -8,6 +8,8 @@
 
 import logging
 
+from ...kernel import api as kernel_api
+
 
 
 class Task(object):
@@ -54,6 +56,11 @@ class Task(object):
             self._start_running()
 
         return self._running.send(*args, **kwargs)
+
+
+    # Quick acess to the kernel trap API with.
+
+    api = kernel_api
 
 
     def run(self):

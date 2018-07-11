@@ -19,21 +19,21 @@ class Parallel(task.Task):
         self._stop_last = stop_last
 
 
-    def run(self):
+    async def run(self):
 
         running_tasks = []
         results = {}
 
         for task in self._tasks:
-            yield ('task-spawn', task)
+            await self.api.task_spawn(task)
             running_tasks.append(task)
         while len(running_tasks) > self._stop_last:
-            task, success, return_value = yield ('task-wait',)
+            task, success, return_value = await self.api.task_wait()
             results[task] = (success, return_value)
             running_tasks.remove(task)
         for task in running_tasks:
-            yield ('task-destroy', task)
-            _ = yield ('task-wait',)
+            await self.api.task_destroy(task)
+            _ = await self.api.task_wait()
 
         return results
 

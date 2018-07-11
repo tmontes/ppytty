@@ -30,7 +30,7 @@ class Serial(task.Task):
         self._monitor_factory = monitor_factory
 
 
-    def run(self):
+    async def run(self):
 
         index = 0
         index_max = len(self._tasks) - 1
@@ -43,8 +43,8 @@ class Serial(task.Task):
             if self._monitor_factory:
                 task = self._monitor_factory(task, index, index_max)
 
-            yield ('task-spawn', task)
-            _, success, nav_hint = yield ('task-wait',)
+            await self.api.task_spawn(task)
+            _, success, nav_hint = await self.api.task_wait()
 
             action = self._default_nav
             if self._take_nav_hint and success and nav_hint in self._ACTIONS:
