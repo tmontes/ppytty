@@ -81,7 +81,7 @@ def sleep(seconds):
 def key_read():
     """
     Blocks caller task, waiting for the kernel managed TTY input.
-    Returns a single byte value.
+    Returns one or more bytes.
 
     Concurrent reads are served on a round-robin basis.
     """
@@ -90,11 +90,11 @@ def key_read():
 
 
 @types.coroutine
-def key_unread(key_byte_value):
+def key_unread(pushed_back_bytes):
     """
     See `key_read`.
     """
-    yield Trap.KEY_UNREAD, key_byte_value
+    yield Trap.KEY_UNREAD, pushed_back_bytes
 
 
 

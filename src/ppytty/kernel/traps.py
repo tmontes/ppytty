@@ -187,9 +187,9 @@ def key_read(task):
 
 
 @handler_for(Trap.KEY_UNREAD)
-def key_unread(task, pushed_back_key):
+def key_unread(task, pushed_back_bytes):
 
-    loop.process_tasks_waiting_key(pushed_back_key)
+    state.terminal.input_buffer.append(pushed_back_bytes)
     state.runnable_tasks.append(task)
 
 

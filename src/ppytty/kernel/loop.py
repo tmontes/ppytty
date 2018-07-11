@@ -36,7 +36,7 @@ def run(task, post_prompt=None):
         try:
             success, result = loop()
             while post_prompt:
-                _ = _read_keyboard(prompt=post_prompt)
+                process_lowlevel_io(prompt=post_prompt)
         except _ForcedStop as e:
             success, result = None, e
 
@@ -50,6 +50,7 @@ def loop(once=False):
            state.tasks_waiting_key or state.tasks_waiting_time or state.completed_tasks):
         state.now = hw.time_monotonic()
         if not state.runnable_tasks:
+            process_lowlevel_io()
             process_tasks_waiting_key()
             process_tasks_waiting_time()
         else:
@@ -121,16 +122,14 @@ def run_task_until_trap(task):
 
 
 
-def process_tasks_waiting_key(keyboard_byte=None):
+def process_tasks_waiting_key():
 
-    if keyboard_byte is None:
-        keyboard_byte = _read_keyboard(prompt='?')
-
-    if keyboard_byte and state.tasks_waiting_key:
+    while state.terminal.input_buffer and state.tasks_waiting_key:
+        keyboard_bytes = state.terminal.input_buffer.popleft()
         key_waiter = state.tasks_waiting_key.popleft()
-        state.trap_will_return(key_waiter, keyboard_byte)
+        state.trap_will_return(key_waiter, keyboard_bytes)
         state.runnable_tasks.append(key_waiter)
-        log.info('%r getting key %r', key_waiter, keyboard_byte)
+        log.info('%r getting key %r', key_waiter, keyboard_bytes)
 
 
 
@@ -201,7 +200,7 @@ def _prompt_context(prompt):
 
 _NO_FDS = []
 
-def _read_keyboard(prompt=None):
+def process_lowlevel_io(prompt=None):
 
     quit_in_progress = False
 
@@ -215,22 +214,21 @@ def _read_keyboard(prompt=None):
         with _prompt_context(actual_prompt):
             fds, _, _ = hw.select_select(state.in_fds, _NO_FDS, _NO_FDS, timeout)
         if state.user_in_fd in fds:
-            keyboard_byte = hw.os_read(state.user_in_fd, 1)
-            if keyboard_byte == b'q':
+            keyboard_bytes = hw.os_read(state.user_in_fd, 8)
+            if keyboard_bytes == b'q':
                 if quit_in_progress:
                     raise _ForcedStop()
                 else:
                     quit_in_progress = True
                     timeout = None
-                continue
             elif quit_in_progress:
                 quit_in_progress = False
                 timeout = save_timeout
-                continue
-            elif keyboard_byte == b'D':
+            elif keyboard_bytes == b'D':
                 trap_handlers[Trap.STATE_DUMP](None)
-                continue
-            return keyboard_byte
+            else:
+                state.terminal.input_buffer.append(keyboard_bytes)
+                break
         elif not quit_in_progress:
             break
 
