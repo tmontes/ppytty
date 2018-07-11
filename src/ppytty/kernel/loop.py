@@ -127,15 +127,10 @@ def process_tasks_waiting_key(keyboard_byte=None):
         keyboard_byte = _read_keyboard(prompt='?')
 
     if keyboard_byte and state.tasks_waiting_key:
-        while state.tasks_waiting_key_hq:
-            _, _, key_waiter = heapq.heappop(state.tasks_waiting_key_hq)
-            if key_waiter in state.tasks_waiting_key:
-                state.tasks_waiting_key.remove(key_waiter)
-                state.cleanup_tasks_waiting_key_hq()
-                state.trap_will_return(key_waiter, keyboard_byte)
-                state.runnable_tasks.append(key_waiter)
-                log.info('%r getting key %r', key_waiter, keyboard_byte)
-                break
+        key_waiter = state.tasks_waiting_key.popleft()
+        state.trap_will_return(key_waiter, keyboard_byte)
+        state.runnable_tasks.append(key_waiter)
+        log.info('%r getting key %r', key_waiter, keyboard_byte)
 
 
 

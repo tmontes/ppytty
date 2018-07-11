@@ -73,7 +73,6 @@ STATE_ATTRS = {
     'tasks_waiting_child': (_assert_empty_list, _change_list),
     'tasks_waiting_inbox': (_assert_empty_list, _change_list),
     'tasks_waiting_key': (_assert_empty_list, _change_list),
-    'tasks_waiting_key_hq': (_assert_empty_list, _change_list),
     'tasks_waiting_time': (_assert_empty_list, _change_list),
     'tasks_waiting_time_hq': (_assert_empty_list, _change_list),
     'user_space_tasks': (_assert_empty_dict, _change_dict),

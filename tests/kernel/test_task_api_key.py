@@ -17,7 +17,7 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
     def test_read_key(self):
 
         async def task():
-            result = await api.key_read(priority=100)
+            result = await api.key_read()
             return result
 
         self.input_control.feed_data(b'x')
@@ -31,7 +31,7 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
     def test_blocking_read_key(self):
 
         async def child():
-            byte_key = await api.key_read(priority=100)
+            byte_key = await api.key_read()
             return byte_key
 
         async def parent(child_task):
@@ -52,54 +52,21 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
         self.assertEqual(child_result, b'k')
 
 
-    def test_read_key_priority(self):
-
-        async def child(read_key_priority):
-            byte_key = await api.key_read(priority=read_key_priority)
-            return byte_key
-
-        async def parent(hi_pri_reader, lo_pri_reader):
-            all_tasks = {hi_pri_reader, lo_pri_reader}
-            await api.task_spawn(lo_pri_reader)
-            await api.task_spawn(hi_pri_reader)
-            await api.sleep(1)
-            self.input_control.feed_data(b'i')
-            completed_task, child_success, child_result = await api.task_wait()
-            all_tasks.remove(completed_task)
-            other_task = all_tasks.pop()
-            await api.task_destroy(other_task)
-            destroyed_task, _, _ = await api.task_wait()
-            return completed_task, child_success, child_result, destroyed_task
-
-        hi_pri_reader = child(100)
-        lo_pri_reader = child(1000)
-
-        success, result = run(parent(hi_pri_reader, lo_pri_reader))
-
-        self.assertTrue(success)
-
-        completed_task, child_success, child_result, destroyed_task = result
-        self.assertIs(completed_task, hi_pri_reader)
-        self.assertTrue(child_success)
-        self.assertEqual(child_result, b'i')
-        self.assertIs(destroyed_task, lo_pri_reader)
-
-
     def test_put_key(self):
 
-        async def hi_pri_child():
-            byte_key = await api.key_read(priority=100)
+        async def first_reader_child():
+            byte_key = await api.key_read()
             await api.key_unread(byte_key)
             await api.sleep(42)
 
-        async def lo_pri_child():
-            byte_key = await api.key_read(priority=1000)
+        async def second_reader_child():
+            byte_key = await api.key_read()
             return byte_key
 
-        async def parent(hi_pri_reader, lo_pri_reader):
-            all_tasks = {hi_pri_reader, lo_pri_reader}
-            await api.task_spawn(lo_pri_reader)
-            await api.task_spawn(hi_pri_reader)
+        async def parent(first_reader, second_reader):
+            all_tasks = {first_reader, second_reader}
+            await api.task_spawn(first_reader)
+            await api.task_spawn(second_reader)
             await api.sleep(1)
             self.input_control.feed_data(b't')
             completed_task, child_success, child_result = await api.task_wait()
@@ -109,14 +76,14 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
             destroyed_task, _, _ = await api.task_wait()
             return completed_task, child_success, child_result, destroyed_task
 
-        success, result = run(parent(hi_pri_child, lo_pri_child))
+        success, result = run(parent(first_reader_child, second_reader_child))
 
         self.assertTrue(success)
         completed_task, child_success, child_result, destroyed_task = result
-        self.assertIs(completed_task, lo_pri_child)
+        self.assertIs(completed_task, second_reader_child)
         self.assertTrue(child_success)
         self.assertEqual(child_result, b't')
-        self.assertIs(destroyed_task, hi_pri_child)
+        self.assertIs(destroyed_task, first_reader_child)
 
 
     def test_kernel_run_stops_with_double_q_input(self):
