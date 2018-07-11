@@ -13,7 +13,7 @@ Running tasks use these to interact with the kernel.
 
 import types
 
-from . trap_ids import Trap
+from . trap_handlers import Trap
 
 
 

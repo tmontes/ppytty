@@ -12,8 +12,7 @@ import logging
 
 from . import hw
 from . import exceptions
-from . trap_handlers import handlers as trap_handlers
-from . trap_ids import Trap
+from . trap_handlers import handlers as trap_handlers, Trap
 from . import common
 from . state import state
 from . terminal import Terminal
