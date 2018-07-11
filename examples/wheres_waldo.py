@@ -21,18 +21,18 @@ class Pulse(ppytty.Task):
     def set_msgs(self, msgs):
         self._msgs = itertools.cycle(msgs)
 
-    def run(self):
+    async def run(self):
         min_color = 232
         max_color = 255
         fade_in = range(min_color, max_color+1)
         fade_out = range(max_color-1, min_color, -1)
-        yield ('sleep', self._predelay)
+        await self.api.sleep(self._predelay)
         normal = '\x1b[39m'
         for msg in self._msgs:
             for fg in itertools.chain(fade_in, fade_out):
                 output = f'\x1b[38;5;{fg}m{msg}{normal}'
-                yield ('direct-print', output, self._x, self._y)
-                yield ('sleep', self._delay)
+                await self.api.direct_print(output, self._x, self._y)
+                await self.api.sleep(self._delay)
 
 
 
