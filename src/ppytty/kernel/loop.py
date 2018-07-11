@@ -12,7 +12,8 @@ import logging
 
 from . import hw
 from . import exceptions
-from . import trap_handlers
+from . trap_handlers import handlers as trap_handlers
+from . trap_ids import Trap
 from . import common
 from . state import state
 from . terminal import Terminal
@@ -75,13 +76,12 @@ def process_task_trap(task, trap):
 
     log.debug('%r trap: %r', task, trap)
     state.trap_call[task] = trap
-    trap_name, *trap_args = trap
-    trap_handler_name = trap_name.replace("-", "_")
+    trap_id, *trap_args = trap
     try:
-        trap_handler = getattr(trap_handlers, trap_handler_name)
-    except AttributeError:
+        trap_handler = trap_handlers[trap_id]
+    except KeyError:
         log.error('%r trap does not exist: %r', task, trap)
-        state.trap_will_throw(task, exceptions.TrapDoesNotExist(trap_name))
+        state.trap_will_throw(task, exceptions.TrapDoesNotExist(trap_id))
         state.runnable_tasks.append(task)
     else:
         try:
@@ -234,7 +234,7 @@ def _read_keyboard(prompt=None):
                 timeout = save_timeout
                 continue
             elif keyboard_byte == b'D':
-                trap_handlers.state_dump(None)
+                trap_handlers[Trap.STATE_DUMP](None)
                 continue
             return keyboard_byte
         elif not quit_in_progress:

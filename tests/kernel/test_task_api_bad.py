@@ -5,7 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from ppytty.kernel import run
+from ppytty.kernel import run, api
 from ppytty.kernel.exceptions import TrapDoesNotExist, TrapArgCountWrong
 
 from . import helper_io
@@ -44,7 +44,7 @@ class Test(helper_io.NoOutputTestCase):
     def test_wrong_trap_arg_count_raises_exception(self):
 
         def task():
-            yield ('sleep',)
+            yield (api.Trap.SLEEP,)
 
         success, result = run(task)
         self.assertFalse(success)
@@ -59,7 +59,7 @@ class Test(helper_io.NoOutputTestCase):
 
         def task():
             try:
-                yield ('sleep', 1, 2, 3)
+                yield (api.Trap.SLEEP, 1, 2, 3)
             except TrapArgCountWrong:
                 pass
 
