@@ -79,21 +79,20 @@ class Test(helper_io.NoOutputAutoTimeTestCase):
         self.assertEqual(state.now, 0, 'unexpected state.now')
         self._assert_waiting_not_runnable()
 
+        # Iteration #3
+
+        # success, result = loop.loop(once=True)
+        # self._assert_not_completed(success, result)
+        # self.assertEqual(state.now, 5, 'unexpected state.now')
+        # self._assert_runnable_not_waiting()
+
         # --------------------------------------------------------------------
         # Iteration #3
         # - now is 5 seconds later.
-        # - Task moved from tasks_waiting_time to runnable_tasks.
-
-        success, result = loop.loop(once=True)
-        self._assert_not_completed(success, result)
-        self.assertEqual(state.now, 5, 'unexpected state.now')
-        self._assert_runnable_not_waiting()
-
-        # --------------------------------------------------------------------
-        # Iteration #4
         # - Completed with success and the return value of the task.
 
         success, result = loop.loop(once=True)
+        self.assertEqual(state.now, 5, 'unexpected state.now')
         self.assertTrue(success)
         self.assertEqual(result, 42)
 
