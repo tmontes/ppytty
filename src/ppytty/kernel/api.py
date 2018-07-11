@@ -85,7 +85,7 @@ def key_read(priority=0):
     lower numeric `priority` are served first. High priority readers can pass
     read byte values to lower priority ones via the `key_unread` trap.
     """
-    return (yield 'read-key', priority)
+    return (yield 'key-read', priority)
 
 
 
@@ -94,7 +94,7 @@ def key_unread(key_byte_value):
     """
     See `key_read`.
     """
-    yield 'put-key', key_byte_value
+    yield 'key-unread', key_byte_value
 
 
 

@@ -115,14 +115,14 @@ def sleep(task, seconds):
 
 
 
-def read_key(task, priority):
+def key_read(task, priority):
 
     state.tasks_waiting_key.append(task)
     heapq.heappush(state.tasks_waiting_key_hq, (priority, id(task), task))
 
 
 
-def put_key(task, pushed_back_key):
+def key_unread(task, pushed_back_key):
 
     loop.process_tasks_waiting_key(pushed_back_key)
     state.runnable_tasks.append(task)
