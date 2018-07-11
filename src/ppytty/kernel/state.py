@@ -43,9 +43,8 @@ class _State(object):
         # Tasks waiting on their inbox.
         self.tasks_waiting_inbox = []
 
-        # Tasks waiting on keyboard input, and the associated priority queue.
-        self.tasks_waiting_key = []
-        self.tasks_waiting_key_hq = []
+        # Tasks waiting on keyboard input.
+        self.tasks_waiting_key = collections.deque()
 
         # Tasks sleeping, and the associated priority queue.
         self.tasks_waiting_time = []
@@ -174,13 +173,6 @@ class _State(object):
 
         if not self.tasks_waiting_time:
             self.tasks_waiting_time_hq.clear()
-
-
-
-    def cleanup_tasks_waiting_key_hq(self):
-
-        if not self.tasks_waiting_key:
-            self.tasks_waiting_key_hq.clear()
 
 
 

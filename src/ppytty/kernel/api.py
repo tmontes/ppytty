@@ -78,25 +78,23 @@ def sleep(seconds):
 
 
 @types.coroutine
-def key_read(priority=0):
+def key_read():
     """
     Blocks caller task, waiting for the kernel managed TTY input.
-    Returns a single byte value.
+    Returns one or more bytes.
 
-    Concurrent reads are served on a `priority` basis: outstanding reads with
-    lower numeric `priority` are served first. High priority readers can pass
-    read byte values to lower priority ones via the `key_unread` trap.
+    Concurrent reads are served on a round-robin basis.
     """
-    return (yield Trap.KEY_READ, priority)
+    return (yield Trap.KEY_READ,)
 
 
 
 @types.coroutine
-def key_unread(key_byte_value):
+def key_unread(pushed_back_bytes):
     """
     See `key_read`.
     """
-    yield Trap.KEY_UNREAD, key_byte_value
+    yield Trap.KEY_UNREAD, pushed_back_bytes
 
 
 

@@ -5,6 +5,7 @@
 # See LICENSE for deatils.
 # ----------------------------------------------------------------------------
 
+import collections
 import functools
 
 import blessings
@@ -32,6 +33,8 @@ class Terminal(object):
         width = width if width else self._bt.width
         height = height if height else self._bt.height
         self._window = window.Window(left, top, width, height, bg)
+
+        self.input_buffer = collections.deque()
 
         # Speed up sub-attribute access with these attributes.
         self._bt_clear = self._bt.clear

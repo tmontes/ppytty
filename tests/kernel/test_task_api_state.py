@@ -115,7 +115,7 @@ class Test(helper_io.NoOutputAutoTimeTestCase):
             await api.message_wait()
 
         async def wait_key():
-            await api.key_read(1000)
+            await api.key_read()
 
         async def completed():
             await api.sleep(0)

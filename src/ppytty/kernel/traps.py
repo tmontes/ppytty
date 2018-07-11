@@ -180,17 +180,21 @@ def sleep(task, seconds):
 
 
 @handler_for(Trap.KEY_READ)
-def key_read(task, priority):
+def key_read(task):
 
     state.tasks_waiting_key.append(task)
-    heapq.heappush(state.tasks_waiting_key_hq, (priority, id(task), task))
 
 
 
 @handler_for(Trap.KEY_UNREAD)
-def key_unread(task, pushed_back_key):
+def key_unread(task, pushed_back_bytes):
 
-    loop.process_tasks_waiting_key(pushed_back_key)
+    if state.tasks_waiting_key:
+        key_waiter = state.tasks_waiting_key.popleft()
+        state.trap_will_return(key_waiter, pushed_back_bytes)
+        state.runnable_tasks.append(key_waiter)
+    else:
+        state.terminal.input_buffer.append(pushed_back_bytes)
     state.runnable_tasks.append(task)
 
 
@@ -259,7 +263,6 @@ def task_destroy(task, user_child_task, keep_running=True):
         state.tasks_waiting_child.remove(child_task)
     elif child_task in state.tasks_waiting_key:
         state.tasks_waiting_key.remove(child_task)
-        state.cleanup_tasks_waiting_key_hq()
     elif child_task in state.tasks_waiting_time:
         state.tasks_waiting_time.remove(child_task)
         state.cleanup_tasks_waiting_time_hq()
