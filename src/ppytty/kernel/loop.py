@@ -49,11 +49,10 @@ def loop(once=False):
     while (state.runnable_tasks or state.tasks_waiting_child or state.tasks_waiting_inbox or
            state.tasks_waiting_key or state.tasks_waiting_time or state.completed_tasks):
         state.now = hw.time_monotonic()
-        if not state.runnable_tasks:
-            process_lowlevel_io()
-            process_tasks_waiting_key()
-            process_tasks_waiting_time()
-        else:
+        process_lowlevel_io()
+        process_tasks_waiting_key()
+        process_tasks_waiting_time()
+        if state.runnable_tasks:
             task = state.runnable_tasks.popleft()
             try:
                 trap = run_task_until_trap(task)
@@ -204,7 +203,9 @@ def process_lowlevel_io(prompt=None):
 
     quit_in_progress = False
 
-    if state.tasks_waiting_time:
+    if state.runnable_tasks:
+        timeout = 0
+    elif state.tasks_waiting_time:
         timeout = max(state.tasks_waiting_time_hq[0][0] - state.now, 0)
     else:
         timeout = None
