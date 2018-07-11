@@ -17,9 +17,9 @@ class Label(widget.Widget):
         self._text = text
 
 
-    def run(self):
+    async def run(self):
 
-        yield ('direct-print', self._text)
+        await self.api.direct_print(self._text)
 
 
 # ----------------------------------------------------------------------------

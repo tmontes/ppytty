@@ -6,10 +6,10 @@ import ppytty
 
 class WindowExerciser(ppytty.Task):
 
-    def run(self):
+    async def run(self):
 
-        w1 = yield ('window-create', 5, 3, 40, 15, 31)
-        w2 = yield ('window-create', 35, 12, 40, 15, 39)
+        w1 = await self.api.window_create(5, 3, 40, 15, 31)
+        w2 = await self.api.window_create(35, 12, 40, 15, 39)
 
         w1.print('Bottom window'.center(40), bg=17)
         w2.print('Top window'.center(40), bg=19)
@@ -19,11 +19,11 @@ class WindowExerciser(ppytty.Task):
         w1.print('\x1b[2;1H')   # TODO: implement as window.move_cursor?
         w2.print('\x1b[2;1H')
 
-        yield ('window-render', w2)
-        yield ('sleep', 0.2)
-        yield ('window-render', w1)
+        await self.api.window_render(w2)
+        await self.api.sleep(0.2)
+        await self.api.window_render(w1)
 
-        yield ('sleep', 0.2)
+        await self.api.sleep(0.2)
 
         words = 'the quick brown fox jumps over the lazy dog'.split()
         windows = (w1, w2)
@@ -32,26 +32,26 @@ class WindowExerciser(ppytty.Task):
             window = random.choice(windows)
             word = random.choice(words)
             window.print(word + ' ')
-            yield ('window-render', window)
-            yield ('sleep', 0.05)
+            await self.api.window_render(window)
+            await self.api.sleep(0.05)
 
-        yield ('window-destroy', w1)
+        await self.api.window_destroy(w1)
 
-        yield ('state-dump', 'MY TAG')
+        await self.api.state_dump('MY TAG')
 
-        yield ('sleep', 2)
+        await self.api.sleep(2)
 
 
 class Parent(ppytty.Task):
 
-    def run(self):
+    async def run(self):
 
         child = WindowExerciser()
-        yield ('task-spawn', child)
-        # yield ('sleep', 1)
-        # yield ('task-destroy', child)
-        result = yield ('task-wait', )
-        # yield ('direct-print', f'child result={result!r}')
+        await self.api.task_spawn(child)
+        # await self.api.sleep(1)
+        # await self.api.task_destroy(child)
+        result = await self.api.task_wait()
+        await self.api.direct_print(f'child result={result!r}')
 
 
 ppytty_task = Parent()

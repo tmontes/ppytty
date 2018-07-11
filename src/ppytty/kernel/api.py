@@ -13,6 +13,8 @@ Running tasks use these to interact with the kernel.
 
 import types
 
+from . traps import Trap
+
 
 
 @types.coroutine
@@ -20,7 +22,7 @@ def direct_clear():
     """
     Clear the output TTY, bypassing kernel terminal/window handling.
     """
-    yield 'direct-clear',
+    yield Trap.DIRECT_CLEAR,
 
 
 
@@ -29,7 +31,7 @@ def direct_print(text, x=None, y=None, save_location=False):
     """
     Print to the output TTY, bypassing kernel terminal/window handling.
     """
-    yield 'direct-print', text, x, y, save_location
+    yield Trap.DIRECT_PRINT, text, x, y, save_location
 
 
 
@@ -38,7 +40,7 @@ def window_create(left, top, width, height, background=None):
     """
     Creates a kernel managed window.
     """
-    return (yield 'window-create', left, top, width, height, background)
+    return (yield Trap.WINDOW_CREATE, left, top, width, height, background)
 
 
 
@@ -51,7 +53,7 @@ def window_destroy(window):
 
     Raises TrapException if `window` is not a caller task created window.
     """
-    yield 'window-destroy', window
+    yield Trap.WINDOW_DESTROY, window
 
 
 
@@ -62,7 +64,7 @@ def window_render(window, full=False):
     If `full` is True, the whole window contents is rendered; otherwise, only
     the lines that changed since the previous render will be rendered.
     """
-    yield 'window-render', window, full
+    yield Trap.WINDOW_RENDER, window, full
 
 
 
@@ -71,7 +73,7 @@ def sleep(seconds):
     """
     Sleep caller for `seconds` seconds.
     """
-    yield 'sleep', seconds
+    yield Trap.SLEEP, seconds
 
 
 
@@ -85,7 +87,7 @@ def key_read(priority=0):
     lower numeric `priority` are served first. High priority readers can pass
     read byte values to lower priority ones via the `key_unread` trap.
     """
-    return (yield 'read-key', priority)
+    return (yield Trap.KEY_READ, priority)
 
 
 
@@ -94,7 +96,7 @@ def key_unread(key_byte_value):
     """
     See `key_read`.
     """
-    yield 'put-key', key_byte_value
+    yield Trap.KEY_UNREAD, key_byte_value
 
 
 
@@ -103,7 +105,7 @@ def task_spawn(task):
     """
     Spawns a new task as a child of the caller.
     """
-    yield 'task-spawn', task
+    yield Trap.TASK_SPAWN, task
 
 
 
@@ -113,7 +115,7 @@ def task_wait():
     Waits for child task completion.
     Returns (completed_task, success, result) tuple.
     """
-    return (yield 'task-wait',)
+    return (yield Trap.TASK_WAIT,)
 
 
 
@@ -126,7 +128,7 @@ def task_destroy(task):
     The destroyed `task` must still be waited for with a `task_wait` call:
     the `success` will be `False` and `result` will a TrapDestroyed instance.
     """
-    yield 'task-destroy', task
+    yield Trap.TASK_DESTROY, task
 
 
 
@@ -135,7 +137,7 @@ def message_send(task, message):
     """
     Sends `message` to `task`. When `task` is None, sends `message to parent.
     """
-    yield 'message-send', task, message
+    yield Trap.MESSAGE_SEND, task, message
 
 
 
@@ -145,7 +147,7 @@ def message_wait():
     Waits for a message to be received.
     Returns (sender_task, message) tuple.
     """
-    return (yield 'message-wait',)
+    return (yield Trap.MESSAGE_WAIT,)
 
 
 
@@ -154,7 +156,7 @@ def state_dump(tag=''):
     """
     Dumps the kernel state to the log, tagged with the optional `tag`.
     """
-    yield 'state-dump', tag
+    yield Trap.STATE_DUMP, tag
 
 
 

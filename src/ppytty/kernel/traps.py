@@ -5,6 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
+import enum
 import collections
 import heapq
 import logging
@@ -21,6 +22,64 @@ log = logging.getLogger(__name__)
 
 
 
+# ----------------------------------------------------------------------------
+# Trap idenfifiers
+
+class Trap(enum.Enum):
+
+    DIRECT_CLEAR = enum.auto()
+    DIRECT_PRINT = enum.auto()
+
+    WINDOW_CREATE = enum.auto()
+    WINDOW_RENDER = enum.auto()
+    WINDOW_DESTROY = enum.auto()
+
+    SLEEP = enum.auto()
+
+    KEY_READ = enum.auto()
+    KEY_UNREAD = enum.auto()
+
+    TASK_SPAWN = enum.auto()
+    TASK_DESTROY = enum.auto()
+    TASK_WAIT = enum.auto()
+
+    MESSAGE_SEND = enum.auto()
+    MESSAGE_WAIT = enum.auto()
+
+    STATE_DUMP = enum.auto()
+
+
+
+# ----------------------------------------------------------------------------
+# Trap identifier to handler function mapping.
+
+
+# Maps Trap identifiers to handler functions.
+
+handlers = {}
+
+
+# Decorator function that populates the handlers map.
+
+def handler_for(trap_id):
+
+    def decorator_function(trap_handler):
+
+        if trap_id in handlers:
+            raise ValueError(f'duplicate handler for {trap_id}')
+        handlers[trap_id] = trap_handler
+
+        return trap_handler
+
+    return decorator_function
+
+
+
+# ----------------------------------------------------------------------------
+# Trap handlers
+
+
+@handler_for(Trap.DIRECT_CLEAR)
 def direct_clear(task):
 
     state.terminal.direct_clear()
@@ -28,6 +87,7 @@ def direct_clear(task):
 
 
 
+@handler_for(Trap.DIRECT_PRINT)
 def direct_print(task, *args):
 
     state.terminal.direct_print(*args)
@@ -35,6 +95,7 @@ def direct_print(task, *args):
 
 
 
+@handler_for(Trap.WINDOW_CREATE)
 def window_create(task, left, top, width, height, bg=None):
 
     try:
@@ -52,6 +113,7 @@ def window_create(task, left, top, width, height, bg=None):
 
 
 
+@handler_for(Trap.WINDOW_DESTROY)
 def window_destroy(task, window):
 
     if not window in state.task_windows[task]:
@@ -72,6 +134,7 @@ def window_destroy(task, window):
 
 
 
+@handler_for(Trap.WINDOW_RENDER)
 def window_render(task, window, full=False):
 
     if not window in state.task_windows[task]:
@@ -103,6 +166,7 @@ def window_render(task, window, full=False):
 
 
 
+@handler_for(Trap.SLEEP)
 def sleep(task, seconds):
 
     if seconds <= 0:
@@ -115,20 +179,23 @@ def sleep(task, seconds):
 
 
 
-def read_key(task, priority):
+@handler_for(Trap.KEY_READ)
+def key_read(task, priority):
 
     state.tasks_waiting_key.append(task)
     heapq.heappush(state.tasks_waiting_key_hq, (priority, id(task), task))
 
 
 
-def put_key(task, pushed_back_key):
+@handler_for(Trap.KEY_UNREAD)
+def key_unread(task, pushed_back_key):
 
     loop.process_tasks_waiting_key(pushed_back_key)
     state.runnable_tasks.append(task)
 
 
 
+@handler_for(Trap.TASK_SPAWN)
 def task_spawn(task, user_child_task):
 
     child_task = state.get_mapped_kernel_task(user_child_task)
@@ -139,6 +206,7 @@ def task_spawn(task, user_child_task):
 
 
 
+@handler_for(Trap.TASK_WAIT)
 def task_wait(task):
 
     child = None
@@ -162,6 +230,7 @@ def task_wait(task):
 
 
 
+@handler_for(Trap.TASK_DESTROY)
 def task_destroy(task, user_child_task, keep_running=True):
 
     try:
@@ -214,6 +283,7 @@ def task_destroy(task, user_child_task, keep_running=True):
 
 
 
+@handler_for(Trap.MESSAGE_SEND)
 def message_send(task, to_user_task, message):
 
     if to_user_task is None:
@@ -239,6 +309,7 @@ def message_send(task, to_user_task, message):
 
 
 
+@handler_for(Trap.MESSAGE_WAIT)
 def message_wait(task):
 
     task_inbox = state.task_inbox[task]
@@ -254,6 +325,7 @@ def message_wait(task):
 
 _SEPARATOR = '-' * 60
 
+@handler_for(Trap.STATE_DUMP)
 def state_dump(task, tag=''):
 
     def _task_status(task):

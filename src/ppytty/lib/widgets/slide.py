@@ -12,10 +12,10 @@ from .. import tasks
 
 class Slide(tasks.Parallel):
 
-    def run(self):
+    async def run(self):
 
-        yield ('direct-clear',)
-        result = yield from super().run()
+        await self.api.direct_clear()
+        result = await super().run()
         return result
 
 

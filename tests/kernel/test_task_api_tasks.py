@@ -128,7 +128,7 @@ class TestWaitChildException(helper_io.NoOutputTestCase):
     def test_parent_spawn_wait_child_trap_arg_count_wrong_exception(self):
 
         def child():
-            yield ('sleep', 1, 2, 3)
+            yield (api.Trap.SLEEP, 1, 2, 3)
 
         exc = self.parent_spawn_wait_child_exception(child(), TrapArgCountWrong)
         self.assertEqual(len(exc.args), 1)
