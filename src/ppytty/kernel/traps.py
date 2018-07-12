@@ -99,7 +99,7 @@ def direct_print(task, *args):
 def window_create(task, left, top, width, height, bg=None):
 
     try:
-        w = Window(left, top, width, height, bg)
+        w = Window(state.terminal.window, left, top, width, height, bg=bg)
     except Exception as e:
         log.error('%r window create failed: %s', task, e)
         log.debug('%r traceback', task, exc_info=True)

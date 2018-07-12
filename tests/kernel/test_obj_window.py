@@ -6,6 +6,7 @@
 # ----------------------------------------------------------------------------
 
 import unittest
+import types
 
 from ppytty.kernel import window
 
@@ -15,18 +16,23 @@ from . import helper_io
 
 class TestNonRenderingAspects(unittest.TestCase):
 
+    def setUp(self):
+
+        self.sbt = window._SelfBlessingsTerminal(80, 25)
+        self.parent = types.SimpleNamespace()
+        self.parent.bt = self.sbt
+
+
     def test_sbt_too_large_fg_color(self):
 
-        sbt = window._SelfBlessingsTerminal
         with self.assertRaises(ValueError):
-            sbt.color(256)
+            self.sbt.color(256)
 
 
     def test_sbt_too_large_bg_color(self):
 
-        sbt = window._SelfBlessingsTerminal
         with self.assertRaises(ValueError):
-            sbt.on_color(256)
+            self.sbt.on_color(256)
 
 
     def test_window_overlaps(self):
@@ -47,8 +53,8 @@ class TestNonRenderingAspects(unittest.TestCase):
         ]
         for w1args, w2args, expect_overlap in tests:
             with self.subTest(w1args=w1args, w2args=w2args, eo=expect_overlap):
-                w1 = window.Window(*w1args)
-                w2 = window.Window(*w2args)
+                w1 = window.Window(self.parent, *w1args)
+                w2 = window.Window(self.parent, *w2args)
                 w1overlap = w1.overlaps(w2)
                 w2overlap = w2.overlaps(w1)
                 # The overlap operation is cummutative.
@@ -65,8 +71,10 @@ class TestWithHiddenCursor(helper_io.NoOutputTestCase):
 
         self.WIDTH = 40
         self.HEIGHT = 15
-        self.w = window.Window(0, 0, self.WIDTH, self.HEIGHT)
-        self.sbt = window._SelfBlessingsTerminal
+        self.sbt = window._SelfBlessingsTerminal(80, 25)
+        parent = types.SimpleNamespace()
+        parent.bt = self.sbt
+        self.w = window.Window(parent, 0, 0, self.WIDTH, self.HEIGHT)
 
 
     def _assert_blank_window_rendered(self, rendered_bytes):
