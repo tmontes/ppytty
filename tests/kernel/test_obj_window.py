@@ -63,6 +63,34 @@ class TestNonRenderingAspects(unittest.TestCase):
                 self.assertEqual(expect_overlap, w1overlap, 'overlap')
 
 
+    def test_window_geometry(self):
+
+        tests = [
+            # absolute geometry window
+            (dict(x=4, y=2, w=40, h=10, dx=0, dy=0, dw=0, dh=0), (4, 2, 40, 10)),
+            # absolute geometry window, with deltas
+            (dict(x=4, y=2, w=40, h=10, dx=2, dy=1, dw=-2, dh=-1), (6, 3, 38, 9)),
+            # full screen window
+            (dict(x=0, y=0, w=1.0, h=1.0, dx=0, dy=0, dw=0, dh=0), (0, 0, 80, 25)),
+            # full-screen window with 1 column/row margin
+            (dict(x=0, y=0, w=1.0, h=1.0, dx=1, dy=1, dw=-2, dh=-2), (1, 1, 78, 23)),
+            # full-left-hand side window
+            (dict(x=0, y=0, w=0.5, h=1.0, dx=0, dy=0, dw=0, dh=0), (0, 0, 40, 25)),
+            # full-right-hand side window
+            (dict(x=0.5, y=0, w=0.5, h=1.0, dx=0, dy=0, dw=0, dh=0), (40, 0, 40, 25)),
+            # 20 column width, right aligned window
+            (dict(x=-20, y=0, w=20, h=1.0, dx=0, dy=0, dw=0, dh=0), (60, 0, 20, 25)),
+            # 40% - 1 line height, bottom aligned window, shifted 1 line up
+            (dict(x=0, y=-0.4, w=1.0, h=0.4, dx=0, dy=-1, dw=0, dh=-1), (0, 14, 80, 9)),
+        ]
+        for win_kwargs, expected_geometry in tests:
+            with self.subTest(win_kwargs=win_kwargs):
+                w = window.Window(self.parent, **win_kwargs)
+                geometry = (w._left, w._top, w.width, w.height)
+                self.assertEqual(geometry, expected_geometry, 'bad geometry')
+
+
+
 class TestWithHiddenCursor(helper_io.NoOutputTestCase):
 
     # Inheriting from NoOutputTestCase just for the bytes_match method.

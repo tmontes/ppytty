@@ -96,10 +96,10 @@ def direct_print(task, *args):
 
 
 @handler_for(Trap.WINDOW_CREATE)
-def window_create(task, left, top, width, height, bg=None):
+def window_create(task, x, y, w, h, dx, dy, dw, dh, bg):
 
     try:
-        w = Window(state.terminal.window, left, top, width, height, bg=bg)
+        w = Window(state.terminal.window, x, y, w, h, dx, dy, dw, dh, bg)
     except Exception as e:
         log.error('%r window create failed: %s', task, e)
         log.debug('%r traceback', task, exc_info=True)

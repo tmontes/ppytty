@@ -112,21 +112,41 @@ class _SelfBlessingsTerminal(object):
 
 class Window(object):
 
-    def __init__(self, parent, left, top, width, height, bg=None, no_cursor=True):
+    def __init__(self, parent, x=0, y=0, w=1.0, h=1.0, dx=0, dy=0, dw=0, dh=0,
+                 bg=None, no_cursor=True):
 
         # We don't really care about the parent itself; all we need is its `bt`
         # attribute so that we can:
         # - Get the parent's width/height.
         # - Produce the correct escape sequences when rendering.
-        self._parent_bt = parent.bt
+        self._parent = parent
 
-        self._left = left
-        self._top = top
-        self._width = width
-        self._height = height
+        # Window geometry is defined by:
+        # - Top left corner (x, y):
+        #   - Positive ints map to 0-based absolute parent coords.
+        #   - Positive floats map to 0-based relative parent coords.
+        #     (where 1.0 is the first column/row after the visible ones)
+        #   - Negative ints map to from-right/bottom absolute parent coords.
+        #     (where -1 is the last column/row)
+        #   - Negative floats map to from-right/bottom relative parent coords.
+        #     (where -1.0 represents the first visible column/row)
+        # - Width/Heigth (w/h):
+        #   - Much like (x, y) where negative values are not expected to work!
+        # - All values are updated by a delta: dx, dy, dw, dh.
+        # See self._update_geometry()
+        self._x = x
+        self._y = y
+        self._w = w
+        self._h = h
+        self._dx = dx
+        self._dy = dy
+        self._dw = dw
+        self._dh = dh
+        self._update_geometry()
+
         self._bg = bg
 
-        self._screen = pyte.Screen(width, height)
+        self._screen = pyte.Screen(self._width, self._height)
         self._stream = pyte.ByteStream(self._screen)
 
         self._screen.cursor.hidden = no_cursor
@@ -134,7 +154,25 @@ class Window(object):
         # My public `bt` so others can:
         # - Get my width/height.
         # - Produce the correct escape sequences to be used in self.feed().
-        self.bt = _SelfBlessingsTerminal(width, height)
+        self.bt = _SelfBlessingsTerminal(self._width, self._height)
+
+
+    def _update_geometry(self):
+
+        def _rel_to_abs(value, limit, delta):
+            if isinstance(value, float):
+                value = int(value * limit)
+            if value < 0:
+                value = limit + value
+            return value + delta
+
+        parent_width = self._parent.bt.width
+        parent_height = self._parent.bt.height
+
+        self._left = _rel_to_abs(self._x, parent_width, self._dx)
+        self._top =  _rel_to_abs(self._y, parent_height, self._dy)
+        self._width = _rel_to_abs(self._w, parent_width, self._dw)
+        self._height = _rel_to_abs(self._h, parent_height, self._dh)
 
 
     def __repr__(self):
@@ -145,15 +183,21 @@ class Window(object):
 
 
     @property
-    def parent_width(self):
+    def parent(self):
 
-        return self._parent_bt.width
+        return self._parent
 
 
     @property
-    def parent_height(self):
+    def width(self):
 
-        return self._parent_bt.height
+        return self._width
+
+
+    @property
+    def height(self):
+
+        return self._height
 
 
     def overlaps(self, window):
@@ -213,7 +257,7 @@ class Window(object):
         height = self._height
         window_bg = self._bg
 
-        bt = self._parent_bt
+        bt = self._parent.bt
         bt_move = bt.move
         self_char_format = self._char_format
 
