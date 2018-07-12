@@ -180,9 +180,9 @@ class Window(object):
     def print(self, text, x=None, y=None, fg=None, bg=None):
 
         attrs = []
-        if fg:
+        if fg is not None:
             attrs.extend((38, 5, fg))
-        if bg:
+        if bg is not None:
             attrs.extend((48, 5, bg))
         if attrs:
             self._screen.select_graphic_rendition(*attrs)
