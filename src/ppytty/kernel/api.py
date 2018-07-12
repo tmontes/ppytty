@@ -36,11 +36,11 @@ def direct_print(text, x=None, y=None, save_location=False):
 
 
 @types.coroutine
-def window_create(left, top, width, height, background=None):
+def window_create(x, y, w, h, dx=0, dy=0, dw=0, dh=0, background=None):
     """
     Creates a kernel managed window.
     """
-    return (yield Trap.WINDOW_CREATE, left, top, width, height, background)
+    return (yield Trap.WINDOW_CREATE, x, y, w, h, dx, dy, dw, dh, background)
 
 
 
