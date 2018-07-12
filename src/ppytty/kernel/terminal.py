@@ -32,7 +32,7 @@ class Terminal(object):
 
         width = width if width else self._bt.width
         height = height if height else self._bt.height
-        self._window = window.Window(left, top, width, height, bg)
+        self._window = window.Window(self, left, top, width, height, bg=bg)
 
         self.input_buffer = collections.deque()
 
@@ -75,6 +75,22 @@ class Terminal(object):
     def out_fd(self):
 
         return self._out_fd
+
+
+    @property
+    def bt(self):
+
+        # self is self._window's parent; thus it needs to expose self.bt.
+
+        return self._bt
+
+
+    @property
+    def window(self):
+
+        # Windows created via traps need parents: Terminal.window is that.
+
+        return self._window
 
 
     def _termios_settings(self, activate=True):
@@ -148,7 +164,7 @@ class Terminal(object):
 
     def render(self, full=False):
 
-        data = self._window_render(bt=self._bt, full=full, encoding=self._encoding)
+        data = self._window_render(full=full, encoding=self._encoding)
         self._os_write_out_fd(data)
 
 
