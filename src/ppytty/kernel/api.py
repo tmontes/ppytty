@@ -58,13 +58,16 @@ def window_destroy(window):
 
 
 @types.coroutine
-def window_render(window, full=False):
+def window_render(window, full=False, terminal_render=True):
     """
     Renders `window` onto the output terminal.
     If `full` is True, the whole window contents is rendered; otherwise, only
     the lines that changed since the previous render will be rendered.
+    If `terminal_render` is True, the terminal is rendered to the output TTY;
+    this allows tasks to optimize rendering multiple windows to the terminal
+    while only triggering the final terminal to TTY rendering at the end.
     """
-    yield Trap.WINDOW_RENDER, window, full
+    yield Trap.WINDOW_RENDER, window, full, terminal_render
 
 
 

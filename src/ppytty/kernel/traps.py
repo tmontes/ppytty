@@ -135,7 +135,7 @@ def window_destroy(task, window):
 
 
 @handler_for(Trap.WINDOW_RENDER)
-def window_render(task, window, full=False):
+def window_render(task, window, full=False, terminal_render=True):
 
     if not window in state.task_windows[task]:
         state.trap_will_throw(task, exceptions.TrapException('no such window'))
@@ -182,7 +182,8 @@ def window_render(task, window, full=False):
             continue
         common.render_window_to_terminal(w, full=True)
 
-    state.terminal.render()
+    if terminal_render:
+        state.terminal.render()
 
     state.runnable_tasks.append(task)
 
