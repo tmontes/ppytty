@@ -151,14 +151,12 @@ def window_render(task, window, full=False):
     except ValueError:
         raise RuntimeError('unexpected condition: window not in all_windows')
 
-    data = window.render(full=full)
-    state.terminal.feed(data)
+    common.render_window_to_terminal(window, full=full)
 
     for w in state.all_windows[window_index+1:]:
         if not w.overlaps(window):
             continue
-        data = w.render(full=True)
-        state.terminal.feed(data)
+        common.render_window_to_terminal(w, full=True)
 
     state.terminal.render()
 
