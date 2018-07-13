@@ -22,7 +22,7 @@ async def window_moves():
 
     for _ in range(15):
         w2.move(dx=-2, dy=-1 if random.random()<0.4 else 0)
-        await api.window_render(w2)
+        await api.window_render(w2, terminal_render=False)
         w1.move(dx=2, dy=1 if random.random()<0.5 else 0)
         await api.window_render(w1)
         await api.sleep(0.02)
