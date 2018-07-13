@@ -158,32 +158,37 @@ def window_render(task, window, full=False, terminal_render=True):
     except ValueError:
         raise RuntimeError('unexpected condition: window not in all_windows')
 
+    # Speed up attribute access
+    state_terminal = state.terminal
+    common_render_window_to_terminal = common.render_window_to_terminal
+    state_all_windows = state.all_windows
+
     uncovered = window.uncovered_geometry()
     if uncovered:
-        state.terminal.window.erase_geometry(*uncovered)
+        state_terminal.window.erase_geometry(*uncovered)
         # Re-render windows below `window`, as needed.
-        for w in state.all_windows[:window_index]:
+        for w in state_all_windows[:window_index]:
             if not w.overlaps_geometry(*uncovered):
                 continue
-            common.render_window_to_terminal(w, full=True)
+            common_render_window_to_terminal(w, full=True)
         # Uncovered means move/resize: a full render is needed.
         full = True
 
 
     # Render the actual window.
-    common.render_window_to_terminal(window, full=full)
+    common_render_window_to_terminal(window, full=full)
 
     # Re-render windows on top of `window`, as needed.
-    for w in state.all_windows[window_index+1:]:
+    for w in state_all_windows[window_index+1:]:
         if not uncovered:
             if not w.overlaps(window):
                 continue
         elif not w.overlaps(window) and not w.overlaps_geometry(*uncovered):
             continue
-        common.render_window_to_terminal(w, full=True)
+        common_render_window_to_terminal(w, full=True)
 
     if terminal_render:
-        state.terminal.render()
+        state_terminal.render()
 
     state.runnable_tasks.append(task)
 
