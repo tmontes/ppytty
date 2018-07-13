@@ -8,8 +8,8 @@ class WindowExerciser(ppytty.Task):
 
     async def run(self):
 
-        w1 = await self.api.window_create(0.1, 0.1, 0.5, 0.5, background=31)
-        w2 = await self.api.window_create(0.4, 0.4, 0.5, 0.5, background=39)
+        w1 = await self.api.window_create(0.1, 0.1, 0.4, 0.4, background=31)
+        w2 = await self.api.window_create(0.4, 0.4, 0.4, 0.4, background=39)
 
         w1.print('Bottom window'.center(w1.width), bg=17)
         w2.print('Top window'.center(w2.width), bg=19)
@@ -22,11 +22,10 @@ class WindowExerciser(ppytty.Task):
         await self.api.window_render(w2)
         await self.api.sleep(0.5)
         await self.api.window_render(w1)
-        await self.api.sleep(0.5)
 
         words = 'the quick brown fox jumps over the lazy dog'.split()
         windows = (w1, w2)
-        for _ in range(w1.width*w1.height//2):
+        for _ in range(int(w1.width*w1.height//2.5)):
             window = random.choice(windows)
             word = random.choice(words)
             window.print(word + ' ')
@@ -41,6 +40,9 @@ class WindowExerciser(ppytty.Task):
         w2.print('  [ANY KEY TO END]')
         await self.api.window_render(w2)
 
+        await self.api.key_read()
+
+        await self.api.window_destroy(w1)
         await self.api.key_read()
 
 
