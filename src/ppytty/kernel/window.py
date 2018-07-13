@@ -144,6 +144,9 @@ class Window(object):
         self._dh = dh
         self._update_geometry()
 
+        # Track "uncovered" parent geometry after moves/resizes.
+        self._update_last_render_geometry()
+
         self._bg = bg
 
         self._screen = pyte.Screen(self._width, self._height)
@@ -175,6 +178,14 @@ class Window(object):
         self._height = _rel_to_abs(self._h, parent_height, self._dh)
 
 
+    def _update_last_render_geometry(self):
+
+        self._last_render_left = self._left
+        self._last_render_top = self._top
+        self._last_render_width = self._width
+        self._last_render_height = self._height
+
+
     def __repr__(self):
 
         geometry = f'{self._width}x{self._height}'
@@ -202,23 +213,70 @@ class Window(object):
 
     def overlaps(self, window):
 
-        a_min_x = self._left
-        a_max_x = a_min_x + self._width - 1
-        a_min_y = self._top
-        a_max_y = a_min_y + self._height - 1
-        b_min_x = window._left
-        b_max_x = b_min_x + window._width - 1
-        b_min_y = window._top
-        b_max_y = b_min_y + window._height - 1
-        horizontal = (a_min_x <= b_max_x) and (a_max_x >= b_min_x)
-        vertical = (a_min_y <= b_max_y) and (a_max_y >= b_min_y)
+        w_min_x = window._left
+        w_max_x = w_min_x + window._width - 1
+        w_min_y = window._top
+        w_max_y = w_min_y + window._height - 1
+
+        return self.overlaps_geometry(w_min_x, w_max_x, w_min_y, w_max_y)
+
+
+    def overlaps_geometry(self, g_min_x, g_max_x, g_min_y, g_max_y):
+
+        my_min_x = self._left
+        my_max_x = my_min_x + self._width - 1
+        my_min_y = self._top
+        my_max_y = my_min_y + self._height - 1
+
+        horizontal = (my_min_x <= g_max_x) and (my_max_x >= g_min_x)
+        vertical = (my_min_y <= g_max_y) and (my_max_y >= g_min_y)
+
         return horizontal and vertical
+
+
+    def uncovered_geometry(self):
+
+        # Returns (min_x, min_y, max_x, max_y) tuple in parent coordinates if
+        # the Window moved/resized such that it left "blanks" in the parent
+        # since the last render; otherwise returns `None`.
+
+        # IOW: if the current geometry fully "covers" the last rendered geometry
+        # return `None`, otherwise return the last rendered geometry such that
+        # callers know they might need to "erase/re-render" the uncovered area.
+
+        cur_min_x = self._left
+        cur_max_x = cur_min_x + self._width - 1
+        cur_min_y = self._top
+        cur_max_y = cur_min_y + self._height - 1
+        lr_min_x = self._last_render_left
+        lr_max_x = lr_min_x + self._last_render_width - 1
+        lr_min_y = self._last_render_top
+        lr_max_y = lr_min_y + self._last_render_height - 1
+
+        horizontal_covered = (cur_min_x <= lr_min_x) and (cur_max_x >= lr_max_x)
+        vertical_covered = (cur_min_y <= lr_min_y) and (cur_max_y >= lr_max_y)
+
+        if horizontal_covered and vertical_covered:
+            return None
+        return lr_min_x, lr_max_x, lr_min_y, lr_max_y
 
 
     def clear(self, how=2):
 
         self._screen.erase_in_display(how)
         self._screen.cursor_position()
+
+
+    def erase_geometry(self, min_x, max_x, min_y, max_y):
+
+        self_screen = self._screen
+        self_screen_buffer = self_screen.buffer
+        self_screen_dirty = self_screen.dirty
+
+        for y in range(min_y, max_y+1):
+            for x in range(min_x, max_x+1):
+                del self_screen_buffer[y][x]
+            self_screen_dirty.add(y)
 
 
     def print(self, text, x=None, y=None, fg=None, bg=None):
@@ -238,6 +296,17 @@ class Window(object):
 
         if attrs:
             self._screen.select_graphic_rendition(0)
+
+
+    def move(self, x=None, y=None, dx=0, dy=0):
+
+        if x is not None:
+            self._x = x
+        if y is not None:
+            self._y = y
+        self._dx += dx
+        self._dy += dy
+        self._update_geometry()
 
 
     def feed(self, data):
@@ -289,7 +358,10 @@ class Window(object):
             payload_append(bt_move(top+screen_cursor.y, left+screen_cursor.x))
             if not screen_cursor.hidden:
                 payload_append(bt.normal_cursor)
+
         screen_dirty.clear()
+        self._update_last_render_geometry()
+
         return ''.join(payload).encode(encoding)
 
 
