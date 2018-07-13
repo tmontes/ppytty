@@ -142,23 +142,45 @@ def window_render(task, window, full=False):
         state.runnable_tasks.append(task)
         return
 
-    # Render `window` and all other windows that:
-    # - Overlap with it.
-    # - Are on top of it.
+    # General rendering strategy:
+    # - Find out if `window`` left any uncovered geometry since last render.
+    #   (due to moving or resizing)
+    # - If there is any uncovered geometry:
+    #   - Erase it in the destination terminal.
+    #   - Re-render all windows below `window` overlapping with that geometry.
+    # - Then render the actual `window`.
+    # - Finally, re-render all windows on top of `window`, skipping:
+    #   - The ones that do not overlap with it...
+    #   - ...and that do not overlap with the uncovered geometry (if any).
 
     try:
         window_index = state.all_windows.index(window)
     except ValueError:
         raise RuntimeError('unexpected condition: window not in all_windows')
 
-    data = window.render(full=full)
-    state.terminal.feed(data)
+    uncovered = window.uncovered_geometry()
+    if uncovered:
+        state.terminal.window.erase_geometry(*uncovered)
+        # Re-render windows below `window`, as needed.
+        for w in state.all_windows[:window_index]:
+            if not w.overlaps_geometry(*uncovered):
+                continue
+            common.render_window_to_terminal(w, full=True)
+        # Uncovered means move/resize: a full render is needed.
+        full = True
 
+
+    # Render the actual window.
+    common.render_window_to_terminal(window, full=full)
+
+    # Re-render windows on top of `window`, as needed.
     for w in state.all_windows[window_index+1:]:
-        if not w.overlaps(window):
+        if not uncovered:
+            if not w.overlaps(window):
+                continue
+        elif not w.overlaps(window) and not w.overlaps_geometry(*uncovered):
             continue
-        data = w.render(full=True)
-        state.terminal.feed(data)
+        common.render_window_to_terminal(w, full=True)
 
     state.terminal.render()
 

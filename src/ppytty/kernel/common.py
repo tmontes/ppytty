@@ -9,6 +9,13 @@ from . state import state
 
 
 
+def render_window_to_terminal(window, full):
+
+    data = window.render(full=full)
+    state.terminal.feed(data)
+
+
+
 def destroy_task_windows(task):
 
     need_rerender = bool(state.task_windows[task])
@@ -27,8 +34,7 @@ def rerender_all_windows():
     state.terminal.clear()
 
     for w in state.all_windows:
-        data = w.render(full=True)
-        state.terminal.feed(data)
+        render_window_to_terminal(w, full=True)
 
     state.terminal.render()
 
