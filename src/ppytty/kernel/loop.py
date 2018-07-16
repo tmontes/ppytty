@@ -97,7 +97,7 @@ def process_task_trap(task, trap):
                     state.trap_will_throw(task, exceptions.TrapArgCountWrong(*te.args))
                     state.runnable_tasks.append(task)
                     return
-            log.error('%r trap %r execution failed: %r', task, trap, e)
+            log.error('%r trap %r execution failed', task, trap, exc_info=True)
             # TODO: trap handler execution failed: inconsistent state? panic?
 
 
