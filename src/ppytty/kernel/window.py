@@ -276,7 +276,10 @@ class Window(object):
         from_x = max(0, min_x)
         to_x = min(self._width, max_x+1)
 
-        for y in range(min_y, max_y+1):
+        from_y = max(0, min_y)
+        to_y = min(self._height, max_y+1)
+
+        for y in range(from_y, to_y):
             for x in range(from_x, to_x):
                 del self_screen_buffer[y][x]
             self_screen_dirty.add(y)
@@ -319,6 +322,7 @@ class Window(object):
 
     def render(self, full=False, encoding='utf8'):
 
+        self_parent = self._parent
         screen = self._screen
         screen_cursor = screen.cursor
         screen_buffer = screen.buffer
@@ -326,27 +330,35 @@ class Window(object):
         left = self._left
         render_left = max(0, left)
         top = self._top
-        height = self._height
         window_bg = self._bg
 
-        bt = self._parent.bt
+        bt = self_parent.bt
         bt_move = bt.move
         self_char_format = self._char_format
 
         payload = []
         payload_append = payload.append
 
-        prev_char_format = ''
-        line_numbers = range(height) if full else screen_dirty
+        # Do not render lines outside of parent geometry
+        if full:
+            min_line = max(0, -top)
+            max_line = min(self._height, self_parent.height - top)
+            line_numbers = range(min_line, max_line)
+        else:
+            line_numbers = {
+                line_no for line_no in screen_dirty
+                if -top <= line_no < self_parent.height - top
+            }
 
         if line_numbers and not screen_cursor.hidden:
             payload_append(bt.hide_cursor)
 
         # Do not render columns outside of parent geometry
         min_column = max(0, -left)
-        max_column = min(self._width, self.parent.width - left)
+        max_column = min(self._width, self_parent.width - left)
         column_numbers = range(min_column, max_column)
 
+        prev_char_format = ''
         for line_no in line_numbers:
             line_data = screen_buffer[line_no]
             payload_append(bt_move(top+line_no, render_left))
@@ -363,7 +375,8 @@ class Window(object):
 
         if line_numbers:
             payload_append(bt.normal)
-            payload_append(bt_move(top+screen_cursor.y, render_left+screen_cursor.x))
+            # TODO: Improve cursor handling if outside parent geometry.
+            payload_append(bt_move(max(0, top+screen_cursor.y), render_left+screen_cursor.x))
             if not screen_cursor.hidden:
                 payload_append(bt.normal_cursor)
 
