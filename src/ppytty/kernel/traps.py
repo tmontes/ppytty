@@ -101,8 +101,7 @@ def window_create(task, x, y, w, h, dx, dy, dw, dh, bg):
     try:
         w = Window(state.terminal.window, x, y, w, h, dx, dy, dw, dh, bg)
     except Exception as e:
-        log.error('%r window create failed: %s', task, e)
-        log.debug('%r traceback', task, exc_info=True)
+        log.error('%r window create failed', task, exc_info=True)
         w = None
     else:
         state.task_windows[task].append(w)
