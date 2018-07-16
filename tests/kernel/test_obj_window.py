@@ -102,6 +102,8 @@ class TestWithHiddenCursor(helper_io.NoOutputTestCase):
         self.sbt = window._SelfBlessingsTerminal(80, 25)
         parent = types.SimpleNamespace()
         parent.bt = self.sbt
+        parent.width = 80
+        parent.height = 25
         self.w = window.Window(parent, 0, 0, self.WIDTH, self.HEIGHT)
 
 
