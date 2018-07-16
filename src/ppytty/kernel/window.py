@@ -273,8 +273,11 @@ class Window(object):
         self_screen_buffer = self_screen.buffer
         self_screen_dirty = self_screen.dirty
 
+        from_x = max(0, min_x)
+        to_x = min(self._width, max_x+1)
+
         for y in range(min_y, max_y+1):
-            for x in range(min_x, max_x+1):
+            for x in range(from_x, to_x):
                 del self_screen_buffer[y][x]
             self_screen_dirty.add(y)
 
@@ -321,8 +324,8 @@ class Window(object):
         screen_buffer = screen.buffer
         screen_dirty = screen.dirty
         left = self._left
+        render_left = max(0, left)
         top = self._top
-        width = self._width
         height = self._height
         window_bg = self._bg
 
@@ -339,10 +342,15 @@ class Window(object):
         if line_numbers and not screen_cursor.hidden:
             payload_append(bt.hide_cursor)
 
+        # Do not render columns outside of parent geometry
+        min_column = max(0, -left)
+        max_column = min(self._width, self.parent.width - left)
+        column_numbers = range(min_column, max_column)
+
         for line_no in line_numbers:
             line_data = screen_buffer[line_no]
-            payload_append(bt_move(top+line_no, left))
-            for column_no in range(width):
+            payload_append(bt_move(top+line_no, render_left))
+            for column_no in column_numbers:
                 char_data, fg, bg, bold, _, _, _, reverse = line_data[column_no]
                 default_bg = window_bg
                 if hasattr(window_bg, '__getitem__'):
@@ -355,7 +363,7 @@ class Window(object):
 
         if line_numbers:
             payload_append(bt.normal)
-            payload_append(bt_move(top+screen_cursor.y, left+screen_cursor.x))
+            payload_append(bt_move(top+screen_cursor.y, render_left+screen_cursor.x))
             if not screen_cursor.hidden:
                 payload_append(bt.normal_cursor)
 
