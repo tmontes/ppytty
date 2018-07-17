@@ -50,6 +50,9 @@ class _State(object):
         self.tasks_waiting_time = []
         self.tasks_waiting_time_hq = []
 
+        # Tasks waiting on spawned processes.
+        self.tasks_waiting_processes = set()
+
         # ---------------------------------------------------------------------
         # Spawned objects
 
@@ -79,17 +82,23 @@ class _State(object):
 
         # Keys: Tasks, Values: List of Task created Windows.
         self.task_windows = collections.defaultdict(list)
-
         # Task created Window list in back to front rendering order.
         self.all_windows = []
+
+        # Keys: Tasks, Values: List of Task spawned Processes.
+        self.task_processes = collections.defaultdict(list)
+        # Keys: Processes, Values: Tasks
+        self.process_task = {}
+        # Keys: PIDs, Values: Processes
+        self.all_processes = {}
+        # Keys: Tasks, Values: List of completed Processes.
+        self.completed_processes = collections.defaultdict(collections.deque)
 
         # ---------------------------------------------------------------------
         # I/O file descriptors.
 
-        self.in_fds = []
+        self.in_fds = {}
         self.out_fds = []
-        self.user_in_fd = None
-        self.user_out_fd = None
 
         # ---------------------------------------------------------------------
         # Environment.
@@ -114,10 +123,18 @@ class _State(object):
         self.runnable_tasks.append(self.top_task)
 
         self.terminal = terminal
-        self.user_in_fd = terminal.in_fd
-        self.in_fds.append(terminal.in_fd)
-        self.user_out_fd = terminal.out_fd
+        self.track_input_fd(terminal.in_fd, callback=None)
         self.out_fds.append(terminal.out_fd)
+
+
+    def track_input_fd(self, fd, callback):
+
+        self.in_fds[fd] = callback
+
+
+    def discard_input_fd(self, fd):
+
+        del self.in_fds[fd]
 
 
     def get_mapped_kernel_task(self, user_task):
@@ -173,6 +190,25 @@ class _State(object):
 
         if not self.tasks_waiting_time:
             self.tasks_waiting_time_hq.clear()
+
+
+    def track_task_process(self, task, process):
+
+        self.task_processes[task].append(process)
+        self.process_task[process] = task
+        self.all_processes[process.pid] = process
+
+
+    def cleanup_task_process(self, task, process):
+
+        task_processes = self.task_processes[task]
+        task_processes.remove(process)
+        if not task_processes:
+            del self.task_processes[task]
+        del self.process_task[process]
+        del self.all_processes[process.pid]
+        if not self.completed_processes[task]:
+            del self.completed_processes[task]
 
 
 

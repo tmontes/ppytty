@@ -5,8 +5,6 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-import unittest
-
 from ppytty.kernel import run, api
 from ppytty.kernel.exceptions import TrapException
 
@@ -16,7 +14,7 @@ from . import helper_state
 
 
 
-class TestNeedingOutput(unittest.TestCase):
+class TestNeedingOutput(helper_io.NoOutputTestCase):
 
     def setUp(self):
 
@@ -27,14 +25,6 @@ class TestNeedingOutput(unittest.TestCase):
 
         helper_log.remove_handler(self.log_handler)
 
-
-    # Using helper_io.NoOutputTestCase makes this test fail.
-    # Motive:
-    # - state.user_out_fd would be a callable mock.
-    # - The trap implementation excludes any callable attribute.
-
-    # TODO: Maybe we can get back to a no-output producing test when the
-    # input tests and associated input fakes are created.
 
     def test_state_dump_logs_all_state_fields(self):
 

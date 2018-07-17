@@ -9,12 +9,14 @@ import enum
 import collections
 import heapq
 import logging
+import os
 
 from . import exceptions
 from . import common
 from . import loop
 from . state import state
 from . window import Window
+from . process import Process
 
 
 
@@ -45,6 +47,9 @@ class Trap(enum.Enum):
 
     MESSAGE_SEND = enum.auto()
     MESSAGE_WAIT = enum.auto()
+
+    PROCESS_SPAWN = enum.auto()
+    PROCESS_WAIT = enum.auto()
 
     STATE_DUMP = enum.auto()
 
@@ -353,6 +358,46 @@ def message_wait(task):
 
 
 
+@handler_for(Trap.PROCESS_SPAWN)
+def process_spawn(task, window, args, buffer_size=4096):
+
+    def updater(from_fd):
+
+        def callback():
+            window.feed(os.read(from_fd, buffer_size))
+            common.render_window_to_terminal(window, full=False)
+            state.terminal.render()
+
+        return callback
+
+    try:
+        process = Process(window, args)
+    except Exception as e:
+        exc = exceptions.TrapException('process spawning failed', e)
+        state.trap_will_throw(task, exc)
+    else:
+        state.track_task_process(task, process)
+        state.track_input_fd(process.pty_master_fd, updater(process.pty_master_fd))
+        state.trap_will_return(task, process)
+    finally:
+        state.runnable_tasks.append(task)
+
+
+
+@handler_for(Trap.PROCESS_WAIT)
+def process_wait(task):
+
+    completed_processes = state.completed_processes.get(task)
+    if completed_processes:
+        process = completed_processes.popleft()
+        state.cleanup_task_process(task, process)
+        state.trap_will_return(task, process)
+        state.runnable_tasks.append(task)
+    else:
+        state.tasks_waiting_processes.add(task)
+
+
+
 _SEPARATOR = '-' * 60
 
 @handler_for(Trap.STATE_DUMP)
@@ -369,6 +414,8 @@ def state_dump(task, tag=''):
             return 'WK'
         if task in state.tasks_waiting_time:
             return 'WT'
+        if task in state.tasks_waiting_processes:
+            return 'WP'
         if task in state.completed_tasks:
             return 'CC'
         return 'RR'

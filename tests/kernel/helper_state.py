@@ -37,6 +37,16 @@ def _assert_empty_dict(object, attr_name):
         raise AssertionError(f'{attr_name!r} with non-zero length: {value!r}')
 
 
+def _assert_empty_set(object, attr_name):
+
+    value = getattr(object, attr_name)
+    for expected_attr in ('add', 'remove', 'update'):
+        if not hasattr(value, expected_attr):
+            raise AssertionError(f'{attr_name!r} not set-like: no {expected_attr} method')
+    if len(value):
+        raise AssertionError(f'{attr_name!r} with non-zero length: {value!r}')
+
+
 # Utility callables to change kernel state.
 
 def _change_scalar(object, attr_name):
@@ -54,6 +64,12 @@ def _change_dict(object, attr_name):
 
     attr = getattr(object, attr_name)
     attr[42] = 42
+
+
+def _change_set(object, attr_name):
+
+    attr = getattr(object, attr_name)
+    attr.add(42)
 
 
 
@@ -75,6 +91,7 @@ STATE_ATTRS = {
     'tasks_waiting_key': (_assert_empty_list, _change_list),
     'tasks_waiting_time': (_assert_empty_list, _change_list),
     'tasks_waiting_time_hq': (_assert_empty_list, _change_list),
+    'tasks_waiting_processes': (_assert_empty_set, _change_set),
     'user_space_tasks': (_assert_empty_dict, _change_dict),
     'kernel_space_tasks': (_assert_empty_dict, _change_dict),
     'trap_call': (_assert_empty_dict, _change_dict),
@@ -83,10 +100,12 @@ STATE_ATTRS = {
     'task_inbox': (_assert_empty_dict, _change_dict),
     'task_windows': (_assert_empty_dict, _change_dict),
     'all_windows': (_assert_empty_list, _change_list),
-    'in_fds': (_assert_empty_list, _change_list),
+    'task_processes': (_assert_empty_dict, _change_dict),
+    'process_task': (_assert_empty_dict, _change_dict),
+    'all_processes': (_assert_empty_dict, _change_dict),
+    'completed_processes': (_assert_empty_dict, _change_dict),
+    'in_fds': (_assert_empty_dict, _change_dict),
     'out_fds': (_assert_empty_list, _change_list),
-    'user_in_fd': (_assert_is_none, _change_scalar),
-    'user_out_fd': (_assert_is_none, _change_scalar),
     'now': (_assert_is_none, _change_scalar),
     'terminal': (_assert_is_none, _change_scalar),
 }
