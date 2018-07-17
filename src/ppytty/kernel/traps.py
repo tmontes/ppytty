@@ -9,6 +9,7 @@ import enum
 import collections
 import heapq
 import logging
+import os
 
 from . import exceptions
 from . import common
@@ -358,7 +359,16 @@ def message_wait(task):
 
 
 @handler_for(Trap.PROCESS_SPAWN)
-def process_spawn(task, window, args):
+def process_spawn(task, window, args, buffer_size=4096):
+
+    def updater(from_fd):
+
+        def callback():
+            window.feed(os.read(from_fd, buffer_size))
+            common.render_window_to_terminal(window, full=False)
+            state.terminal.render()
+
+        return callback
 
     try:
         process = Process(window, args)
@@ -367,6 +377,7 @@ def process_spawn(task, window, args):
         state.trap_will_throw(task, exc)
     else:
         state.track_task_process(task, process)
+        state.track_input_fd(process.pty_master_fd, updater(process.pty_master_fd))
         state.trap_will_return(task, process)
     finally:
         state.runnable_tasks.append(task)

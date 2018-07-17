@@ -21,6 +21,7 @@ class Process(object):
 
         master, slave = os.openpty()
         self._pty_master = master
+        self._pty_slave = slave
 
         self._process = subprocess.Popen(
             args, bufsize=0, stdin=slave, stdout=slave, stderr=slave,
@@ -60,6 +61,12 @@ class Process(object):
         # Calling .wait() on the Popen object ensures the proper internal clean
         # up, avoiding a misleading ResourceWarning.
         self._process.wait()
+
+
+    @property
+    def pty_master_fd(self):
+
+        return self._pty_master
 
 
     @property

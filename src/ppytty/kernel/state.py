@@ -123,8 +123,13 @@ class _State(object):
         self.runnable_tasks.append(self.top_task)
 
         self.terminal = terminal
-        self.in_fds[terminal.in_fd] = None
+        self.track_input_fd(terminal.in_fd, callback=None)
         self.out_fds.append(terminal.out_fd)
+
+
+    def track_input_fd(self, fd, callback):
+
+        self.in_fds[fd] = callback
 
 
     def get_mapped_kernel_task(self, user_task):
