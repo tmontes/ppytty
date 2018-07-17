@@ -99,7 +99,6 @@ class _State(object):
 
         self.in_fds = {}
         self.out_fds = []
-        self.user_out_fd = None
 
         # ---------------------------------------------------------------------
         # Environment.
@@ -125,7 +124,6 @@ class _State(object):
 
         self.terminal = terminal
         self.in_fds[terminal.in_fd] = None
-        self.user_out_fd = terminal.out_fd
         self.out_fds.append(terminal.out_fd)
 
 
