@@ -15,6 +15,7 @@ from . import common
 from . import loop
 from . state import state
 from . window import Window
+from . process import Process
 
 
 
@@ -359,20 +360,30 @@ def message_wait(task):
 @handler_for(Trap.PROCESS_SPAWN)
 def process_spawn(task, window, args):
 
-    # TODO: Implementation pending!
-    result = list()
-    state.trap_will_return(task, result)
-    state.runnable_tasks.append(task)
+    try:
+        process = Process(window, args)
+    except Exception as e:
+        exc = exceptions.TrapException('process spawning failed', e)
+        state.trap_will_throw(task, exc)
+    else:
+        state.track_task_process(task, process)
+        state.trap_will_return(task, process)
+    finally:
+        state.runnable_tasks.append(task)
 
 
 
 @handler_for(Trap.PROCESS_WAIT)
 def process_wait(task):
 
-    # TODO: Implementation pending!
-    result = list()
-    state.trap_will_return(task, result)
-    state.runnable_tasks.append(task)
+    completed_processes = state.completed_processes.get(task)
+    if completed_processes:
+        process = completed_processes.popleft()
+        state.cleanup_task_process(task, process)
+        state.trap_will_return(task, process)
+        state.runnable_tasks.append(task)
+    else:
+        state.tasks_waiting_processes.add(task)
 
 
 
@@ -392,6 +403,8 @@ def state_dump(task, tag=''):
             return 'WK'
         if task in state.tasks_waiting_time:
             return 'WT'
+        if task in state.tasks_waiting_processes:
+            return 'WP'
         if task in state.completed_tasks:
             return 'CC'
         return 'RR'

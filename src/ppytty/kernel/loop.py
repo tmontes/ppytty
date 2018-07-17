@@ -9,6 +9,8 @@ import contextlib
 import heapq
 import inspect
 import logging
+import os
+import signal
 
 from . import hw
 from . import exceptions
@@ -33,6 +35,7 @@ def run(task, post_prompt=None):
 
     with Terminal() as t:
         state.prepare_to_run(task, t)
+        track_child_process_termination()
         try:
             success, result = loop()
             while post_prompt:
@@ -44,10 +47,49 @@ def run(task, post_prompt=None):
 
 
 
+def track_child_process_termination():
+
+    # TODO: These should be closed, on exiting!
+    read_fd, write_fd = os.pipe()
+
+    def wakeup_lowlevel_io():
+        os.write(write_fd, b'!')
+
+    def consume_wakeup_byte():
+        os.read(read_fd, 1)
+
+    def signal_handler(_signal, _frame):
+        pid, status = os.wait()
+        log.info('SIGCHLD from pid=%r, status=%r', pid, status)
+        try:
+            process = state.all_processes[pid]
+        except KeyError:
+            log.error('SIGCHLD child process not found')
+        else:
+            try:
+                task = state.process_task[process]
+            except KeyError:
+                log.error('SIGCHLD task not found')
+            else:
+                process.store_wait_status(status)
+                if task in state.tasks_waiting_processes:
+                    state.tasks_waiting_processes.remove(task)
+                    state.trap_will_return(task, process)
+                    state.runnable_tasks.append(task)
+                    wakeup_lowlevel_io()
+                else:
+                    state.completed_processes[task].append(process)
+
+    state.in_fds[read_fd] = consume_wakeup_byte
+    signal.signal(signal.SIGCHLD, signal_handler)
+
+
+
 def loop(once=False):
 
     while (state.runnable_tasks or state.tasks_waiting_child or state.tasks_waiting_inbox or
-           state.tasks_waiting_key or state.tasks_waiting_time or state.completed_tasks):
+           state.tasks_waiting_key or state.tasks_waiting_time or state.completed_tasks or
+           state.tasks_waiting_processes):
         state.now = hw.time_monotonic()
         process_lowlevel_io()
         process_tasks_waiting_key()
@@ -214,23 +256,26 @@ def process_lowlevel_io(prompt=None):
         actual_prompt = 'QUIT?' if quit_in_progress else prompt
         with _prompt_context(actual_prompt):
             fds, _, _ = hw.select_select(state.in_fds, _NO_FDS, _NO_FDS, timeout)
-        if state.user_in_fd in fds:
-            keyboard_bytes = hw.os_read(state.user_in_fd, 8)
-            if keyboard_bytes == b'q':
-                if quit_in_progress:
-                    raise _ForcedStop()
+        for fd in fds:
+            in_fd_callable = state.in_fds[fd]
+            if in_fd_callable is None:
+                keyboard_bytes = hw.os_read(fd, 8)
+                if keyboard_bytes == b'q':
+                    if quit_in_progress:
+                        raise _ForcedStop()
+                    else:
+                        quit_in_progress = True
+                        timeout = None
+                elif quit_in_progress:
+                    quit_in_progress = False
+                    timeout = save_timeout
+                elif keyboard_bytes == b'D':
+                    trap_handlers[Trap.STATE_DUMP](None)
                 else:
-                    quit_in_progress = True
-                    timeout = None
-            elif quit_in_progress:
-                quit_in_progress = False
-                timeout = save_timeout
-            elif keyboard_bytes == b'D':
-                trap_handlers[Trap.STATE_DUMP](None)
+                    state.terminal.input_buffer.append(keyboard_bytes)
             else:
-                state.terminal.input_buffer.append(keyboard_bytes)
-                break
-        elif not quit_in_progress:
+                in_fd_callable()
+        if not quit_in_progress:
             break
 
 
