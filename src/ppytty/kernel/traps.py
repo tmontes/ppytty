@@ -46,6 +46,9 @@ class Trap(enum.Enum):
     MESSAGE_SEND = enum.auto()
     MESSAGE_WAIT = enum.auto()
 
+    PROCESS_SPAWN = enum.auto()
+    PROCESS_WAIT = enum.auto()
+
     STATE_DUMP = enum.auto()
 
 
@@ -350,6 +353,26 @@ def message_wait(task):
         state.runnable_tasks.append(task)
     else:
         state.tasks_waiting_inbox.append(task)
+
+
+
+@handler_for(Trap.PROCESS_SPAWN)
+def process_spawn(task, window, args):
+
+    # TODO: Implementation pending!
+    result = list()
+    state.trap_will_return(task, result)
+    state.runnable_tasks.append(task)
+
+
+
+@handler_for(Trap.PROCESS_WAIT)
+def process_wait(task):
+
+    # TODO: Implementation pending!
+    result = list()
+    state.trap_will_return(task, result)
+    state.runnable_tasks.append(task)
 
 
 

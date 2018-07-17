@@ -153,6 +153,27 @@ def message_wait():
 
 
 @types.coroutine
+def process_spawn(window, args):
+    """
+    Spawns a child process with its stdin/out/err wired to a PTY in `window`.
+    `args` should be a list where the first item is the executable and the
+    remaining will be passed to it as command line arguments.
+
+    Returns a process object.
+    """
+    return (yield Trap.PROCESS_SPAWN, window, args)
+
+
+@types.coroutine
+def process_wait():
+    """
+    Waits for a child process to terminate.
+    Returns a (process, exit_code) tuple.
+    """
+    return (yield Trap.PROCESS_WAIT,)
+
+
+@types.coroutine
 def state_dump(tag=''):
     """
     Dumps the kernel state to the log, tagged with the optional `tag`.
