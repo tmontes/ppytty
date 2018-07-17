@@ -74,6 +74,11 @@ class Process(object):
         return self._exit_signal
 
 
+    def signal(self, signal):
+
+        return self._process.send_signal(signal)
+
+
     def terminate(self):
 
         return self._process.terminate()

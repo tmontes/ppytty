@@ -6,6 +6,7 @@
 # ----------------------------------------------------------------------------
 
 import textwrap
+import signal
 import sys
 
 from ppytty.kernel import run, api
@@ -64,9 +65,45 @@ class Tests(helper_io.NoOutputTestCase):
         self.assertEqual(completed_process.exit_signal, 0)
 
 
-    def test_spawn_signal_wait(self):
+    async def _signal_test_task(self, send_signal_callable):
 
-        raise NotImplementedError()
+        window = await api.window_create(0, 0, 80, 25)
+        args = self._sleeper_process_args(42)
+        spawned_process = await api.process_spawn(window, args)
+        send_signal_callable(spawned_process)
+        completed_process = await api.process_wait()
+        await api.window_destroy(window)
+        return completed_process
+
+
+    def test_spawn_terminate_wait(self):
+
+        task = self._signal_test_task(lambda p: p.terminate())
+        success, completed_process = run(task)
+
+        self.assertTrue(success)
+        self.assertEqual(completed_process.exit_signal, signal.SIGTERM)
+        self.assertEqual(completed_process.exit_code, 0)
+
+
+    def test_spawn_kill_wait(self):
+
+        task = self._signal_test_task(lambda p: p.kill())
+        success, completed_process = run(task)
+
+        self.assertTrue(success)
+        self.assertEqual(completed_process.exit_signal, signal.SIGKILL)
+        self.assertEqual(completed_process.exit_code, 0)
+
+
+    def test_spawn_sigusr1_wait(self):
+
+        task = self._signal_test_task(lambda p: p.signal(signal.SIGUSR1))
+        success, completed_process = run(task)
+
+        self.assertTrue(success)
+        self.assertEqual(completed_process.exit_signal, signal.SIGUSR1)
+        self.assertEqual(completed_process.exit_code, 0)
 
 
 
