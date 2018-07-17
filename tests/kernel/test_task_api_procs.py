@@ -27,18 +27,35 @@ class Tests(helper_io.NoOutputTestCase):
         return [sys.executable, '-c', python_source_code]
 
 
-    def test_spawn_wait(self):
+    async def _spawn_sleep_wait(self, sleep_before_wait, process_sleep):
 
-        async def task():
+        window = await api.window_create(0, 0, 80, 25)
+        args = self._sleeper_process_args(process_sleep)
+        spawned_process = await api.process_spawn(window, args)
+        await api.sleep(sleep_before_wait)
+        completed_process = await api.process_wait()
+        await api.window_destroy(window)
+        return spawned_process, completed_process
 
-            window = await api.window_create(0, 0, 80, 25)
-            args = self._sleeper_process_args(0)
-            process = await api.process_spawn(window, args)
-            completed_process = await api.process_wait()
-            await api.window_destroy(window)
-            return process, completed_process
 
-        success, result = run(task)
+    def test_spawn_wait_process_ends(self):
+
+        success, result = run(self._spawn_sleep_wait(0, 0.1))
+
+        self.assertTrue(success)
+        spawned_process, completed_process = result
+        self.assertIs(spawned_process, completed_process)
+        self.assertEqual(completed_process.exit_code, 42)
+        self.assertEqual(completed_process.exit_signal, 0)
+
+
+    def test_spawn_process_ends_wait(self):
+
+        # Test is somewhat fragile
+        # Ideally it should exercise the "process terminates before our task
+        # waits for it" code path. It might not, if the spawning is too slow.
+
+        success, result = run(self._spawn_sleep_wait(0.1, 0))
 
         self.assertTrue(success)
         spawned_process, completed_process = result
