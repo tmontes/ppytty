@@ -5,6 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
+import textwrap
 import sys
 
 from ppytty.kernel import run, api
@@ -18,10 +19,11 @@ class Tests(helper_io.NoOutputTestCase):
     @staticmethod
     def _sleeper_process_args(seconds):
 
-        python_source_code = f"""
-            import time
+        python_source_code = textwrap.dedent(f"""
+            import time, sys
             time.sleep({seconds})
-        """
+            sys.exit(42)
+        """).strip()
         return [sys.executable, '-c', python_source_code]
 
 
@@ -41,6 +43,8 @@ class Tests(helper_io.NoOutputTestCase):
         self.assertTrue(success)
         spawned_process, completed_process = result
         self.assertIs(spawned_process, completed_process)
+        self.assertEqual(completed_process.exit_code, 42)
+        self.assertEqual(completed_process.exit_signal, 0)
 
 
     def test_spawn_signal_wait(self):
