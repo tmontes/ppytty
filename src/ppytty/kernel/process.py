@@ -7,6 +7,7 @@
 
 import fcntl
 import os
+import struct
 import subprocess
 import termios
 
@@ -22,16 +23,24 @@ class Process(object):
         master, slave = os.openpty()
         self._pty_master = master
         self._pty_slave = slave
+        self._set_pty_window_size()
 
+        # TODO: Currently passing environment copy to child process. Change?
         self._process = subprocess.Popen(
             args, bufsize=0, stdin=slave, stdout=slave, stderr=slave,
-            env={}, start_new_session=True,
+            start_new_session=True,
             preexec_fn=self._set_stdin_as_controlling_terminal
         )
 
         # Will be assigned when the process terminates
         self._exit_code = None
         self._exit_signal = None
+
+
+    def _set_pty_window_size(self):
+
+        ws = struct.pack('HHHH', self._window.height, self._window.width, 0, 0)
+        fcntl.ioctl(self._pty_master, termios.TIOCSWINSZ, ws)
 
 
     @staticmethod
@@ -52,8 +61,9 @@ class Process(object):
         return self._process.pid
 
 
-    def store_wait_status(self, status):
+    def wrap_up(self, status):
 
+        # Keep exit code and signal for interested parties.
         self._exit_code = status >> 8
         self._exit_signal = status & 0xff
 
@@ -61,6 +71,10 @@ class Process(object):
         # Calling .wait() on the Popen object ensures the proper internal clean
         # up, avoiding a misleading ResourceWarning.
         self._process.wait()
+
+        # Process gone, close the PTY.
+        os.close(self._pty_master)
+        os.close(self._pty_slave)
 
 
     @property
@@ -94,5 +108,6 @@ class Process(object):
     def kill(self):
 
         return self._process.kill()
+
 
 # ----------------------------------------------------------------------------

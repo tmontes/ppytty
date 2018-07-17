@@ -132,6 +132,11 @@ class _State(object):
         self.in_fds[fd] = callback
 
 
+    def discard_input_fd(self, fd):
+
+        del self.in_fds[fd]
+
+
     def get_mapped_kernel_task(self, user_task):
 
         try:

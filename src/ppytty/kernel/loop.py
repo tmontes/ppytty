@@ -71,7 +71,8 @@ def track_child_process_termination():
             except KeyError:
                 log.error('SIGCHLD task not found')
             else:
-                process.store_wait_status(status)
+                process.wrap_up(status)
+                state.discard_input_fd(process.pty_master_fd)
                 if task in state.tasks_waiting_processes:
                     state.tasks_waiting_processes.remove(task)
                     state.trap_will_return(task, process)
