@@ -300,6 +300,8 @@ def task_destroy(task, user_child_task, keep_running=True):
         state.cleanup_tasks_waiting_time_hq()
     elif child_task in state.tasks_waiting_inbox:
         state.tasks_waiting_inbox.remove(child_task)
+    elif child_task in state.tasks_waiting_processes:
+        state.tasks_waiting_processes.remove(child_task)
     elif child_task in state.completed_tasks:
         del state.completed_tasks[child_task]
     else:
@@ -309,6 +311,9 @@ def task_destroy(task, user_child_task, keep_running=True):
 
     state.clear_trap_info(child_task)
     common.destroy_task_windows(child_task)
+    if child_task in state.task_processes:
+        log.warning('%r did not wait for spawned processes: %r',
+                    child_task, state.task_processes[child_task])
     if keep_running:
         state.completed_tasks[child_task]  = (False, exceptions.TrapDestroyed(task))
         state.runnable_tasks.append(task)
