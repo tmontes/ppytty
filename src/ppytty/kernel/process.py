@@ -51,8 +51,7 @@ class Process(object):
             fcntl.fcntl(0, termios.TIOCSCTTY, 0)
         except OSError:
             # TODO: Figure out what's going on here.
-            # Tests are failing here on Linux, but ok on macOS.
-            # Non-testing code seems to work fine on both platforms.
+            # Failing on Linux with errno=22, but ok on macOS.
             # PS: Can't log this failure: this runs in the child process.
             pass
 
