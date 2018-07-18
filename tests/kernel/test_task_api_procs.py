@@ -144,6 +144,11 @@ class TestOddCases(helper_io.NoOutputTestCase):
         # Task should have succeeded.
         self.assertTrue(success, f'non-success result: {process!r}')
 
+        self._assert_process_running_and_message_logged(process, task)
+
+
+    def _assert_process_running_and_message_logged(self, process, task):
+
         # Use an actual system call to confirm that the process is running.
         still_running = None
         try:
@@ -172,7 +177,35 @@ class TestOddCases(helper_io.NoOutputTestCase):
 
     def test_child_task_spawns_and_is_destroyed(self):
 
-        raise NotImplementedError()
+        async def child():
+            window = await api.window_create(0, 0, 80, 25)
+            args = _sleeper_process_args(42)
+            process = await api.process_spawn(window, args)
+            await api.message_send(None, process)
+            _ = await api.process_wait()
 
+        async def parent():
+            child_task = child()
+            await api.task_spawn(child_task)
+            _, process = await api.message_wait()
+            # Sleep to ensure child gets to `api.process_wait`.
+            await api.sleep(0.001)
+            await api.task_destroy(child_task)
+            _ = await api.task_wait()
+            return child_task, process
+
+
+        # Calling it ourselves such that repr(task) can be found in the log.
+        task = parent()
+        success, result = run(task)
+        child_task, process = result
+
+        # Task should have succeeded.
+        self.assertTrue(success, f'non-success result: {process!r}')
+
+        # Child process should have been left running, clean it up when done.
+        self.addCleanup(lambda: process.terminate())
+
+        self._assert_process_running_and_message_logged(process, child_task)
 
 # ----------------------------------------------------------------------------
