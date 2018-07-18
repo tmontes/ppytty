@@ -74,12 +74,15 @@ def track_child_process_termination():
                 handle_process_termination(task, process, status)
 
 
+    def pending_read(fd):
+
+        return hw.select_select([fd], _NO_FDS, _NO_FDS, 0)[0]
+
     def handle_process_termination(task, process, status):
 
         process.store_exit_status(status)
         fd = process.pty_master_fd
-        pending_read, _, _ = hw.select_select([fd], _NO_FDS, _NO_FDS, 0)
-        if pending_read:
+        if pending_read(fd):
             orig_callback = state.in_fds[fd]
             new_callback = read_and_wrap_up(orig_callback, task, process)
             state.track_input_fd(fd, new_callback)
@@ -92,8 +95,10 @@ def track_child_process_termination():
 
         def new_callback():
             orig_callback()
-            state.discard_input_fd(process.pty_master_fd)
-            update_state(task, process)
+            fd = process.pty_master_fd
+            if not pending_read(fd):
+                state.discard_input_fd(fd)
+                update_state(task, process)
 
         return new_callback
 
