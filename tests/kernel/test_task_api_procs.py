@@ -5,6 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
+import os
 import textwrap
 import signal
 import sys
@@ -12,26 +13,27 @@ import sys
 from ppytty.kernel import run, api
 
 from . import helper_io
+from . import helper_log
+
+
+
+def _sleeper_process_args(seconds):
+
+    python_source_code = textwrap.dedent(f"""
+        import time, sys
+        time.sleep({seconds})
+        sys.exit(42)
+    """).strip()
+    return [sys.executable, '-c', python_source_code]
 
 
 
 class Tests(helper_io.NoOutputTestCase):
 
-    @staticmethod
-    def _sleeper_process_args(seconds):
-
-        python_source_code = textwrap.dedent(f"""
-            import time, sys
-            time.sleep({seconds})
-            sys.exit(42)
-        """).strip()
-        return [sys.executable, '-c', python_source_code]
-
-
     async def _spawn_sleep_wait(self, sleep_before_wait, process_sleep):
 
         window = await api.window_create(0, 0, 80, 25)
-        args = self._sleeper_process_args(process_sleep)
+        args = _sleeper_process_args(process_sleep)
         spawned_process = await api.process_spawn(window, args)
         await api.sleep(sleep_before_wait)
         completed_process = await api.process_wait()
@@ -68,7 +70,7 @@ class Tests(helper_io.NoOutputTestCase):
     async def _signal_test_task(self, send_signal_callable):
 
         window = await api.window_create(0, 0, 80, 25)
-        args = self._sleeper_process_args(42)
+        args = _sleeper_process_args(42)
         spawned_process = await api.process_spawn(window, args)
         # TODO: Something not 100% clear going on here.
         # Tests running this task fail "randomly". This sleep seems to help.
@@ -112,14 +114,98 @@ class Tests(helper_io.NoOutputTestCase):
 
 class TestOddCases(helper_io.NoOutputTestCase):
 
-    def test_spawn_process_and_terminate_task(self):
+    def setUp(self):
 
-        raise NotImplementedError()
+        super().setUp()
+        self.log_handler = helper_log.create_and_add_handler()
+
+
+    def tearDown(self):
+
+        helper_log.remove_handler(self.log_handler)
+        super().tearDown()
+
+
+    def test_spawn_dont_wait(self):
+
+        async def spawn_and_exit():
+            window = await api.window_create(0, 0, 80, 25)
+            args = _sleeper_process_args(42)
+            process = await api.process_spawn(window, args)
+            return process
+
+        # Calling it ourselves such that repr(task) can be found in the log.
+        task = spawn_and_exit()
+        success, process = run(task)
+
+        # Child process should have been left running, clean it up when done.
+        self.addCleanup(lambda: process.terminate())
+
+        # Task should have succeeded.
+        self.assertTrue(success, f'non-success result: {process!r}')
+
+        self._assert_process_running_and_message_logged(process, task)
+
+
+    def _assert_process_running_and_message_logged(self, process, task):
+
+        # Use an actual system call to confirm that the process is running.
+        still_running = None
+        try:
+            os.kill(process.pid, 0)
+        except OSError:
+            still_running = False
+        else:
+            still_running = True
+        finally:
+            self.assertTrue(still_running, 'expected process to be running')
+
+        # Since the process is running, these must be None
+        self.assertIsNone(process.exit_code, 'non-Non process.exit_code')
+        self.assertIsNone(process.exit_signal, 'non-Non process.exit_signal')
+
+        # A message should have been logged containing the following parts:
+        expected_parts = (repr(task), 'spawn', 'process', repr(process))
+        message_found = False
+        log_msgs = self.log_handler.messages
+        for level, msg in log_msgs:
+            if all(p in msg for p in expected_parts) and level=='WARNING':
+                message_found = True
+                break
+        self.assertTrue(message_found, f'expected message not logged: {log_msgs}')
 
 
     def test_child_task_spawns_and_is_destroyed(self):
 
-        raise NotImplementedError()
+        async def child():
+            window = await api.window_create(0, 0, 80, 25)
+            args = _sleeper_process_args(42)
+            process = await api.process_spawn(window, args)
+            await api.message_send(None, process)
+            _ = await api.process_wait()
 
+        async def parent():
+            child_task = child()
+            await api.task_spawn(child_task)
+            _, process = await api.message_wait()
+            # Sleep to ensure child gets to `api.process_wait`.
+            await api.sleep(0.001)
+            await api.task_destroy(child_task)
+            _ = await api.task_wait()
+            return child_task, process
+
+
+        # Calling it ourselves such that repr(task) can be found in the log.
+        task = parent()
+        success, result = run(task)
+        child_task, process = result
+
+        # Task should have succeeded.
+        self.assertTrue(success, f'non-success result: {process!r}')
+
+        # Child process should have been left running, clean it up when done.
+        self.addCleanup(lambda: process.terminate())
+
+        self._assert_process_running_and_message_logged(process, child_task)
 
 # ----------------------------------------------------------------------------

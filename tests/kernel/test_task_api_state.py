@@ -39,8 +39,8 @@ class TestNeedingOutput(helper_io.NoOutputTestCase):
         for state_attr in helper_state.STATE_ATTRS:
             with self.subTest(state_attr=state_attr):
                 expected_pattern = f'state.{state_attr}='
-                for message in self.log_handler.messages:
-                    if expected_pattern in message:
+                for level, message in self.log_handler.messages:
+                    if expected_pattern in message and level=='CRITICAL':
                         break
                 else:
                     raise AssertionError(f'{expected_pattern!r} not found')
@@ -72,8 +72,8 @@ class Test(helper_io.NoOutputAutoTimeTestCase):
         self.assertIsNone(result)
 
         expected = str(user_level_task)
-        for message in self.log_handler.messages:
-            if expected in message:
+        for level, message in self.log_handler.messages:
+            if expected in message and level=='CRITICAL':
                 break
             if 'DATA STRUCTURES' in message:
                 # if we get to this point, the task hierarchy is gone
@@ -148,9 +148,9 @@ class Test(helper_io.NoOutputAutoTimeTestCase):
         }
         for task, expected_state in expected_states.items():
             with self.subTest(task=task, expected_state=expected_state):
-                task_str = str(task)
-                for message in self.log_handler.messages:
-                    if task_str in message and expected_state in message:
+                expected_parts = (str(task), expected_state)
+                for level, message in self.log_handler.messages:
+                    if all(p in message for p in expected_parts) and level=='CRITICAL':
                         break
                     if 'DATA STRUCTURES' in message:
                         # if we get to this point, the task hierarchy is gone

@@ -250,6 +250,8 @@ def process_task_completion(task, success, result):
     state.clear_task_parenthood(task)
     state.clear_trap_info(task)
     common.destroy_task_windows(task)
+    if task in state.task_processes:
+        log.warning('%r did not wait for spawned processes: %r', task, state.task_processes[task])
 
 
 

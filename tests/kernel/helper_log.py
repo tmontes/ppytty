@@ -19,7 +19,7 @@ class Handler(logging.Handler):
 
     def emit(self, record):
 
-        self.messages.append(self.format(record))
+        self.messages.append((record.levelname, self.format(record)))
 
 
 

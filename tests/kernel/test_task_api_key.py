@@ -130,8 +130,8 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
         self.assertIsNone(result)
 
         separator_line_count = sum(
-            1 for msg in log_handler.messages
-            if 'DUMP STATE' in msg
+            1 for level, msg in log_handler.messages
+            if 'DUMP STATE' in msg and level=='CRITICAL'
         )
         self.assertGreaterEqual(separator_line_count, 1)
 
