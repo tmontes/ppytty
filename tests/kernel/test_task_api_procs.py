@@ -163,8 +163,8 @@ class TestOddCases(helper_io.NoOutputTestCase):
         expected_parts = (repr(task), 'spawn', 'process', repr(process))
         message_found = False
         log_msgs = self.log_handler.messages
-        for msg in log_msgs:
-            if all(p in msg for p in expected_parts):
+        for level, msg in log_msgs:
+            if all(p in msg for p in expected_parts) and level=='WARNING':
                 message_found = True
                 break
         self.assertTrue(message_found, f'expected message not logged: {log_msgs}')
