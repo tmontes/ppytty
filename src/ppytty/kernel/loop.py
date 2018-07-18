@@ -71,17 +71,43 @@ def track_child_process_termination():
             except KeyError:
                 log.error('SIGCHLD task not found')
             else:
-                process.wrap_up(status)
-                state.discard_input_fd(process.pty_master_fd)
-                if task in state.tasks_waiting_processes:
-                    state.tasks_waiting_processes.remove(task)
-                    state.trap_will_return(task, process)
-                    state.runnable_tasks.append(task)
-                    wakeup_lowlevel_io()
-                else:
-                    state.completed_processes[task].append(process)
+                handle_process_termination(task, process, status)
 
-    state.in_fds[read_fd] = consume_wakeup_byte
+
+    def handle_process_termination(task, process, status):
+
+        process.store_exit_status(status)
+        fd = process.pty_master_fd
+        pending_read, _, _ = hw.select_select([fd], _NO_FDS, _NO_FDS, 0)
+        if pending_read:
+            orig_callback = state.in_fds[fd]
+            new_callback = read_and_wrap_up(orig_callback, task, process)
+            state.track_input_fd(fd, new_callback)
+        else:
+            state.discard_input_fd(fd)
+            update_state(task, process)
+            wakeup_lowlevel_io()
+
+    def read_and_wrap_up(orig_callback, task, process):
+
+        def new_callback():
+            orig_callback()
+            state.discard_input_fd(process.pty_master_fd)
+            update_state(task, process)
+
+        return new_callback
+
+    def update_state(task, process):
+
+        if task in state.tasks_waiting_processes:
+            state.tasks_waiting_processes.remove(task)
+            state.cleanup_task_process(task, process)
+            state.trap_will_return(task, process)
+            state.runnable_tasks.append(task)
+        else:
+            state.completed_processes[task].append(process)
+
+    state.track_input_fd(read_fd, consume_wakeup_byte)
     signal.signal(signal.SIGCHLD, signal_handler)
 
 
