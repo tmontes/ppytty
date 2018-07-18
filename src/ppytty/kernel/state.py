@@ -100,6 +100,9 @@ class _State(object):
         self.in_fds = {}
         self.out_fds = []
 
+        # Used for deferred closing of process PTY FDs.
+        self.close_fd_callables = []
+
         # ---------------------------------------------------------------------
         # Environment.
 
