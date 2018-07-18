@@ -122,6 +122,7 @@ class StateAssertionsMixin(object):
         'tasks_waiting_inbox',
         'tasks_waiting_key',
         'tasks_waiting_time',
+        'tasks_waiting_processes',
     )
     def assert_no_tasks(self):
 
