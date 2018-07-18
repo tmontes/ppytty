@@ -20,7 +20,6 @@ class Process(object):
         self._window = window
         self._args = args
 
-        # TODO: Confirm these are auto-closed once the child terminates.
         master, slave = os.openpty()
         self._pty_master = master
         self._pty_slave = slave
@@ -77,6 +76,12 @@ class Process(object):
         # Calling .wait() on the Popen object ensures the proper internal clean
         # up, avoiding a misleading ResourceWarning.
         self._process.wait()
+
+
+    def close_pty(self):
+
+        os.close(self._pty_master)
+        os.close(self._pty_slave)
 
 
     @property

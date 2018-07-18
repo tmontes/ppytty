@@ -106,6 +106,7 @@ STATE_ATTRS = {
     'completed_processes': (_assert_empty_dict, _change_dict),
     'in_fds': (_assert_empty_dict, _change_dict),
     'out_fds': (_assert_empty_list, _change_list),
+    'close_fd_callables': (_assert_empty_list, _change_list),
     'now': (_assert_is_none, _change_scalar),
     'terminal': (_assert_is_none, _change_scalar),
 }

@@ -87,8 +87,7 @@ def track_child_process_termination():
             new_callback = read_and_wrap_up(orig_callback, task, process)
             state.track_input_fd(fd, new_callback)
         else:
-            state.discard_input_fd(fd)
-            update_state(task, process)
+            wrap_up(task, process)
             wakeup_lowlevel_io()
 
     def read_and_wrap_up(orig_callback, task, process):
@@ -97,13 +96,14 @@ def track_child_process_termination():
             orig_callback()
             fd = process.pty_master_fd
             if not pending_read(fd):
-                state.discard_input_fd(fd)
-                update_state(task, process)
+                wrap_up(task, process)
 
         return new_callback
 
-    def update_state(task, process):
+    def wrap_up(task, process):
 
+        state.discard_input_fd(process.pty_master_fd)
+        state.close_fd_callables.append(process.close_pty)
         if task in state.tasks_waiting_processes:
             state.tasks_waiting_processes.remove(task)
             state.cleanup_task_process(task, process)
@@ -307,6 +307,8 @@ def process_lowlevel_io(prompt=None):
                     state.terminal.input_buffer.append(keyboard_bytes)
             else:
                 in_fd_callable()
+        while state.close_fd_callables:
+            state.close_fd_callables.pop()()
         if not quit_in_progress:
             break
 
