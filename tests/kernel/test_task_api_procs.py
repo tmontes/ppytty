@@ -70,6 +70,9 @@ class Tests(helper_io.NoOutputTestCase):
         window = await api.window_create(0, 0, 80, 25)
         args = self._sleeper_process_args(42)
         spawned_process = await api.process_spawn(window, args)
+        # TODO: Something not 100% clear going on here.
+        # Tests running this task fail "randomly". This sleep seems to help.
+        await api.sleep(0.001)
         send_signal_callable(spawned_process)
         completed_process = await api.process_wait()
         await api.window_destroy(window)
@@ -81,7 +84,7 @@ class Tests(helper_io.NoOutputTestCase):
         task = self._signal_test_task(lambda p: p.terminate())
         success, completed_process = run(task)
 
-        self.assertTrue(success)
+        self.assertTrue(success, f'non-success result: {completed_process!r}')
         self.assertEqual(completed_process.exit_signal, signal.SIGTERM)
         self.assertEqual(completed_process.exit_code, 0)
 
@@ -91,7 +94,7 @@ class Tests(helper_io.NoOutputTestCase):
         task = self._signal_test_task(lambda p: p.kill())
         success, completed_process = run(task)
 
-        self.assertTrue(success)
+        self.assertTrue(success, f'non-success result: {completed_process!r}')
         self.assertEqual(completed_process.exit_signal, signal.SIGKILL)
         self.assertEqual(completed_process.exit_code, 0)
 
@@ -101,7 +104,7 @@ class Tests(helper_io.NoOutputTestCase):
         task = self._signal_test_task(lambda p: p.signal(signal.SIGUSR1))
         success, completed_process = run(task)
 
-        self.assertTrue(success)
+        self.assertTrue(success, f'non-success result: {completed_process!r}')
         self.assertEqual(completed_process.exit_signal, signal.SIGUSR1)
         self.assertEqual(completed_process.exit_code, 0)
 

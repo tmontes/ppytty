@@ -20,6 +20,7 @@ class Process(object):
         self._window = window
         self._args = args
 
+        # TODO: Confirm these are auto-closed once the child terminates.
         master, slave = os.openpty()
         self._pty_master = master
         self._pty_slave = slave
@@ -46,8 +47,13 @@ class Process(object):
     @staticmethod
     def _set_stdin_as_controlling_terminal():
 
-        fcntl.fcntl(0, termios.TIOCSCTTY, 0)
-
+        try:
+            fcntl.fcntl(0, termios.TIOCSCTTY, 0)
+        except OSError:
+            # TODO: Figure out what's going on here.
+            # Failing on Linux with errno=22, but ok on macOS.
+            # PS: Can't log this failure: this runs in the child process.
+            pass
 
     def __repr__(self):
 
@@ -61,7 +67,7 @@ class Process(object):
         return self._process.pid
 
 
-    def wrap_up(self, status):
+    def store_exit_status(self, status):
 
         # Keep exit code and signal for interested parties.
         self._exit_code = status >> 8
@@ -71,10 +77,6 @@ class Process(object):
         # Calling .wait() on the Popen object ensures the proper internal clean
         # up, avoiding a misleading ResourceWarning.
         self._process.wait()
-
-        # Process gone, close the PTY.
-        os.close(self._pty_master)
-        os.close(self._pty_slave)
 
 
     @property
