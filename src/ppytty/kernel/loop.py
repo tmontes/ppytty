@@ -104,6 +104,7 @@ def track_child_process_termination():
 
         state.discard_input_fd(process.pty_master_fd)
         state.close_fd_callables.append(process.close_pty)
+        state.cleanup_focusable_window_process(process=process)
         if task in state.tasks_waiting_processes:
             state.tasks_waiting_processes.remove(task)
             state.cleanup_task_process(task, process)
@@ -278,6 +279,7 @@ _NO_FDS = []
 def process_lowlevel_io(prompt=None):
 
     quit_in_progress = False
+    focused_process = state.window_process[state.focused_window]
 
     if state.runnable_tasks:
         timeout = 0
@@ -305,6 +307,12 @@ def process_lowlevel_io(prompt=None):
                     timeout = save_timeout
                 elif keyboard_bytes == b'D':
                     trap_handlers[Trap.STATE_DUMP](None)
+                elif keyboard_bytes == b'\x06':
+                    # CTRL-F
+                    focused_process = state.next_focusable_window_process()
+                    log.info('input focus on %r', focused_process)
+                elif focused_process:
+                    hw.os_write(focused_process.pty_master_fd, keyboard_bytes)
                 else:
                     state.terminal.input_buffer.append(keyboard_bytes)
             else:
