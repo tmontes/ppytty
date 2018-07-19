@@ -22,6 +22,7 @@ def destroy_task_windows(task):
 
     for window in state.task_windows[task]:
         state.all_windows.remove(window)
+        state.cleanup_focusable_window_process(window)
     del state.task_windows[task]
 
     if need_rerender:

@@ -127,6 +127,7 @@ def window_destroy(task, window):
 
     state.task_windows[task].remove(window)
     state.all_windows.remove(window)
+    state.cleanup_focusable_window_process(window)
 
     # One window is gone: need to re-render everything to account for it.
     # Possible optimizations:
@@ -381,6 +382,7 @@ def process_spawn(task, window, args, buffer_size=4096):
         exc = exceptions.TrapException('process spawning failed', e)
         state.trap_will_throw(task, exc)
     else:
+        state.track_focusable_window_process(window, process)
         state.track_task_process(task, process)
         state.track_input_fd(process.pty_master_fd, updater(process.pty_master_fd))
         state.trap_will_return(task, process)

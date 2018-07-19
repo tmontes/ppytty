@@ -37,6 +37,19 @@ def _assert_empty_dict(object, attr_name):
         raise AssertionError(f'{attr_name!r} with non-zero length: {value!r}')
 
 
+def _assert_none_mapping_dict(object, attr_name):
+
+    value = getattr(object, attr_name)
+    for expected_attr in ('keys', 'values', 'items'):
+        if not hasattr(value, expected_attr):
+            raise AssertionError(f'{attr_name!r} not dict-like: no {expected_attr} method')
+    if len(value) != 1:
+        raise AssertionError(f'{attr_name!r} with non-1 length: {value!r}')
+    expect_none = value[None]
+    if expect_none is not None:
+        raise AssertionError(f'None not mapped to None')
+
+
 def _assert_empty_set(object, attr_name):
 
     value = getattr(object, attr_name)
@@ -100,6 +113,10 @@ STATE_ATTRS = {
     'task_inbox': (_assert_empty_dict, _change_dict),
     'task_windows': (_assert_empty_dict, _change_dict),
     'all_windows': (_assert_empty_list, _change_list),
+    'focusable_windows': (_assert_empty_list, _change_list),
+    'focused_window': (_assert_is_none, _change_scalar),
+    'process_window': (_assert_empty_dict, _change_dict),
+    'window_process': (_assert_none_mapping_dict, _change_dict),
     'task_processes': (_assert_empty_dict, _change_dict),
     'process_task': (_assert_empty_dict, _change_dict),
     'all_processes': (_assert_empty_dict, _change_dict),

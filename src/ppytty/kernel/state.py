@@ -84,6 +84,14 @@ class _State(object):
         self.task_windows = collections.defaultdict(list)
         # Task created Window list in back to front rendering order.
         self.all_windows = []
+        # Windows that can get input focus.
+        self.focusable_windows = []
+        # Window with input focus.
+        self.focused_window = None
+        # Keys: Windows, Values: Processes
+        self.window_process = {None: None}
+        # Keys: Processes, Values: Windows
+        self.process_window = {}
 
         # Keys: Tasks, Values: List of Task spawned Processes.
         self.task_processes = collections.defaultdict(list)
@@ -193,6 +201,54 @@ class _State(object):
 
         if not self.tasks_waiting_time:
             self.tasks_waiting_time_hq.clear()
+
+
+    def track_focusable_window_process(self, window, process):
+
+        self.focusable_windows.append(window)
+        self.focused_window = window
+        self.window_process[window] = process
+        self.process_window[process] = window
+
+
+    def next_focusable_window_process(self):
+
+        if self.focused_window:
+            try:
+                focusable_count = len(self.focusable_windows)
+                focus_index = self.focusable_windows.index(self.focused_window)
+                next_index = focus_index + 1
+                if next_index == focusable_count:
+                    self.focused_window = None
+                else:
+                    self.focused_window = self.focusable_windows[next_index]
+            except ValueError:
+                # Shouldn't happen. Be safe side and assume none is focused.
+                pass
+            else:
+                return self.window_process[self.focused_window]
+
+        if self.focusable_windows:
+            self.focused_window = self.focusable_windows[0]
+        else:
+            self.focused_window = None
+
+        return self.window_process[self.focused_window]
+
+
+    def cleanup_focusable_window_process(self, window=None, process=None):
+
+        if process is not None:
+            window = self.process_window[process]
+
+        if window not in self.focusable_windows:
+            return
+
+        self.focusable_windows.remove(window)
+        if window is self.focused_window:
+            self.focused_window = None
+        process = self.window_process.pop(window, None)
+        self.process_window.pop(process, None)
 
 
     def track_task_process(self, task, process):
