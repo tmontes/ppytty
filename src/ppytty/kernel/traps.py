@@ -439,8 +439,6 @@ def state_dump(task, tag=''):
 
     def _log_object_vars(name, obj):
         for k, v in vars(obj).items():
-            if k.startswith('_') or callable(getattr(obj, k, None)):
-                continue
             if isinstance(v, collections.defaultdict):
                 v = dict(v)
             log.critical('%s.%s=%r', name, k, v)
