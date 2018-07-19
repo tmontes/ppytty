@@ -112,8 +112,8 @@ class TestWithHiddenCursor(helper_io.NoOutputTestCase):
         blank_line = self.WIDTH * ' '
         expected = []
         expected.append(
-            # First line: move to 0, 0 + normal text attributes + spaces.
-            self.sbt.move(0, 0) + self.sbt.normal + blank_line
+            # First line: hide cursor + move to 0, 0 + normal text attributes + spaces.
+            self.sbt.hide_cursor + self.sbt.move(0, 0) + self.sbt.normal + blank_line
         )
         for line_number in range(1, 15):
             expected.append(
@@ -174,7 +174,8 @@ class TestWithHiddenCursor(helper_io.NoOutputTestCase):
         rendered_bytes = self.w.render()
 
         expected_prefixes = [
-            # Cursor should be moved to top left and text attributes normal.
+            # Cursor should be hidden, moved to top left and text attributes normal.
+            self.sbt.hide_cursor.encode('latin1'),
             self.sbt.move(0, 0).encode('latin1'),
             self.sbt.normal.encode('latin1'),
         ]
@@ -203,7 +204,8 @@ class TestWithHiddenCursor(helper_io.NoOutputTestCase):
         rendered_bytes = self.w.render()
 
         expected_prefixes = [
-            # Cursor should be moved row=2, col=0 + normal text attributes.
+            # Cursor should be hidden + moved row=2, col=0 + normal text attributes.
+            self.sbt.hide_cursor.encode('latin1'),
             self.sbt.move(ROW, 0).encode('latin1'),
             self.sbt.normal.encode('latin1'),
         ]
@@ -232,7 +234,8 @@ class TestWithHiddenCursor(helper_io.NoOutputTestCase):
 
 
         expected_prefixes = [
-            # Cursor should be moved row=2, col=0 + normal text attributes.
+            # Cursor should be hiddent + moved row=2, col=0 + normal text attributes.
+            self.sbt.hide_cursor.encode('latin1'),
             self.sbt.move(row, 0).encode('latin1'),
             self.sbt.normal.encode('latin1'),
         ]
@@ -273,4 +276,6 @@ class TestWithHiddenCursor(helper_io.NoOutputTestCase):
         for column, row, fg, bg in positions_and_colors:
             with self.subTest(column=column, row=row, fg=fg, bg=bg):
                 self._assert_render_positioned_colored_print(column, row, fg, bg)
+
+
 # ----------------------------------------------------------------------------

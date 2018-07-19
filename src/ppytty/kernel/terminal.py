@@ -136,6 +136,12 @@ class Terminal(object):
         return self._bt.height
 
 
+    @property
+    def cursor(self):
+
+        return self._window.cursor
+
+
     def direct_clear(self):
 
         self._write(self._bt_clear)
@@ -162,9 +168,10 @@ class Terminal(object):
         self._window_feed(data)
 
 
-    def render(self, full=False):
+    def render(self, full=False, cursor_only=False):
 
-        data = self._window_render(full=full, encoding=self._encoding)
+        data = self._window_render(full=full, encoding=self._encoding,
+                                   cursor_only=cursor_only)
         self._os_write_out_fd(data)
 
 

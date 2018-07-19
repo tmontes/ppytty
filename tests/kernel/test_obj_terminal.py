@@ -34,6 +34,8 @@ class Test(helper_io.NoOutputTestCase):
     def _assert_blank_terminal_rendered(self, written_bytes):
 
         prefixes = [
+            # Hides cursor and moves it to the top left.
+            self.fake_tigetstr('civis'),
             self.fake_tparm(self.fake_tigetstr('cup'), 0, 0),
         ]
         payload = b' ' * 80 * 25
@@ -81,7 +83,8 @@ class Test(helper_io.NoOutputTestCase):
         written_bytes = self.get_os_written_bytes()
 
         prefixes = [
-            # Start by positioning the cursor at (col=0, row=0).
+            # Start by hiding the cursor and putting at (col=0, row=0).
+            self.fake_tigetstr('civis'),
             self.fake_tparm(self.fake_tigetstr('cup'), 0, 0),
         ]
         suffixes = [
@@ -114,7 +117,8 @@ class Test(helper_io.NoOutputTestCase):
 
         # render should output the full 80 column terminal row.
         prefixes = [
-            # Start by positioning the cursor at (col=0, row=2).
+            # Start by hiding the cursor and putting at (col=0, row=0).
+            self.fake_tigetstr('civis'),
             self.fake_tparm(self.fake_tigetstr('cup'), ROW, 0),
         ]
         suffixes = [

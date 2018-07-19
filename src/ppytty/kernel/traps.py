@@ -382,6 +382,7 @@ def process_spawn(task, window, args, buffer_size=4096):
         exc = exceptions.TrapException('process spawning failed', e)
         state.trap_will_throw(task, exc)
     else:
+        window.cursor.hidden = False
         state.track_focusable_window_process(window, process)
         state.track_task_process(task, process)
         state.track_input_fd(process.pty_master_fd, updater(process.pty_master_fd))
@@ -438,8 +439,6 @@ def state_dump(task, tag=''):
 
     def _log_object_vars(name, obj):
         for k, v in vars(obj).items():
-            if k.startswith('_') or callable(getattr(obj, k, None)):
-                continue
             if isinstance(v, collections.defaultdict):
                 v = dict(v)
             log.critical('%s.%s=%r', name, k, v)

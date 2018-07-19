@@ -23,7 +23,7 @@ def _assert_attrs_are_these(object_name, object, attr_names):
         raise AssertionError(f'{object_name!r} has no attribute {attr_name!r}')
 
     # no `object` attributes other than those in `attr_names`
-    for attr_name in dir(object):
+    for attr_name in vars(object):
         if attr_name.startswith('_'):
             continue
         if callable(getattr(object, attr_name)):
