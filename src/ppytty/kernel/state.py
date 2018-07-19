@@ -239,7 +239,7 @@ class _State(object):
     def cleanup_focusable_window_process(self, window=None, process=None):
 
         if process is not None:
-            window = self.process_window[process]
+            window = self.process_window.get(process)
 
         if window not in self.focusable_windows:
             return
