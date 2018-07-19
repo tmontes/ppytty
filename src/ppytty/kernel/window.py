@@ -200,6 +200,18 @@ class Window(object):
 
 
     @property
+    def left(self):
+
+        return self._left
+
+
+    @property
+    def top(self):
+
+        return self._top
+
+
+    @property
     def width(self):
 
         return self._width
@@ -209,6 +221,12 @@ class Window(object):
     def height(self):
 
         return self._height
+
+
+    @property
+    def cursor(self):
+
+        return self._screen.cursor
 
 
     def overlaps(self, window):
@@ -320,7 +338,7 @@ class Window(object):
         self._stream.feed(data)
 
 
-    def render(self, full=False, encoding='utf8'):
+    def render(self, full=False, encoding='utf8', cursor_only=False):
 
         self_parent = self._parent
         screen = self._screen
@@ -339,18 +357,21 @@ class Window(object):
         payload = []
         payload_append = payload.append
 
-        # Do not render lines outside of parent geometry
-        if full:
-            min_line = max(0, -top)
-            max_line = min(self._height, self_parent.height - top)
-            line_numbers = range(min_line, max_line)
+        if cursor_only:
+            line_numbers = ()
         else:
-            line_numbers = {
-                line_no for line_no in screen_dirty
-                if -top <= line_no < self_parent.height - top
-            }
+            # Do not render lines outside of parent geometry
+            if full:
+                min_line = max(0, -top)
+                max_line = min(self._height, self_parent.height - top)
+                line_numbers = range(min_line, max_line)
+            else:
+                line_numbers = {
+                    line_no for line_no in screen_dirty
+                    if -top <= line_no < self_parent.height - top
+                }
 
-        if line_numbers and not screen_cursor.hidden:
+        if line_numbers or cursor_only:
             payload_append(bt.hide_cursor)
 
         # Do not render columns outside of parent geometry
@@ -373,7 +394,7 @@ class Window(object):
                     prev_char_format = char_format
                 payload_append(char_data)
 
-        if line_numbers:
+        if line_numbers or cursor_only:
             payload_append(bt.normal)
             # TODO: Improve cursor handling if outside parent geometry.
             payload_append(bt_move(max(0, top+screen_cursor.y), render_left+screen_cursor.x))

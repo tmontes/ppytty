@@ -283,14 +283,29 @@ _KEY_FOCUS = b'f'
 
 def process_lowlevel_io(prompt=None):
 
-    def forward_keybard_input(focused_process, keyboard_bytes):
-        if focused_process:
-            hw.os_write(focused_process.pty_master_fd, keyboard_bytes)
+    def forward_keybard_input(process, keyboard_bytes):
+        if process:
+            hw.os_write(process.pty_master_fd, keyboard_bytes)
         else:
             state.terminal.input_buffer.append(keyboard_bytes)
 
+    def visual_focus_change():
+        process = state.focused_process
+        window = state.focused_window
+        t_cursor = state.terminal.cursor
+        if process:
+            w_cursor = window.cursor
+            t_cursor.hidden = w_cursor.hidden
+            t_cursor.x = window.left + w_cursor.x
+            t_cursor.y = window.top + w_cursor.y
+        else:
+            t_cursor.hidden = True
+        state.terminal.render(cursor_only=True)
+        log.info('input focus on %r/%r', process, window)
+
+
     grab_terminal_input = False
-    focused_process = state.window_process[state.focused_window]
+    focused_process = state.focused_process
 
     if state.runnable_tasks:
         timeout = 0
@@ -313,8 +328,8 @@ def process_lowlevel_io(prompt=None):
                     elif keyboard_bytes == _KEY_DUMP:
                         trap_handlers[Trap.STATE_DUMP](None)
                     elif keyboard_bytes == _KEY_FOCUS:
-                        focused_process = state.next_focusable_window_process()
-                        log.info('input focus on %r', focused_process)
+                        state.next_window_process_focus()
+                        visual_focus_change()
                     elif keyboard_bytes == _KEY_GRAB:
                         # _KEY_GRAB as non-grabbed input
                         forward_keybard_input(focused_process, keyboard_bytes)

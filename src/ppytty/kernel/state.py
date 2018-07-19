@@ -211,7 +211,13 @@ class _State(object):
         self.process_window[process] = window
 
 
-    def next_focusable_window_process(self):
+    @property
+    def focused_process(self):
+
+        return self.window_process[self.focused_window]
+
+
+    def next_window_process_focus(self):
 
         if self.focused_window:
             try:
@@ -232,8 +238,6 @@ class _State(object):
             self.focused_window = self.focusable_windows[0]
         else:
             self.focused_window = None
-
-        return self.window_process[self.focused_window]
 
 
     def cleanup_focusable_window_process(self, window=None, process=None):
