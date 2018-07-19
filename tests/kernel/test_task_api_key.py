@@ -86,10 +86,10 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
         self.assertIs(destroyed_task, first_reader_child)
 
 
-    def test_kernel_run_stops_with_double_q_input(self):
+    def test_kernel_run_stops_with_ctrl_f_dot_input(self):
 
         async def task():
-            self.input_control.feed_data(b'qq')
+            self.input_control.feed_data(b'\x06.')
             while True:
                 await api.sleep(42)
 
@@ -99,13 +99,13 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
         self.assertIsInstance(result, loop._ForcedStop)
 
 
-    def test_kernel_run_does_not_stop_with_q_and_something_else(self):
+    def test_kernel_run_does_not_stop_with_ctrl_f_and_something_else(self):
 
         async def task():
             await api.sleep(42)
             return 'confirming-regular-completion'
 
-        self.input_control.feed_data(b'qx')
+        self.input_control.feed_data(b'\x06x')
 
         success, result = run(task)
 
@@ -114,7 +114,7 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
         self.assertEqual(result, 'confirming-regular-completion')
 
 
-    def test_kernel_run_dumps_state_with_capital_d_input(self):
+    def test_kernel_run_dumps_state_with_ctrl_f_d_input(self):
 
         async def task():
             await api.sleep(1)
@@ -122,7 +122,7 @@ class Test(helper_io.NoOutputAutoTimeControlledInputTestCase):
         log_handler = helper_log.create_and_add_handler()
         self.addCleanup(lambda: helper_log.remove_handler(log_handler))
 
-        self.input_control.feed_data(b'D')
+        self.input_control.feed_data(b'\x06d')
 
         success, result = run(task)
 

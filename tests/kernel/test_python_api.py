@@ -28,13 +28,13 @@ class TestRun(helper_io.NoOutputAutoTimeControlledInputTestCase):
         run(generator_object)
 
 
-    def test_run_with_prompt_needs_double_q_to_complete(self):
+    def test_run_with_prompt_needs_ctrl_f_dot_to_complete(self):
 
-        pre_callable = lambda: self.input_control.feed_data(b'qq!')
+        pre_callable = lambda: self.input_control.feed_data(b'\x06.!')
 
         run(tasks.sleep_zero(pre_callable), post_prompt='[COMPLETED]')
 
-        # Check first two b'q' in the input were consumed: buffer holds b'!'.
+        # Check first bytes in the input were consumed: buffer holds b'!'.
         self.assertTrue(len(self.input_control.buffer), 1)
         self.assertEqual(self.input_control.buffer[0], b'!')
 
