@@ -289,21 +289,6 @@ def process_lowlevel_io(prompt=None):
         else:
             state.terminal.input_buffer.append(keyboard_bytes)
 
-    def visual_focus_change():
-        process = state.focused_process
-        window = state.focused_window
-        t_cursor = state.terminal.cursor
-        if process:
-            w_cursor = window.cursor
-            t_cursor.hidden = w_cursor.hidden
-            t_cursor.x = window.left + w_cursor.x
-            t_cursor.y = window.top + w_cursor.y
-        else:
-            t_cursor.hidden = True
-        state.terminal.render(cursor_only=True)
-        log.info('input focus on %r/%r', process, window)
-
-
     grab_terminal_input = False
     focused_process = state.focused_process
 
@@ -329,7 +314,7 @@ def process_lowlevel_io(prompt=None):
                         trap_handlers[Trap.STATE_DUMP](None)
                     elif keyboard_bytes == _KEY_FOCUS:
                         state.next_window_process_focus()
-                        visual_focus_change()
+                        common.render_focus_change()
                     elif keyboard_bytes == _KEY_GRAB:
                         # _KEY_GRAB as non-grabbed input
                         forward_keybard_input(focused_process, keyboard_bytes)
