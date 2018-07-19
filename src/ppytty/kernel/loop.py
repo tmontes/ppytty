@@ -276,9 +276,20 @@ def _prompt_context(prompt):
 
 _NO_FDS = []
 
+_KEY_GRAB = b'\x06'
+_KEY_STOP = b'.'
+_KEY_DUMP = b'd'
+_KEY_FOCUS = b'f'
+
 def process_lowlevel_io(prompt=None):
 
-    quit_in_progress = False
+    def forward_keybard_input(focused_process, keyboard_bytes):
+        if focused_process:
+            hw.os_write(focused_process.pty_master_fd, keyboard_bytes)
+        else:
+            state.terminal.input_buffer.append(keyboard_bytes)
+
+    grab_terminal_input = False
     focused_process = state.window_process[state.focused_window]
 
     if state.runnable_tasks:
@@ -289,37 +300,37 @@ def process_lowlevel_io(prompt=None):
         timeout = None
     save_timeout = timeout
     while True:
-        actual_prompt = 'QUIT?' if quit_in_progress else prompt
+        actual_prompt = '[GRAB]' if grab_terminal_input else prompt
         with _prompt_context(actual_prompt):
             fds, _, _ = hw.select_select(state.in_fds, _NO_FDS, _NO_FDS, timeout)
         for fd in fds:
             in_fd_callable = state.in_fds[fd]
             if in_fd_callable is None:
                 keyboard_bytes = hw.os_read(fd, 8)
-                if keyboard_bytes == b'q':
-                    if quit_in_progress:
+                if grab_terminal_input:
+                    if keyboard_bytes == _KEY_STOP:
                         raise _ForcedStop()
-                    else:
-                        quit_in_progress = True
-                        timeout = None
-                elif quit_in_progress:
-                    quit_in_progress = False
+                    elif keyboard_bytes == _KEY_DUMP:
+                        trap_handlers[Trap.STATE_DUMP](None)
+                    elif keyboard_bytes == _KEY_FOCUS:
+                        focused_process = state.next_focusable_window_process()
+                        log.info('input focus on %r', focused_process)
+                    elif keyboard_bytes == _KEY_GRAB:
+                        # _KEY_GRAB as non-grabbed input
+                        forward_keybard_input(focused_process, keyboard_bytes)
+                    grab_terminal_input = False
                     timeout = save_timeout
-                elif keyboard_bytes == b'D':
-                    trap_handlers[Trap.STATE_DUMP](None)
-                elif keyboard_bytes == b'\x06':
-                    # CTRL-F
-                    focused_process = state.next_focusable_window_process()
-                    log.info('input focus on %r', focused_process)
-                elif focused_process:
-                    hw.os_write(focused_process.pty_master_fd, keyboard_bytes)
                 else:
-                    state.terminal.input_buffer.append(keyboard_bytes)
+                    if keyboard_bytes == _KEY_GRAB:
+                        grab_terminal_input = True
+                        timeout = None
+                    else:
+                        forward_keybard_input(focused_process, keyboard_bytes)
             else:
                 in_fd_callable()
         while state.close_fd_callables:
             state.close_fd_callables.pop()()
-        if not quit_in_progress:
+        if not grab_terminal_input:
             break
 
 
