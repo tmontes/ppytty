@@ -338,7 +338,11 @@ class Window(object):
         self._stream.feed(data)
 
 
-    def render(self, full=False, encoding='utf8', cursor_only=False):
+    def render(self, full=False, encoding='utf8', cursor_only=False, do_cursor=False):
+
+        # full: if True, renders all lines; otherwise, renders changed lines.
+        # cursor_only: if True, renders no lines, but renders the cursor.
+        # do_cursor: if True, cursor is rendered with or without rendered lines.
 
         self_parent = self._parent
         screen = self._screen
@@ -371,7 +375,7 @@ class Window(object):
                     if -top <= line_no < self_parent.height - top
                 }
 
-        if line_numbers or cursor_only:
+        if line_numbers or cursor_only or do_cursor:
             payload_append(bt.hide_cursor)
 
         # Do not render columns outside of parent geometry
@@ -394,7 +398,7 @@ class Window(object):
                     prev_char_format = char_format
                 payload_append(char_data)
 
-        if line_numbers or cursor_only:
+        if line_numbers or cursor_only or do_cursor:
             payload_append(bt.normal)
             # TODO: Improve cursor handling if outside parent geometry.
             payload_append(bt_move(max(0, top+screen_cursor.y), render_left+screen_cursor.x))

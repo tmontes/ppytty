@@ -374,7 +374,9 @@ def process_spawn(task, window, args, buffer_size=4096):
             if data:
                 window.feed(data)
                 common.render_window_to_terminal(window, full=False)
-                state.terminal.render()
+                # Cursor moves with no other visible output must be rendered.
+                common.update_terminal_cursor_from_focus()
+                state.terminal.render(do_cursor=True)
             # Let caller know whether we pushed data or from_fd is at EOF.
             return data
 

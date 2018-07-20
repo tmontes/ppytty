@@ -168,10 +168,10 @@ class Terminal(object):
         self._window_feed(data)
 
 
-    def render(self, full=False, cursor_only=False):
+    def render(self, full=False, cursor_only=False, do_cursor=False):
 
         data = self._window_render(full=full, encoding=self._encoding,
-                                   cursor_only=cursor_only)
+                                   cursor_only=cursor_only, do_cursor=do_cursor)
         self._os_write_out_fd(data)
 
 
