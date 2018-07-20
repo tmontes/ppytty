@@ -7,6 +7,7 @@
 
 import fcntl
 import os
+import signal
 import struct
 import subprocess
 import termios
@@ -64,6 +65,12 @@ class Process(object):
     def pid(self):
 
         return self._process.pid
+
+
+    def notify_window_resize(self, _window):
+
+        self._set_pty_window_size()
+        self._process.send_signal(signal.SIGWINCH)
 
 
     def store_exit_status(self, status):

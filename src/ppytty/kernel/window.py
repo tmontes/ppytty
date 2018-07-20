@@ -147,6 +147,9 @@ class Window(object):
         # Track "uncovered" parent geometry after moves/resizes.
         self._update_last_render_geometry()
 
+        # Called after we're resized and passed a single argument: self.
+        self._resize_callbacks = []
+
         self._bg = bg
 
         self._screen = pyte.Screen(self._width, self._height)
@@ -343,6 +346,14 @@ class Window(object):
         self._dh += dh
         self._update_geometry()
         self._screen.resize(self._height, self._width)
+        for callback in self._resize_callbacks:
+            # TODO: Handle exceptions? Remove failing? Log and ignore/re-raise?
+            callback(self)
+
+
+    def add_resize_callback(self, callback):
+
+        self._resize_callbacks.append(callback)
 
 
     def feed(self, data):

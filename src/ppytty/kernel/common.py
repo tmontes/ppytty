@@ -9,13 +9,6 @@ from . state import state
 
 
 
-def render_window_to_terminal(window, full):
-
-    data = window.render(full=full)
-    state.terminal.feed(data)
-
-
-
 def update_terminal_cursor_from_focus():
 
     window = state.focused_window
@@ -53,13 +46,17 @@ def destroy_task_windows(task):
 
 def rerender_all_windows():
 
-    state.terminal.clear()
+    # Speed up attribute access
+    state_terminal = state.terminal
+    state_terminal_feed = state_terminal.feed
+
+    state_terminal.clear()
 
     for w in state.all_windows:
-        render_window_to_terminal(w, full=True)
+        state_terminal_feed(w.render(full=True))
 
     update_terminal_cursor_from_focus()
-    state.terminal.render()
+    state_terminal.render()
 
 
 # ----------------------------------------------------------------------------

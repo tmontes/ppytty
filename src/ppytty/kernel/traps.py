@@ -105,7 +105,7 @@ def window_create(task, x, y, w, h, dx, dy, dw, dh, bg):
 
     try:
         w = Window(state.terminal.window, x, y, w, h, dx, dy, dw, dh, bg)
-    except Exception as e:
+    except Exception:
         log.error('%r window create failed', task, exc_info=True)
         w = None
     else:
@@ -147,6 +147,14 @@ def window_render(task, window, full=False, terminal_render=True):
         state.runnable_tasks.append(task)
         return
 
+    _do_window_render(window, full=full, terminal_render=terminal_render)
+
+    state.runnable_tasks.append(task)
+
+
+
+def _do_window_render(window, full=False, terminal_render=True):
+
     # General rendering strategy:
     # - Find out if `window`` left any uncovered geometry since last render.
     #   (due to moving or resizing)
@@ -161,11 +169,13 @@ def window_render(task, window, full=False, terminal_render=True):
     try:
         window_index = state.all_windows.index(window)
     except ValueError:
-        raise RuntimeError('unexpected condition: window not in all_windows')
+        # Example: window destroyed but process still running.
+        log.error('cannot render, window gone: %r', window)
+        return
 
     # Speed up attribute access
     state_terminal = state.terminal
-    common_render_window_to_terminal = common.render_window_to_terminal
+    state_terminal_feed = state_terminal.feed
     state_all_windows = state.all_windows
 
     uncovered = window.uncovered_geometry()
@@ -175,13 +185,12 @@ def window_render(task, window, full=False, terminal_render=True):
         for w in state_all_windows[:window_index]:
             if not w.overlaps_geometry(*uncovered):
                 continue
-            common_render_window_to_terminal(w, full=True)
+            state_terminal_feed(w.render(full=True))
         # Uncovered means move/resize: a full render is needed.
         full = True
 
-
     # Render the actual window.
-    common_render_window_to_terminal(window, full=full)
+    state_terminal_feed(window.render(full=full))
 
     # Re-render windows on top of `window`, as needed.
     for w in state_all_windows[window_index+1:]:
@@ -190,12 +199,10 @@ def window_render(task, window, full=False, terminal_render=True):
                 continue
         elif not w.overlaps(window) and not w.overlaps_geometry(*uncovered):
             continue
-        common_render_window_to_terminal(w, full=True)
+        state_terminal_feed(w.render(full=True))
 
     if terminal_render:
         state_terminal.render()
-
-    state.runnable_tasks.append(task)
 
 
 
@@ -373,7 +380,7 @@ def process_spawn(task, window, args, buffer_size=4096):
             data = os.read(from_fd, buffer_size)
             if data:
                 window.feed(data)
-                common.render_window_to_terminal(window, full=False)
+                _do_window_render(window, terminal_render=False)
                 # Cursor moves with no other visible output must be rendered.
                 common.update_terminal_cursor_from_focus()
                 state.terminal.render(do_cursor=True)
@@ -389,6 +396,7 @@ def process_spawn(task, window, args, buffer_size=4096):
         state.trap_will_throw(task, exc)
     else:
         window.cursor.hidden = False
+        window.add_resize_callback(process.notify_window_resize)
         state.track_focusable_window_process(window, process)
         state.track_task_process(task, process)
         state.track_input_fd(process.pty_master_fd, updater(process.pty_master_fd))
