@@ -29,8 +29,8 @@ _NO_FDS = []
 
 def track_child_process_termination():
 
-    # TODO: These should be closed, on exiting!
     read_fd, write_fd = os.pipe()
+    state.close_when_done_fds.extend((read_fd, write_fd))
 
     def wakeup_lowlevel_io():
         os.write(write_fd, b'!')
@@ -101,8 +101,8 @@ def track_child_process_termination():
 
 def track_output_terminal_resizes():
 
-    # TODO: These should be closed, on exiting!
     read_fd, write_fd = os.pipe()
+    state.close_when_done_fds.extend((read_fd, write_fd))
 
     def wakeup_lowlevel_io():
         os.write(write_fd, b'!')

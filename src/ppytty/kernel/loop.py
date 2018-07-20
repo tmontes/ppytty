@@ -44,6 +44,8 @@ def run(task, post_prompt=None):
                 process_lowlevel_io(prompt=post_prompt)
         except _ForcedStop as e:
             success, result = None, e
+        finally:
+            close_pending_fds()
 
     return success, result
 
@@ -269,6 +271,17 @@ def process_lowlevel_io(prompt=None):
             state.close_fd_callables.pop()()
         if not grab_terminal_input:
             break
+
+
+
+def close_pending_fds():
+
+    while state.close_when_done_fds:
+        fd = state.close_when_done_fds.pop()
+        try:
+            hw.os_close(fd)
+        except OSError as e:
+            log.error('error closed fd=%r: %r', fd, e)
 
 
 # ----------------------------------------------------------------------------
