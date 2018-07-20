@@ -370,9 +370,13 @@ def process_spawn(task, window, args, buffer_size=4096):
     def updater(from_fd):
 
         def callback():
-            window.feed(os.read(from_fd, buffer_size))
-            common.render_window_to_terminal(window, full=False)
-            state.terminal.render()
+            data = os.read(from_fd, buffer_size)
+            if data:
+                window.feed(data)
+                common.render_window_to_terminal(window, full=False)
+                state.terminal.render()
+            # Let caller know whether we pushed data or from_fd is at EOF.
+            return data
 
         return callback
 
