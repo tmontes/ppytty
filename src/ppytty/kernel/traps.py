@@ -105,7 +105,7 @@ def window_create(task, x, y, w, h, dx, dy, dw, dh, bg):
 
     try:
         w = Window(state.terminal.window, x, y, w, h, dx, dy, dw, dh, bg)
-    except Exception as e:
+    except Exception:
         log.error('%r window create failed', task, exc_info=True)
         w = None
     else:
