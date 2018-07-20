@@ -111,6 +111,9 @@ class _State(object):
         # Used for deferred closing of process PTY FDs.
         self.close_fd_callables = []
 
+        # Will be closed just before exiting: holds fds used by signal handlers.
+        self.close_when_done_fds = []
+
         # ---------------------------------------------------------------------
         # Environment.
 

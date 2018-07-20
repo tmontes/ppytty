@@ -22,6 +22,7 @@ import time as _time
 
 os_read = _os.read
 os_write = _os.write
+os_close = _os.close
 os_ttyname = _os.ttyname
 
 select_select = _select.select
