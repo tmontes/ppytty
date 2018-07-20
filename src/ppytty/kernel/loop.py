@@ -93,9 +93,10 @@ def track_child_process_termination():
     def read_and_wrap_up(orig_callback, task, process):
 
         def new_callback():
-            orig_callback()
+            # orig_callback: `updater` function on `process_spawn` trap code.
+            data = orig_callback()
             fd = process.pty_master_fd
-            if not pending_read(fd):
+            if not data or not pending_read(fd):
                 wrap_up(task, process)
 
         return new_callback
@@ -327,7 +328,13 @@ def process_lowlevel_io(prompt=None):
                     else:
                         forward_keybard_input(focused_process, keyboard_bytes)
             else:
-                in_fd_callable()
+                _ = in_fd_callable()
+                # Returns the bytes read. As of now (see commit history), only
+                # child process PTY master FDs match this case, returning b'' on
+                # some child termination cases. These are handled in the wrapper
+                # callable that is setup on the SIGCHLD handler - refer to that.
+                # TODO: If/whenever this will be handling other kinds of input
+                # FDs, particular handling may be needed when b'' is returned.
         while state.close_fd_callables:
             state.close_fd_callables.pop()()
         if not grab_terminal_input:
