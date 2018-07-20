@@ -6,11 +6,16 @@
 # ----------------------------------------------------------------------------
 
 import fcntl
+import logging
 import os
 import signal
 import struct
 import subprocess
 import termios
+
+
+
+log = logging.getLogger(__name__)
 
 
 
@@ -40,8 +45,14 @@ class Process(object):
 
     def _set_pty_window_size(self):
 
-        ws = struct.pack('HHHH', self._window.height, self._window.width, 0, 0)
-        fcntl.ioctl(self._pty_master, termios.TIOCSWINSZ, ws)
+        try:
+            ws = struct.pack('HHHH', self._window.height, self._window.width, 0, 0)
+            fcntl.ioctl(self._pty_master, termios.TIOCSWINSZ, ws)
+        except struct.error as e:
+            log.warning('%r: invalid geometry for PTY w=%r h=%r: %r', self,
+                        self._window.width, self._window.height, e)
+        except OSError as e:
+            log.warning('%r: setting PTY geometry failed: %r', self, e)
 
 
     @staticmethod
@@ -67,7 +78,7 @@ class Process(object):
         return self._process.pid
 
 
-    def notify_window_resize(self, _window):
+    def resize_pty(self, _window):
 
         self._set_pty_window_size()
         self._process.send_signal(signal.SIGWINCH)
