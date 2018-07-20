@@ -18,9 +18,11 @@ class TestNonRenderingAspects(unittest.TestCase):
 
     def setUp(self):
 
-        self.sbt = window._SelfBlessingsTerminal(80, 25)
+        self.sbt = window._SelfBlessingsTerminal
         self.parent = types.SimpleNamespace()
         self.parent.bt = self.sbt
+        self.parent.width = 80
+        self.parent.height = 25
 
 
     def test_sbt_too_large_fg_color(self):
@@ -99,7 +101,7 @@ class TestWithHiddenCursor(helper_io.NoOutputTestCase):
 
         self.WIDTH = 40
         self.HEIGHT = 15
-        self.sbt = window._SelfBlessingsTerminal(80, 25)
+        self.sbt = window._SelfBlessingsTerminal
         parent = types.SimpleNamespace()
         parent.bt = self.sbt
         parent.width = 80
