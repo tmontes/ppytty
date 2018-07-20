@@ -169,11 +169,13 @@ def _do_window_render(window, full=False, terminal_render=True):
     try:
         window_index = state.all_windows.index(window)
     except ValueError:
-        raise RuntimeError('unexpected condition: window not in all_windows')
+        # Example: window destroyed but process still running.
+        log.error('cannot render, window gone: %r', window)
+        return
 
     # Speed up attribute access
     state_terminal = state.terminal
-    common_render_window_to_terminal = common.render_window_to_terminal
+    state_terminal_feed = state_terminal.feed
     state_all_windows = state.all_windows
 
     uncovered = window.uncovered_geometry()
@@ -183,12 +185,12 @@ def _do_window_render(window, full=False, terminal_render=True):
         for w in state_all_windows[:window_index]:
             if not w.overlaps_geometry(*uncovered):
                 continue
-            common_render_window_to_terminal(w, full=True)
+            state_terminal_feed(w.render(full=True))
         # Uncovered means move/resize: a full render is needed.
         full = True
 
     # Render the actual window.
-    common_render_window_to_terminal(window, full=full)
+    state_terminal_feed(window.render(full=full))
 
     # Re-render windows on top of `window`, as needed.
     for w in state_all_windows[window_index+1:]:
@@ -197,7 +199,7 @@ def _do_window_render(window, full=False, terminal_render=True):
                 continue
         elif not w.overlaps(window) and not w.overlaps_geometry(*uncovered):
             continue
-        common_render_window_to_terminal(w, full=True)
+        state_terminal_feed(w.render(full=True))
 
     if terminal_render:
         state_terminal.render()
