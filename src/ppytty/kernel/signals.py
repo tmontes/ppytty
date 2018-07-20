@@ -109,10 +109,9 @@ def track_output_terminal_resizes():
 
     def consume_wakeup_byte():
         os.read(read_fd, 1)
-        state.terminal.notify_resize()
+        state.terminal.resize()
         for w in state.all_windows:
-            w.notify_parent_resized()
-            log.warning('...')
+            w.resize()
         common.rerender_all_windows()
 
     def signal_handler(_signal, _frame):

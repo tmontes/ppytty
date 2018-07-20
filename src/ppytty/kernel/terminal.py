@@ -78,9 +78,6 @@ class Terminal(object):
     def bt(self):
 
         # self is self._window's parent; thus it needs to expose self.bt.
-
-        import logging; log=logging.getLogger('TERM')
-        log.warning('w=%r', self._bt.width)
         return self._bt
 
 
@@ -141,9 +138,9 @@ class Terminal(object):
         return self._window.cursor
 
 
-    def notify_resize(self):
+    def resize(self):
 
-        self._window.notify_parent_resized()
+        self._window.resize()
 
 
     def direct_clear(self):
