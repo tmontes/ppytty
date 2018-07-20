@@ -36,6 +36,7 @@ def run(task, post_prompt=None):
 
     with Terminal() as t:
         state.prepare_to_run(task, t)
+        signals.track_output_terminal_resizes()
         signals.track_child_process_termination()
         try:
             success, result = loop()

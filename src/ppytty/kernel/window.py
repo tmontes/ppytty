@@ -174,6 +174,7 @@ class Window(object):
 
         parent_width = self._parent.bt.width
         parent_height = self._parent.bt.height
+        self.log.warning('ug: pw=%r, x=%r, w=%r', parent_width, self._x, self._w)
 
         self._left = _rel_to_abs(self._x, parent_width, self._dx)
         self._top =  _rel_to_abs(self._y, parent_height, self._dy)
@@ -354,6 +355,15 @@ class Window(object):
     def add_resize_callback(self, callback):
 
         self._resize_callbacks.append(callback)
+
+    import logging; log=logging.getLogger('WIN')
+
+    def notify_parent_resized(self):
+
+        self.log.warning('before %r', self)
+        self._update_geometry()
+        self.log.warning('after %r', self)
+        # TODO: call self._resize_callbacks if needed?
 
 
     def feed(self, data):

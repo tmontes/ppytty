@@ -15,6 +15,7 @@ import logging
 import os
 import signal
 
+from . import common
 from . import hw
 from . state import state
 
@@ -97,6 +98,32 @@ def track_child_process_termination():
     signal.signal(signal.SIGCHLD, signal_handler)
 
 
+
+def track_output_terminal_resizes():
+
+    # TODO: These should be closed, on exiting!
+    read_fd, write_fd = os.pipe()
+
+    def wakeup_lowlevel_io():
+        os.write(write_fd, b'!')
+
+    def consume_wakeup_byte():
+        os.read(read_fd, 1)
+        state.terminal.notify_resize()
+        for w in state.all_windows:
+            w.notify_parent_resized()
+            log.warning('...')
+        common.rerender_all_windows()
+
+    def signal_handler(_signal, _frame):
+        state_terminal = state.terminal
+        w = state_terminal.width
+        h = state_terminal.height
+        log.info('SIGWINCH width=%r, heigth=%r', w, h)
+        wakeup_lowlevel_io()
+
+    state.track_input_fd(read_fd, consume_wakeup_byte)
+    signal.signal(signal.SIGWINCH, signal_handler)
 
 
 # ----------------------------------------------------------------------------

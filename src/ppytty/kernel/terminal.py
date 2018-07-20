@@ -16,8 +16,7 @@ from . import window
 
 class Terminal(object):
 
-    def __init__(self, in_file=None, out_file=None, kind=None,
-                 left=0, top=0, width=None, height=None, bg=None,
+    def __init__(self, in_file=None, out_file=None, kind=None, bg=None,
                  encoding='UTF-8'):
 
         in_file = hw.sys_stdin if in_file is None else in_file
@@ -30,9 +29,7 @@ class Terminal(object):
         self._bt = blessings.Terminal(kind=kind, stream=out_file)
         self._encoding = encoding
 
-        width = width if width else self._bt.width
-        height = height if height else self._bt.height
-        self._window = window.Window(self, left, top, width, height, bg=bg)
+        self._window = window.Window(self, 0, 0, 1.0, 1.0, bg=bg)
 
         self.input_buffer = collections.deque()
 
@@ -82,6 +79,8 @@ class Terminal(object):
 
         # self is self._window's parent; thus it needs to expose self.bt.
 
+        import logging; log=logging.getLogger('TERM')
+        log.warning('w=%r', self._bt.width)
         return self._bt
 
 
@@ -140,6 +139,11 @@ class Terminal(object):
     def cursor(self):
 
         return self._window.cursor
+
+
+    def notify_resize(self):
+
+        self._window.notify_parent_resized()
 
 
     def direct_clear(self):
