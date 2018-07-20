@@ -147,6 +147,14 @@ def window_render(task, window, full=False, terminal_render=True):
         state.runnable_tasks.append(task)
         return
 
+    _do_window_render(window, full=full, terminal_render=terminal_render)
+
+    state.runnable_tasks.append(task)
+
+
+
+def _do_window_render(window, full=False, terminal_render=True):
+
     # General rendering strategy:
     # - Find out if `window`` left any uncovered geometry since last render.
     #   (due to moving or resizing)
@@ -179,7 +187,6 @@ def window_render(task, window, full=False, terminal_render=True):
         # Uncovered means move/resize: a full render is needed.
         full = True
 
-
     # Render the actual window.
     common_render_window_to_terminal(window, full=full)
 
@@ -194,8 +201,6 @@ def window_render(task, window, full=False, terminal_render=True):
 
     if terminal_render:
         state_terminal.render()
-
-    state.runnable_tasks.append(task)
 
 
 
@@ -373,7 +378,7 @@ def process_spawn(task, window, args, buffer_size=4096):
             data = os.read(from_fd, buffer_size)
             if data:
                 window.feed(data)
-                common.render_window_to_terminal(window, full=False)
+                _do_window_render(window, terminal_render=False)
                 # Cursor moves with no other visible output must be rendered.
                 common.update_terminal_cursor_from_focus()
                 state.terminal.render(do_cursor=True)
