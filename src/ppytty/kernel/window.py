@@ -333,6 +333,18 @@ class Window(object):
         self._update_geometry()
 
 
+    def resize(self, w=None, h=None, dw=0, dh=0):
+
+        if w is not None:
+            self._w = w
+        if h is not None:
+            self._h = h
+        self._dw += dw
+        self._dh += dh
+        self._update_geometry()
+        self._screen.resize(self._height, self._width)
+
+
     def feed(self, data):
 
         self._stream.feed(data)
