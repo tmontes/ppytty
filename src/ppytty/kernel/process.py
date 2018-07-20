@@ -47,12 +47,12 @@ class Process(object):
     def _set_stdin_as_controlling_terminal():
 
         try:
-            fcntl.fcntl(0, termios.TIOCSCTTY, 0)
-        except OSError:
-            # TODO: Figure out what's going on here.
-            # Failing on Linux with errno=22, but ok on macOS.
-            # PS: Can't log this failure: this runs in the child process.
-            pass
+            fcntl.ioctl(0, termios.TIOCSCTTY, 0)
+        except OSError as e:
+            # This runs in the spawned child process, we can't log errors.
+            # The best we can do is output them to the child's STDERR.
+            msg = f'Failed setting STDIN as controlling terminal: {e!r}'
+            os.write(2, msg.encode('ascii', errors='xmlcharrefreplace'))
 
     def __repr__(self):
 
