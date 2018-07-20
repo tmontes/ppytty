@@ -396,7 +396,7 @@ def process_spawn(task, window, args, buffer_size=4096):
         state.trap_will_throw(task, exc)
     else:
         window.cursor.hidden = False
-        window.add_resize_callback(process.notify_window_resize)
+        window.add_resize_callback(process.resize_pty)
         state.track_focusable_window_process(window, process)
         state.track_task_process(task, process)
         state.track_input_fd(process.pty_master_fd, updater(process.pty_master_fd))
