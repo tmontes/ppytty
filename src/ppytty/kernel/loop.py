@@ -233,8 +233,7 @@ def process_lowlevel_io(prompt=None):
         timeout = None
     save_timeout = timeout
     while True:
-        actual_prompt = '[GRAB]' if grab_terminal_input else prompt
-        with _prompt_context(actual_prompt):
+        with _prompt_context(prompt):
             fds, _, _ = hw.select_select(state.in_fds, _NO_FDS, _NO_FDS, timeout)
         for fd in fds:
             in_fd_callable = state.in_fds[fd]
