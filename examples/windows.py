@@ -6,13 +6,23 @@ import ppytty
 
 class WindowExerciser(ppytty.Task):
 
-    async def run(self):
+    def w1_repaint(self, w):
+        # can only call methods on w
+        w.print('Bottom window'.center(w.width), x=0, y=0, bg=17)
 
+    def w2_repaint(self, w):
+        # can only call methods on w
+        w.print('Top window'.center(w.width), x=0, y=0, bg=19)
+
+    async def run(self):
         w1 = await self.api.window_create(0.1, 0.1, 0.4, 0.4, background=31)
         w2 = await self.api.window_create(0.4, 0.4, 0.4, 0.4, background=39)
 
-        w1.print('Bottom window'.center(w1.width), bg=17)
-        w2.print('Top window'.center(w2.width), bg=19)
+        w1.add_resize_callback(self.w1_repaint)
+        w2.add_resize_callback(self.w2_repaint)
+
+        self.w1_repaint(w1)
+        self.w2_repaint(w2)
 
         w1.print(f'\x1b[2;{w1.height}r')  # TODO: implement as window.set_scroll_lines?
         w2.print(f'\x1b[2;{w2.height}r')
@@ -25,7 +35,7 @@ class WindowExerciser(ppytty.Task):
 
         words = 'the quick brown fox jumps over the lazy dog'.split()
         windows = (w1, w2)
-        for _ in range(int(w1.width*w1.height//2.5)):
+        for _ in range(int(w1.width*w1.height//5.5)):
             window = random.choice(windows)
             word = random.choice(words)
             window.print(word + ' ')
