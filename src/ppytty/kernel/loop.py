@@ -223,6 +223,7 @@ def process_lowlevel_io(prompt=None):
             state.terminal.input_buffer.append(keyboard_bytes)
 
     grab_terminal_input = False
+    focus_changed = False
     focused_process = state.focused_process
 
     if state.runnable_tasks:
@@ -250,10 +251,11 @@ def process_lowlevel_io(prompt=None):
                         common.highlight_focused_window(clear=True)
                         forward = ord(keyboard_bytes) == _KEY_FOCUS[0]
                         state.next_window_process_focus(forward)
+                        focus_changed = True
                         common.highlight_focused_window()
                         grab_terminal_input = True
                         timeout = None
-                    elif keyboard_bytes == _KEY_GRAB:
+                    elif keyboard_bytes == _KEY_GRAB and not focus_changed:
                         # _KEY_GRAB as non-grabbed input
                         forward_keybard_input(focused_process, keyboard_bytes)
                     if not grab_terminal_input:
@@ -262,6 +264,7 @@ def process_lowlevel_io(prompt=None):
                     if keyboard_bytes == _KEY_GRAB:
                         grab_terminal_input = True
                         timeout = None
+                        focus_changed = False
                         common.highlight_focused_window()
                     else:
                         forward_keybard_input(focused_process, keyboard_bytes)
