@@ -202,6 +202,7 @@ def _do_window_render(window, full=False, terminal_render=True):
         state_terminal_feed(w.render(full=True))
 
     if terminal_render:
+        common.update_terminal_cursor_from_focus()
         state_terminal.render()
 
 
