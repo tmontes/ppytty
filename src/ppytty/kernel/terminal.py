@@ -30,6 +30,7 @@ class Terminal(object):
         self._encoding = encoding
 
         self._window = window.Window(self, 0, 0, 1.0, 1.0, bg=bg)
+        self._window.title = 'ppytty'
 
         self.input_buffer = collections.deque()
 

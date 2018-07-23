@@ -116,6 +116,9 @@ class Window(object):
         # - Produce the correct escape sequences when rendering.
         self._parent = parent
 
+        # Used in focus highlights.
+        self.title = None
+
         # Window geometry is defined by:
         # - Top left corner (x, y):
         #   - Positive ints map to 0-based absolute parent coords.
@@ -188,9 +191,10 @@ class Window(object):
 
     def __repr__(self):
 
+        title = f'{repr(self.title)} ' if self.title else ''
         geometry = f'{self._width}x{self._height}'
         location = f'{self._left},{self._top}'
-        return f'<Window {geometry}@{location} {hex(id(self))}>'
+        return f'<Window {title}{geometry} @{location}>'
 
 
     @property
@@ -309,7 +313,8 @@ class Window(object):
             self._save_buffer = copy.deepcopy(self._screen.buffer)
             self._screen.save_cursor()
             self._screen.cursor.hidden = True
-            self.print(repr(self), x=0, y=self._height-1, fg=0, bg=255)
+            text = str(self.title or self)
+            self.print(text, x=0, y=self._height-1, fg=0, bg=255)
         else:
             self._screen.select_graphic_rendition()
             self._screen.restore_cursor()
