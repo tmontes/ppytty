@@ -34,33 +34,14 @@ __email__ = 'tiago.montes@gmail.com'
 
 from . kernel import run
 
-from . lib import (
-    Task,
-    Parallel, Serial,
-    DelayReturn, KeyboardAction, Loop,
-    OuterSequenceKeyboard, OuterSequenceTimed,
-    InnerSequenceKeyboard, InnerSequenceTimed,
-    Slide,
-    Label,
-    Widget,
-)
+from . lib import *
 
 
 __all__ = [
     'run',
-    'OuterSequenceKeyboard',
-    'OuterSequenceTimed',
+    'Thing',
+    'SlideDeck',
     'Slide',
-    'InnerSequenceKeyboard',
-    'InnerSequenceTimed',
-    'Label',
-    'Widget',
-    'Task',
-    'Serial',
-    'Parallel',
-    'DelayReturn',
-    'KeyboardAction',
-    'Loop',
 ]
 
 # ----------------------------------------------------------------------------

@@ -5,13 +5,19 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from . task import Task
-from . serial import Serial
-from . parallel import Parallel
-from . utils import DelayReturn, KeyboardAction, Loop
-from . sequences import (
-    OuterSequenceTimed, OuterSequenceKeyboard,
-    InnerSequenceTimed, InnerSequenceKeyboard,
-)
+
+from ppytty.kernel import api
+from . import thing
+
+
+
+class KeyReader(thing.Thing):
+
+    async def run(self):
+
+        while True:
+            keyboard_bytes = await api.key_read()
+            await api.message_send(None, keyboard_bytes)
+
 
 # ----------------------------------------------------------------------------
