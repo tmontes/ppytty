@@ -82,11 +82,28 @@ class _Fake_tparm(object):
 
 
 
+class _Fake_os_write(object):
+
+    def __init__(self):
+        self._writes = []
+
+    def reset(self):
+        self._writes.clear()
+
+    def __call__(self, _fd, data):
+        self._writes.append(data)
+        return len(data)
+
+    def written(self):
+        return b''.join(self._writes)
+
+
+
 class NoOutputTestCase(TestCase):
 
     _PATCHES = [
         # Patch ppytty.kernel.hw output related attributes.
-        ('ppytty.kernel.hw.os_write', None, mock.DEFAULT),
+        ('ppytty.kernel.hw.os_write', _Fake_os_write(), None),
         ('ppytty.kernel.hw.termios_tcgetattr', None, mock.DEFAULT),
         ('ppytty.kernel.hw.termios_tcsetattr', None, mock.DEFAULT),
         ('ppytty.kernel.hw.sys_stdout', None, mock.DEFAULT),
@@ -127,15 +144,13 @@ class NoOutputTestCase(TestCase):
     @classmethod
     def reset_os_written_bytes(cls):
 
-        cls._os_write_mock.reset_mock()
+        cls._os_write_mock.reset()
 
 
     @classmethod
     def get_os_written_bytes(cls):
 
-        return b''.join(
-            call[0][1] for call in cls._os_write_mock.call_args_list
-        )
+        return cls._os_write_mock.written()
 
 
     @classmethod

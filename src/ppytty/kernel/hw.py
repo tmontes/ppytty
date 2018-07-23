@@ -25,6 +25,13 @@ os_write = _os.write
 os_close = _os.close
 os_ttyname = _os.ttyname
 
+def os_write_all(fd, data):
+    mv = memoryview(data)
+    while mv:
+        written = os_write(fd, mv)
+        mv = mv[written:]
+
+
 select_select = _select.select
 
 sys_stdin = _sys.stdin

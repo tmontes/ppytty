@@ -42,7 +42,7 @@ class Terminal(object):
         self._window_clear = self._window.clear
         self._window_feed = self._window.feed
         self._window_render = self._window.render
-        self._os_write_out_fd = functools.partial(hw.os_write, self._out_fd)
+        self._os_write_out_fd = functools.partial(hw.os_write_all, self._out_fd)
 
 
     def _common_tty_name(self, *fds):
