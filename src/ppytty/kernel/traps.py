@@ -109,6 +109,7 @@ def window_create(task, x, y, w, h, dx, dy, dw, dh, bg):
         log.error('%r window create failed', task, exc_info=True)
         w = None
     else:
+        state.focused_window = None
         state.task_windows[task].append(w)
         state.all_windows.append(w)
 
