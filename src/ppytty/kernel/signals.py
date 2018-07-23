@@ -33,6 +33,7 @@ def track_child_process_termination():
     state.close_when_done_fds.extend((read_fd, write_fd))
 
     def wakeup_lowlevel_io():
+        # TODO: Just one byte, will this need confirmation / retrying?
         os.write(write_fd, b'!')
 
     def consume_wakeup_byte():
@@ -105,6 +106,7 @@ def track_output_terminal_resizes():
     state.close_when_done_fds.extend((read_fd, write_fd))
 
     def wakeup_lowlevel_io():
+        # TODO: Just one byte, will this need confirmation / retrying?
         os.write(write_fd, b'!')
 
     def consume_wakeup_byte():

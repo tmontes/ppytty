@@ -218,7 +218,7 @@ def process_lowlevel_io(prompt=None):
 
     def forward_keybard_input(process, keyboard_bytes):
         if process:
-            hw.os_write(process.pty_master_fd, keyboard_bytes)
+            hw.os_write_all(process.pty_master_fd, keyboard_bytes)
         else:
             state.terminal.input_buffer.append(keyboard_bytes)
 
