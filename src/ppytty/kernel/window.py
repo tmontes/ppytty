@@ -5,6 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
+import copy
 import functools
 
 import pyte
@@ -115,6 +116,9 @@ class Window(object):
         # - Produce the correct escape sequences when rendering.
         self._parent = parent
 
+        # Used in focus highlights.
+        self.title = None
+
         # Window geometry is defined by:
         # - Top left corner (x, y):
         #   - Positive ints map to 0-based absolute parent coords.
@@ -151,6 +155,9 @@ class Window(object):
 
         self._screen.cursor.hidden = no_cursor
 
+        # Save the screen buffer to support highlight.
+        self._save_buffer = None
+
         # My public `bt` so others can produce the correct escape sequences to
         # be processed by self.feed().
         self.bt = _SelfBlessingsTerminal
@@ -184,9 +191,10 @@ class Window(object):
 
     def __repr__(self):
 
+        title = f'{repr(self.title)} ' if self.title else ''
         geometry = f'{self._width}x{self._height}'
         location = f'{self._left},{self._top}'
-        return f'<Window {geometry}@{location} {hex(id(self))}>'
+        return f'<Window {title}{geometry} @{location}>'
 
 
     @property
@@ -297,6 +305,21 @@ class Window(object):
             for x in range(from_x, to_x):
                 del self_screen_buffer[y][x]
             self_screen_dirty.add(y)
+
+
+    def highlight(self, clear=False):
+
+        if not clear:
+            self._save_buffer = copy.deepcopy(self._screen.buffer)
+            self._screen.save_cursor()
+            self._screen.cursor.hidden = True
+            text = str(self.title or self)
+            self.print(text, x=0, y=self._height-1, fg=0, bg=255)
+        else:
+            self._screen.select_graphic_rendition()
+            self._screen.restore_cursor()
+            self._screen.buffer = self._save_buffer
+            self._save_buffer = None
 
 
     def print(self, text, x=None, y=None, fg=None, bg=None):

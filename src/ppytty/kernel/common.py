@@ -23,10 +23,15 @@ def update_terminal_cursor_from_focus():
 
 
 
-def render_focus_change():
+def highlight_focused_window(clear=False):
 
-    update_terminal_cursor_from_focus()
-    state.terminal.render(cursor_only=True)
+    window = state.focused_window
+    if window is None:
+        window = state.terminal.window
+
+    window.highlight(clear=clear)
+
+    rerender_all_windows(clear=clear)
 
 
 
@@ -44,13 +49,14 @@ def destroy_task_windows(task):
 
 
 
-def rerender_all_windows():
+def rerender_all_windows(clear=True):
 
     # Speed up attribute access
     state_terminal = state.terminal
     state_terminal_feed = state_terminal.feed
 
-    state_terminal.clear()
+    if clear:
+        state_terminal.clear()
 
     for w in state.all_windows:
         state_terminal_feed(w.render(full=True))
