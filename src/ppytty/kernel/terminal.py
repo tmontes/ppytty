@@ -29,6 +29,10 @@ class Terminal(object):
         self._bt = blessings.Terminal(kind=kind, stream=out_file)
         self._encoding = encoding
 
+        self._width = None
+        self._height = None
+        self._update_geometry()
+
         self._window = window.Window(self, 0, 0, 1.0, 1.0, bg=bg)
         self._window.title = 'ppytty'
 
@@ -121,16 +125,22 @@ class Terminal(object):
         # TODO: Handle exceptions or let them through?
 
 
+    def _update_geometry(self):
+
+        self._width = self._bt.width
+        self._height = self._bt.height
+
+
     @property
     def width(self):
 
-        return self._bt.width
+        return self._width
 
 
     @property
     def height(self):
 
-        return self._bt.height
+        return self._height
 
 
     @property
@@ -141,6 +151,7 @@ class Terminal(object):
 
     def resize(self):
 
+        self._update_geometry()
         self._window.resize()
 
 
