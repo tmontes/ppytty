@@ -220,14 +220,14 @@ class _State(object):
         return self.window_process[self.focused_window]
 
 
-    def next_window_process_focus(self):
+    def next_window_process_focus(self, forward=True):
 
         if self.focused_window:
             try:
                 focusable_count = len(self.focusable_windows)
                 focus_index = self.focusable_windows.index(self.focused_window)
-                next_index = focus_index + 1
-                if next_index == focusable_count:
+                next_index = focus_index + (1 if forward else -1)
+                if next_index == focusable_count or next_index == -1:
                     self.focused_window = None
                 else:
                     self.focused_window = self.focusable_windows[next_index]
@@ -238,7 +238,8 @@ class _State(object):
                 return self.window_process[self.focused_window]
 
         if self.focusable_windows:
-            self.focused_window = self.focusable_windows[0]
+            first_index = 0 if forward else -1
+            self.focused_window = self.focusable_windows[first_index]
         else:
             self.focused_window = None
 

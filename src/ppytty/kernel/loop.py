@@ -209,10 +209,10 @@ def _prompt_context(prompt):
 
 _NO_FDS = []
 
-_KEY_GRAB = b'\x06'
+_KEY_GRAB = b'\x06'     # CTRL-F
 _KEY_STOP = b'.'
 _KEY_DUMP = b'd'
-_KEY_FOCUS = b'f'
+_KEY_FOCUS = b'fb'      # next/prev
 
 def process_lowlevel_io(prompt=None):
 
@@ -241,22 +241,29 @@ def process_lowlevel_io(prompt=None):
             if in_fd_callable is None:
                 keyboard_bytes = hw.os_read(fd, 8)
                 if grab_terminal_input:
+                    grab_terminal_input = False
+                    timeout = save_timeout
                     if keyboard_bytes == _KEY_STOP:
                         raise _ForcedStop()
                     elif keyboard_bytes == _KEY_DUMP:
                         trap_handlers[Trap.STATE_DUMP](None)
-                    elif keyboard_bytes == _KEY_FOCUS:
-                        state.next_window_process_focus()
-                        common.render_focus_change()
+                    elif keyboard_bytes in _KEY_FOCUS:
+                        common.highlight_focused_window(clear=True)
+                        forward = ord(keyboard_bytes) == _KEY_FOCUS[0]
+                        state.next_window_process_focus(forward)
+                        common.highlight_focused_window()
+                        grab_terminal_input = True
+                        timeout = None
                     elif keyboard_bytes == _KEY_GRAB:
                         # _KEY_GRAB as non-grabbed input
                         forward_keybard_input(focused_process, keyboard_bytes)
-                    grab_terminal_input = False
-                    timeout = save_timeout
+                    if not grab_terminal_input:
+                        common.highlight_focused_window(clear=True)
                 else:
                     if keyboard_bytes == _KEY_GRAB:
                         grab_terminal_input = True
                         timeout = None
+                        common.highlight_focused_window()
                     else:
                         forward_keybard_input(focused_process, keyboard_bytes)
             else:

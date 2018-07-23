@@ -5,6 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
+import copy
 import functools
 
 import pyte
@@ -150,6 +151,9 @@ class Window(object):
         self._stream = pyte.ByteStream(self._screen)
 
         self._screen.cursor.hidden = no_cursor
+
+        # Save the screen buffer to support highlight.
+        self._save_buffer = None
 
         # My public `bt` so others can produce the correct escape sequences to
         # be processed by self.feed().
@@ -297,6 +301,20 @@ class Window(object):
             for x in range(from_x, to_x):
                 del self_screen_buffer[y][x]
             self_screen_dirty.add(y)
+
+
+    def highlight(self, clear=False):
+
+        if not clear:
+            self._save_buffer = copy.deepcopy(self._screen.buffer)
+            self._screen.save_cursor()
+            self._screen.cursor.hidden = True
+            self.print(repr(self), x=0, y=self._height-1, fg=0, bg=255)
+        else:
+            self._screen.select_graphic_rendition()
+            self._screen.restore_cursor()
+            self._screen.buffer = self._save_buffer
+            self._save_buffer = None
 
 
     def print(self, text, x=None, y=None, fg=None, bg=None):

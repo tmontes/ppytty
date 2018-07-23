@@ -23,10 +23,13 @@ def update_terminal_cursor_from_focus():
 
 
 
-def render_focus_change():
+def highlight_focused_window(clear=False):
 
-    update_terminal_cursor_from_focus()
-    state.terminal.render(cursor_only=True)
+    window = state.focused_window
+    if window is not None:
+        window.highlight(clear=clear)
+
+    rerender_all_windows()
 
 
 
