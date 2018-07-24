@@ -7,11 +7,11 @@
 
 
 from ppytty.kernel import api
-from . import thing
+from . import task
 
 
 
-class KeyReader(thing.Thing):
+class KeyReader(task.Task):
 
     async def run(self):
 

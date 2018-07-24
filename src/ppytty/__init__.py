@@ -39,7 +39,6 @@ from . lib import *
 
 __all__ = [
     'run',
-    'Thing',
     'SlideDeck',
     'Slide',
 ]

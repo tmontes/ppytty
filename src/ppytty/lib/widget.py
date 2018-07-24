@@ -5,7 +5,19 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from . slide_deck import SlideDeck
-from . slide import Slide
+
+from ppytty.kernel import api
+
+from . import thing
+
+
+
+class Widget(thing.Thing):
+
+    # A Widget is a Thing with a Window.
+
+    pass
+
+
 
 # ----------------------------------------------------------------------------
