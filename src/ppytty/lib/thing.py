@@ -42,14 +42,15 @@ class Thing(task.Task):
 
     async def run(self):
 
-        self._log.warning('%r: started', self)
+        self._log.info('%r: started', self)
 
         while self._state != 'completed':
-            sender, request = await api.message_wait()
-            self._log.warning('%s: got request: %r', self, request)
+            sender, message = await api.message_wait()
+            self._log.debug('%s: got message: %r', self, message)
+            request, *request_args = message
             handler = self.get_handler(request)
             try:
-                response = await handler(request)
+                response = await handler(*request_args)
             except Exception:
                 self._log.error('handler exception', exc_info=True)
                 response = 'fail'
@@ -57,7 +58,7 @@ class Thing(task.Task):
                 self._state = 'running'
             await api.message_send(sender, response)
 
-        self._log.warning('%r: done', self)
+        self._log.info('%r: done', self)
 
 
     def get_handler(self, request):
@@ -76,7 +77,7 @@ class Thing(task.Task):
         self._state = 'completed'
 
 
-    async def handle_cleanup(self, _request):
+    async def handle_cleanup(self, *_args):
 
         self.im_done()
         return 'ok'

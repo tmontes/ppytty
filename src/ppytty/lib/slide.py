@@ -19,46 +19,46 @@ class Slide(widget.Widget):
         super().__init__(id=title)
 
         self._widgets = widgets
+        self._widget_count = len(widgets)
         self._current_index = None
 
 
-    async def handle_idle_next(self, request):
+    def log_where(self, slide_index, slide_count):
+
+        self._log.warning('%s: slide %r/%r at widget %r/%r', self,
+                          slide_index+1, slide_count,
+                          self._current_index+1, self._widget_count)
+
+
+    async def handle_idle_next(self, slide_index, slide_count):
 
         self._current_index = 0
-        self._log.warning('%r: in-slide-nav to %r', self, self._current_index)
+        self.log_where(slide_index, slide_count)
         if len(self._widgets) > 1:
             return 'ok'
         else:
             return 'done'
 
 
-    async def handle_idle_prev(self, request):
+    async def handle_running_next(self, slide_index, slide_count):
 
-        return 'done'
-
-
-    async def handle_running_next(self, request):
-
-        ni = self._current_index + 1
-        if ni < len(self._widgets):
-            self._current_index = ni
-            self._log.warning('%r: in-slide-nav next to %r', self, self._current_index)
+        new_index = self._current_index + 1
+        if new_index < self._widget_count:
+            self._current_index = new_index
+            self.log_where(slide_index, slide_count)
+        if new_index < self._widget_count - 1:
             return 'ok'
         else:
-            self._log.warning('%r: in-slide-nav cannot go next', self)
             return 'done'
 
 
-    async def handle_running_prev(self, request):
+    async def handle_cleanup(self, *_args):
 
-        ni = self._current_index - 1
-        if ni >= 0:
-            self._current_index = ni
-            self._log.warning('%r: in-slide-nav prev to %r', self, self._current_index)
-            return 'ok'
-        else:
-            self._log.warning('%r: in-slide-nav cannot go prev', self)
-            return 'done'
+        self._log.warning('%s: cleaning up', self)
+
+        # TODO: clean up my widgets, when I have them.
+
+        return await super().handle_cleanup()
 
 
 # ----------------------------------------------------------------------------
