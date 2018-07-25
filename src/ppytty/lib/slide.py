@@ -32,6 +32,8 @@ class Slide(widget.Widget):
 
     async def handle_idle_next(self, slide_number, slide_count):
 
+        await super().handle_idle_next()
+
         self._current_index = 0
         self.log_where(slide_number, slide_count)
         if len(self._widgets) > 1:
@@ -54,10 +56,7 @@ class Slide(widget.Widget):
 
     async def handle_cleanup(self, **_kwargs):
 
-        self._log.warning('%s: cleaning up', self)
-
-        # TODO: clean up my widgets, when I have them.
-
+        self._log.warning('%s: cleanup my widgets', self)
         return await super().handle_cleanup()
 
 
