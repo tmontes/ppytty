@@ -6,8 +6,8 @@ from ppytty.kernel import api
 
 async def window_moves():
 
-    w1 = await api.window_create(17, 3, 30, 15, background=31)
-    w2 = await api.window_create(40, 10, 30, 15, background=39)
+    w1 = await api.window_create(17, 3, 30, 15, bg=31)
+    w2 = await api.window_create(40, 10, 30, 15, bg=39)
 
     words = 'the quick brown fox jumps over the lazy dog'.split()
     windows = (w1, w2)

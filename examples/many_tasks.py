@@ -8,7 +8,7 @@ from ppytty.kernel import api
 async def runner(name, left):
 
     n = 0
-    w = await api.window_create(left, 3, 20, 4, background=31)
+    w = await api.window_create(left, 3, 20, 4, bg=31)
     w.print(name.center(20), bg=0)
     while True:
         w.print(str(n).center(20), 0, 2)
@@ -18,7 +18,7 @@ async def runner(name, left):
 
 async def sleeper():
 
-    w = await api.window_create(5, 10, 20, 4, background=31)
+    w = await api.window_create(5, 10, 20, 4, bg=31)
     bg = 0
     while True:
         w.print('Sleeper'.center(20), x=0, y=0, bg=bg)
@@ -29,7 +29,7 @@ async def sleeper():
 
 async def reader():
 
-    w = await api.window_create(30, 10, 20, 4, background=31)
+    w = await api.window_create(30, 10, 20, 4, bg=31)
     w.print('Reader'.center(20), bg=0)
     await api.window_render(w)
     while True:
@@ -40,7 +40,7 @@ async def reader():
 
 async def receiver():
 
-    w = await api.window_create(55, 10, 20, 4, background=31)
+    w = await api.window_create(55, 10, 20, 4, bg=31)
     w.print('Receiver'.center(20), bg=0)
     await api.window_render(w)
     while True:
