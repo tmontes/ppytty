@@ -124,7 +124,10 @@ class SlideDeck(task.Task):
             destination = self._current_slide
         if request is None:
             request = self._slide_request
-        message = (request, self._current_index, self._slide_count)
+        message = (request, {
+            'slide_number': self._current_index+1,
+            'slide_count': self._slide_count,
+        })
         self._log.debug('sending to %r: %r', destination, message)
         await api.message_send(destination, message)
         return destination

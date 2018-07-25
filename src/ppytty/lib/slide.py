@@ -23,36 +23,36 @@ class Slide(widget.Widget):
         self._current_index = None
 
 
-    def log_where(self, slide_index, slide_count):
+    def log_where(self, slide_number, slide_count):
 
         self._log.warning('%s: slide %r/%r at widget %r/%r', self,
-                          slide_index+1, slide_count,
+                          slide_number, slide_count,
                           self._current_index+1, self._widget_count)
 
 
-    async def handle_idle_next(self, slide_index, slide_count):
+    async def handle_idle_next(self, slide_number, slide_count):
 
         self._current_index = 0
-        self.log_where(slide_index, slide_count)
+        self.log_where(slide_number, slide_count)
         if len(self._widgets) > 1:
             return 'ok'
         else:
             return 'done'
 
 
-    async def handle_running_next(self, slide_index, slide_count):
+    async def handle_running_next(self, slide_number, slide_count):
 
         new_index = self._current_index + 1
         if new_index < self._widget_count:
             self._current_index = new_index
-            self.log_where(slide_index, slide_count)
+            self.log_where(slide_number, slide_count)
         if new_index < self._widget_count - 1:
             return 'ok'
         else:
             return 'done'
 
 
-    async def handle_cleanup(self, *_args):
+    async def handle_cleanup(self, **_kwargs):
 
         self._log.warning('%s: cleaning up', self)
 

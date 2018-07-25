@@ -47,10 +47,10 @@ class Thing(task.Task):
         while self._state != 'completed':
             sender, message = await api.message_wait()
             self._log.debug('%s: got message: %r', self, message)
-            request, *request_args = message
+            request, request_args = message
             handler = self.get_handler(request)
             try:
-                response = await handler(*request_args)
+                response = await handler(**request_args)
             except Exception:
                 self._log.error('handler exception', exc_info=True)
                 response = 'fail'
@@ -83,7 +83,7 @@ class Thing(task.Task):
         return 'ok'
 
 
-    async def default_handler(self, request):
+    async def default_handler(self, *_args):
 
         raise NotImplementedError()
 
