@@ -21,6 +21,7 @@ _DEFAULT_KEYMAP = {
 }
 
 
+
 class SlideDeck(task.Task):
 
     def __init__(self, slides, keymap=None, **kw):
@@ -28,15 +29,27 @@ class SlideDeck(task.Task):
         super().__init__(**kw)
 
         self._slides = slides
-        self._slide_count = len(slides)
         self._current_index = None
         self._current_slide = None
 
-        self._slide_request = None
-        self._slide_next_ok = None
+        # False if we can tell it to go 'next'. True otherwise.
+        self._slide_done = None
+
+        # Passed to slides, so they can, for example, display these.
+        self._context = {
+            'slide_number': None,
+            'slide_count': len(slides),
+        }
 
         self._key_reader = key_reader.KeyReader()
         self._keymap = keymap if keymap else _DEFAULT_KEYMAP
+
+
+    @property
+    def context(self):
+
+        self._context['slide_number'] = self._current_index + 1
+        return self._context
 
 
     async def run(self):
@@ -55,18 +68,17 @@ class SlideDeck(task.Task):
                 if action is None:
                     continue
                 if action == 'slide-next':
-                    if not self._slide_next_ok:
+                    if self._slide_done:
                         await self.navigate('next')
                     else:
-                        self._slide_request = 'next'
-                        await self.message_send()
+                        await self.navigate_in_slide('next')
                 else:
                     await self.navigate(action)
             elif sender is self._current_slide:
                 # slide responded to 'next' with 'ok'/'done'.
                 self.update_navigation_from_response(message)
             else:
-                self.log_unexpected_sender(sender, message)
+                self._log.error('unexpected sender=%r, message=%r', sender, message)
 
         await api.task_destroy(self._key_reader)
         await api.task_wait()
@@ -88,58 +100,26 @@ class SlideDeck(task.Task):
     async def launch_slide(self, slide_to_cleanup=None):
 
         if slide_to_cleanup is not None:
-            self._log.info('%r: cleaning up slide %r', self, slide_to_cleanup)
+            self._log.info('cleaning up %r', slide_to_cleanup)
             await slide_to_cleanup.cleanup()
-            self._log.info('%r: cleaned up slide %r', self, slide_to_cleanup)
+            self._log.info('cleaned up %r', slide_to_cleanup)
 
-        self._log.info('spawning slide: %r', self._current_slide)
-        await api.task_spawn(self._current_slide)
+        slide_to_launch = self._current_slide
 
-        self._slide_request = 'next'
-        response = await self.message_send_receive()
-        self._log.info('spawned slide response: %r', response)
-
-        self._slide_next_ok = False
-        self.update_navigation_from_response(response)
-
-
-    def update_navigation_from_response(self, response):
-
-        if self._slide_request == 'next':
-            self._slide_next_ok = (response == 'ok')
-            if response not in ('ok', 'done'):
-                self._log.warning('unexpected response: %r', response)
-        self._log.debug('slide navigation: next_ok=%r', self._slide_next_ok)
+        self._log.info('launching %r', slide_to_launch)
+        response = await slide_to_launch.launch(**self.context)
+        self._slide_done = (response == 'done')
+        if response not in ('ok', 'done'):
+            self._log.warning('unexpected launch response: %r', response)
+        self._log.info('launched %r done=%r', slide_to_launch, self._slide_done)
 
 
-    async def message_send(self, destination=None, request=None):
+    async def navigate_in_slide(self, request):
 
-        if destination is None:
-            destination = self._current_slide
-        if request is None:
-            request = self._slide_request
-        message = (request, {
-            'slide_number': self._current_index+1,
-            'slide_count': self._slide_count,
-        })
+        destination = self._current_slide
+        message = (request, self.context)
         self._log.debug('sending to %r: %r', destination, message)
         await api.message_send(destination, message)
-        return destination
-
-
-    async def message_send_receive(self, destination=None, request=None):
-
-        destination = await self.message_send(destination, request)
-        sender, response = await api.message_wait()
-        self._log.debug('response from %r: %r', sender, response)
-        if sender is not destination:
-            self.log_unexpected_sender(sender, response)
-        return response
-
-
-    def log_unexpected_sender(self, sender, message):
-
-        self._log.error('unexpected sender=%r, message=%r', sender, message)
 
 
 # ----------------------------------------------------------------------------
