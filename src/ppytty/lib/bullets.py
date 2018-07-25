@@ -14,9 +14,9 @@ from . import widget
 
 class Bullets(widget.Widget):
 
-    def __init__(self, bullets, at_once=False, **kw):
+    def __init__(self, bullets, id=None, at_once=False, geometry=None, color=None):
 
-        super().__init__()
+        super().__init__(id=id, geometry=geometry, color=color)
 
         self._bullets = bullets
         self._bullet_count = len(bullets)

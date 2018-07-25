@@ -26,9 +26,9 @@ class Thing(task.Task):
     # - One particular message is handled successfully: 'cleanup'.
     # - Once responded to, the thing (as a Task) terminates.
 
-    def __init__(self, **kw):
+    def __init__(self, id=None):
 
-        super().__init__(**kw)
+        super().__init__(id=id)
 
         # One of 'idle', 'running', or 'completed'.
         self._state = 'idle'
