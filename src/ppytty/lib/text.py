@@ -21,14 +21,14 @@ class Text(widget.Widget):
         self._text = text
 
 
-    async def handle_idle_next(self, slide_number, slide_count):
+    async def handle_idle_next(self, **kw):
 
         await super().handle_idle_next()
-        self._log.warning('%s: displayed text %r', self, self._text)
+        self._log.warning('%s: display text=%r kw=%r', self, self._text, kw)
         return 'done'
 
 
-    async def handle_cleanup(self, **_kwargs):
+    async def handle_cleanup(self, **_kw):
 
         self._log.warning('%s: nothing to cleanup, I guess', self)
         return await super().handle_cleanup()

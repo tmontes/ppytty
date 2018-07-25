@@ -88,15 +88,9 @@ class SlideDeck(task.Task):
     async def launch_slide(self, slide_to_cleanup=None):
 
         if slide_to_cleanup is not None:
-            response = await self.message_send_receive(slide_to_cleanup, 'cleanup')
-            if response != 'ok':
-                self._log.error('could not cleanup previous slide')
-            self._log.debug('waiting for %r termination', slide_to_cleanup)
-            terminated, _, _ = await api.task_wait()
-            if terminated is not slide_to_cleanup:
-                self._log.error('unexpected child terminated: %r', terminated)
-            terminated.reset()
-            self._log.debug('previous slide cleaned up')
+            self._log.info('%r: cleaning up slide %r', self, slide_to_cleanup)
+            await slide_to_cleanup.cleanup()
+            self._log.info('%r: cleaned up slide %r', self, slide_to_cleanup)
 
         self._log.info('spawning slide: %r', self._current_slide)
         await api.task_spawn(self._current_slide)

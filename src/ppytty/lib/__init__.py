@@ -6,6 +6,7 @@
 # ----------------------------------------------------------------------------
 
 from . slide_deck import SlideDeck
-from . slide import Slide
+from . slide import Slide, SlideTemplate
+from . text import Text
 
 # ----------------------------------------------------------------------------

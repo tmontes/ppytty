@@ -77,15 +77,53 @@ class Thing(task.Task):
         self._state = 'completed'
 
 
-    async def handle_cleanup(self, *_args):
+    async def handle_cleanup(self, **_kw):
 
         self.im_done()
         return 'ok'
 
 
-    async def default_handler(self, *_args):
+    async def default_handler(self, **_kw):
 
         raise NotImplementedError()
+
+
+    # ------------------------------------------------------------------------
+    # To be used by others to launch me/clean me up.
+
+    async def launch(self, till_done=False, **kw):
+
+        await api.task_spawn(self)
+        message = ('next', kw)
+        done = False
+        while not done:
+            await api.message_send(self, message)
+            sender, response = await api.message_wait()
+            if sender is not self:
+                self.log_unexpected_sender(sender, response)
+            if not till_done or response == 'done':
+                done = True
+        return response
+
+
+    async def cleanup(self, **kw):
+
+        message = ('cleanup', kw)
+        await api.message_send(self, message)
+        sender, response = await api.message_wait()
+        if sender is not self:
+            self.log_unexpected_sender(sender, response)
+        if response != 'ok':
+            self._log.warning('%r: non-ok response for cleanup request', self)
+        completed, _, _ = await api.task_wait()
+        if completed is not self:
+            self._log.warning('%r: unexpected child terminated: %r', self, completed)
+        self.reset()
+
+
+    def log_unexpected_sender(self, sender, message):
+
+        self._log.warning('%s: unexpected sender=%r response=%r', self, sender, response)
 
 
 # ----------------------------------------------------------------------------
