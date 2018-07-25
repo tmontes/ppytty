@@ -14,12 +14,14 @@ from . import widget
 
 class Bullets(widget.Widget):
 
-    def __init__(self, bullets, **kw):
+    def __init__(self, bullets, at_once=False, **kw):
 
         super().__init__()
 
         self._bullets = bullets
         self._bullet_count = len(bullets)
+
+        self._at_once = at_once
         self._current_index = None
 
 
@@ -33,11 +35,14 @@ class Bullets(widget.Widget):
 
         await super().handle_idle_next()
 
+        if self._at_once:
+            for bullet in self._bullets:
+                self._log.warning('%s: bullet=%r context=%r', self, bullet, context)
+            return 'done'
+
         self._current_index = 0
         bullet = self._bullets[0]
-
         self._log.warning('%s: bullet=%r context=%r', self, bullet, context)
-
         return 'done' if self.at_last_bullet else 'ok'
 
 
