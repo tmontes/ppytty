@@ -28,10 +28,10 @@ class Text(widget.Widget):
         return 'done'
 
 
-    async def handle_cleanup(self, **_kw):
+    async def handle_cleanup(self, **kw):
 
         self._log.info('%s: nothing to cleanup, I guess', self)
-        return await super().handle_cleanup()
+        return await super().handle_cleanup(**kw)
 
 
 # ----------------------------------------------------------------------------

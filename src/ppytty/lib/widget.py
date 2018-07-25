@@ -36,21 +36,19 @@ class Widget(thing.Thing):
 
         import random; color['bg'] = random.randint(1, 255)
 
-        self._log.warning('%s: creating window', self)
         window = await api.window_create(**geometry, **color)
         # TODO: maybe avoid rendering now, let the sub-class do that?
         await api.window_render(window)
+        self._log.debug('%s: created window: %r', self, window)
         self._window = window
-        self._log.warning('%s: created window: %r', self, self._window)
         return 'done'
 
 
-    async def handle_cleanup(self, **_kw):
+    async def handle_cleanup(self, **window_destroy_args):
 
-        # TODO: destroy the window without forcing full terminal render
-        #       unless I'm the last widget before "changing slides",
-        #       (whatever that means, in this / the slide's context).
-        self._log.info('%s: destroy window (in deferred mode)', self)
+        await api.window_destroy(self._window, **window_destroy_args)
+        self._log.debug('%s: destroyed window %r', self, window_destroy_args)
+
         return await super().handle_cleanup()
 
 
