@@ -1,5 +1,5 @@
 
-from ppytty import SlideDeck, Slide, SlideTemplate, Text
+from ppytty import SlideDeck, Slide, SlideTemplate, Text, Bullets
 
 t = SlideTemplate(widgets=[
     Text('template text'),
@@ -11,7 +11,7 @@ ppytty_task = SlideDeck([
     ]),
     Slide(title='[content]', template=t, widgets=[
         Text('content text #1'),
-        Text('content text #2'),
+        Bullets(['bullet 1', 'bullet 2']),
         Text('content text #3'),
     ]),
     Slide(title='Thanks!', template=t, widgets=[

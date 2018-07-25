@@ -88,7 +88,7 @@ class Slide(widget.Widget):
             destination = self._current_widget
             message = ('next', context)
             await api.message_send(destination, message)
-            sender, response = api.message_wait()
+            sender, response = await api.message_wait()
             if sender is not destination:
                 # TODO: will the Thing message_wait loop mess with this?
                 self._log.warning('%r: unexpected sender=%r response=%r', self, sender, response)
