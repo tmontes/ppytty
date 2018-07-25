@@ -8,6 +8,7 @@ t = SlideTemplate(widgets=[
 ppytty_task = SlideDeck([
     Slide(title='Welcome', template=t, widgets=[
         Text('welcome text'),
+        Bullets(['welcome bullet 1', 'welcome bullet 2'], at_once=True),
     ]),
     Slide(title='[content]', template=t, widgets=[
         Text('content text #1'),
