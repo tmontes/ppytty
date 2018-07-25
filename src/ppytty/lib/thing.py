@@ -121,7 +121,7 @@ class Thing(task.Task):
         self.reset()
 
 
-    def log_unexpected_sender(self, sender, message):
+    def log_unexpected_sender(self, sender, response):
 
         self._log.warning('%s: unexpected sender=%r response=%r', self, sender, response)
 

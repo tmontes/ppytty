@@ -108,10 +108,15 @@ class SlideDeck(task.Task):
 
         self._log.info('launching %r', slide_to_launch)
         response = await slide_to_launch.launch(**self.context)
+        self.update_navigation_from_response(response)
+        self._log.info('launched %r done=%r', slide_to_launch, self._slide_done)
+
+
+    def update_navigation_from_response(self, response):
+
         self._slide_done = (response == 'done')
         if response not in ('ok', 'done'):
-            self._log.warning('unexpected launch response: %r', response)
-        self._log.info('launched %r done=%r', slide_to_launch, self._slide_done)
+            self._log.warning('unexpected navigation response: %r', response)
 
 
     async def navigate_in_slide(self, request):

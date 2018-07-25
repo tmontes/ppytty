@@ -16,13 +16,13 @@ class Widget(thing.Thing):
 
     async def handle_idle_next(self, **_kw):
 
-        self._log.warning('%s: create window', self)
+        self._log.info('%s: create window', self)
         return 'done'
 
 
     async def handle_cleanup(self, **_kw):
 
-        self._log.warning('%s: destroy window (in deferred mode)', self)
+        self._log.info('%s: destroy window (in deferred mode)', self)
         return await super().handle_cleanup()
 
 

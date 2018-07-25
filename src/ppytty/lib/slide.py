@@ -26,57 +26,107 @@ class Slide(widget.Widget):
 
         super().__init__(id=title)
 
+        self._title = title
         self._template = template
 
         self._widgets = widgets if widgets is not None else ()
         self._widget_count = len(widgets)
         self._current_index = None
+        self._current_widget = None
+
+        # False if we can tell it to go 'next'. True otherwise.
+        self._widget_done = None
+
+        self._launched_widgets = []
 
 
-    def log_where(self, slide_number, slide_count):
+    @property
+    def at_last_widget(self):
 
-        self._log.warning('%s: slide %r/%r at widget %r/%r', self,
-                          slide_number, slide_count,
-                          self._current_index+1, self._widget_count)
+        return self._current_index == self._widget_count-1
 
 
-    async def handle_idle_next(self, **kw):
+    async def handle_idle_next(self, **context):
 
         await super().handle_idle_next()
 
-        self._log.warning('%r: launching template widgets', self)
+        context['slide_title'] = self._title
+
+        self._log.info('%r: launching template widgets', self)
         for widget in self._template.widgets:
-            await widget.launch(till_done=True, **kw)
-        self._log.warning('%r: launched template widgets', self)
+            await widget.launch(till_done=True, **context)
+        self._log.info('%r: launched template widgets', self)
+
+        if not self._widget_count:
+            return 'done'
 
         self._current_index = 0
-        self.log_where(kw.get('slide_number', '?'), kw.get('slide_count', '?'))
-        if len(self._widgets) > 1:
-            return 'ok'
+        self._current_widget = self._widgets[0]
+        launch_response = await self.launch_widget(**context)
+
+        return launch_response if self.at_last_widget else 'ok'
+
+
+    async def handle_running_next(self, **context):
+
+        context['slide_title'] = self._title
+
+        if self._widget_done:
+            # launch next widget, if any
+            new_index = self._current_index + 1
+            if new_index < self._widget_count:
+                self._current_index = new_index
+                self._current_widget = self._widgets[new_index]
+                launch_response = await self.launch_widget(**context)
+                return launch_response if self.at_last_widget else 'ok'
+            else:
+                # last widget done, should have returned 'done' before
+                self._log.warning('%s: should not be reached', self)
+                return 'done'
         else:
-            return 'done'
+            # move on with current widget
+            destination = self._current_widget
+            message = ('next', context)
+            await api.message_send(destination, message)
+            sender, response = api.message_wait()
+            if sender is not destination:
+                # TODO: will the Thing message_wait loop mess with this?
+                self._log.warning('%r: unexpected sender=%r response=%r', self, sender, response)
+            self.update_navigation_from_response(response)
+            return response if self.at_last_widget else 'ok'
 
 
-    async def handle_running_next(self, slide_number, slide_count):
+    async def launch_widget(self, **context):
 
-        new_index = self._current_index + 1
-        if new_index < self._widget_count:
-            self._current_index = new_index
-            self.log_where(slide_number, slide_count)
-        if new_index < self._widget_count - 1:
-            return 'ok'
-        else:
-            return 'done'
+        widget_to_launch = self._current_widget
+
+        self._log.info('%r: launching %r', self, widget_to_launch)
+        response = await widget_to_launch.launch(till_done=False, **context)
+        self._launched_widgets.append(widget_to_launch)
+        self.update_navigation_from_response(response)
+        self._log.info('%r: launched %r done=%r', self, widget_to_launch, self._widget_done)
+        return response
+
+
+    def update_navigation_from_response(self, response):
+
+        self._widget_done = (response == 'done')
+        if response not in ('ok', 'done'):
+            self._log.warning('%s: unexpected navigation response: %r', self, response)
 
 
     async def handle_cleanup(self, **_kwargs):
 
-        self._log.warning('%s: cleanup my widgets', self)
+        self._log.info('%s: cleaning up widgets', self)
+        while self._launched_widgets:
+            widget = self._launched_widgets.pop()
+            await widget.cleanup()
+        self._log.info('%s: cleaned up widgets', self)
 
-        self._log.warning('%r: cleaning up template widgets', self)
+        self._log.info('%r: cleaning up template widgets', self)
         for widget in self._template.widgets:
             await widget.cleanup()
-        self._log.warning('%r: cleaned up template widgets', self)
+        self._log.info('%r: cleaned up template widgets', self)
 
         return await super().handle_cleanup()
 

@@ -24,13 +24,13 @@ class Text(widget.Widget):
     async def handle_idle_next(self, **kw):
 
         await super().handle_idle_next()
-        self._log.warning('%s: display text=%r kw=%r', self, self._text, kw)
+        self._log.warning('%s: text=%r kw=%r', self, self._text, kw)
         return 'done'
 
 
     async def handle_cleanup(self, **_kw):
 
-        self._log.warning('%s: nothing to cleanup, I guess', self)
+        self._log.info('%s: nothing to cleanup, I guess', self)
         return await super().handle_cleanup()
 
 
