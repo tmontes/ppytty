@@ -34,13 +34,13 @@ FAST_COLORED_OUTPUT = textwrap.dedent("""
 
 async def ppytty_task():
 
-    log_window = await api.window_create(0.1, 0.1, 0.8, 0.2, background=31)
+    log_window = await api.window_create(0.1, 0.1, 0.8, 0.2, bg=31)
 
     async def log(msg):
         log_window.print(msg + '\r\n')
         await api.window_render(log_window)
 
-    process_window = await api.window_create(0.1, 0.3, 0.8, 0.6, background=0)
+    process_window = await api.window_create(0.1, 0.3, 0.8, 0.6, bg=0)
     await api.window_render(process_window)
 
     args = ['/usr/bin/vi']

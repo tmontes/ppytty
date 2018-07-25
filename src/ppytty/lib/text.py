@@ -14,9 +14,9 @@ from . import widget
 
 class Text(widget.Widget):
 
-    def __init__(self, text=None, **kw):
+    def __init__(self, text, id=None, geometry=None, color=None):
 
-        super().__init__()
+        super().__init__(id=id, geometry=geometry, color=color)
 
         self._text = text
 
@@ -28,10 +28,10 @@ class Text(widget.Widget):
         return 'done'
 
 
-    async def handle_cleanup(self, **_kw):
+    async def handle_cleanup(self, **kw):
 
         self._log.info('%s: nothing to cleanup, I guess', self)
-        return await super().handle_cleanup()
+        return await super().handle_cleanup(**kw)
 
 
 # ----------------------------------------------------------------------------

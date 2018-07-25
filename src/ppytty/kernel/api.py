@@ -36,24 +36,26 @@ def direct_print(text, x=None, y=None, save_location=False):
 
 
 @types.coroutine
-def window_create(x, y, w, h, dx=0, dy=0, dw=0, dh=0, background=None):
+def window_create(x, y, w, h, dx=0, dy=0, dw=0, dh=0, bg=None):
     """
     Creates a kernel managed window.
     """
-    return (yield Trap.WINDOW_CREATE, x, y, w, h, dx, dy, dw, dh, background)
+    return (yield Trap.WINDOW_CREATE, x, y, w, h, dx, dy, dw, dh, bg)
 
 
 
 
 @types.coroutine
-def window_destroy(window):
+def window_destroy(window, terminal_render=True, just_clear_buffer=False):
     """
-    Destroys `window`. If it has been rendered, the output terminal will be
-    updated to reflect its destruction.
+    Destroys `window`. If `terminal_render` is True, the output terminal will be
+    updated to reflect its destruction. If `just_clear_buffer` is True, the
+    output terminal buffer will be cleared, but not rendered to the actual
+    output TTY.
 
     Raises TrapException if `window` is not a caller task created window.
     """
-    yield Trap.WINDOW_DESTROY, window
+    yield Trap.WINDOW_DESTROY, window, terminal_render, just_clear_buffer
 
 
 

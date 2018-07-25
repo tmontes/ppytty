@@ -6,13 +6,13 @@ from ppytty.kernel import api
 
 async def window_resizes():
 
-    w1 = await api.window_create(4, 2, 60, 15, background=236)
+    w1 = await api.window_create(4, 2, 60, 15, bg=236)
     # p1 = await api.process_spawn(w1, ['/usr/bin/vi'])
     # p1 = await api.process_spawn(w1, ['/bin/bash'])
     p1 = await api.process_spawn(w1, [sys.executable])
     await api.window_render(w1)
 
-    w2 = await api.window_create(50, 10, 30, 15, background=39)
+    w2 = await api.window_create(50, 10, 30, 15, bg=39)
     for _ in range(42):
         w2.print('the quick brown fox jumps over the lazy dog ')
     w2.print('\r\n  KEY TO CONTINUE  \r\n\r\n', bg=173, fg=0)

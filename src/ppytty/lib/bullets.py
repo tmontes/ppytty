@@ -14,9 +14,9 @@ from . import widget
 
 class Bullets(widget.Widget):
 
-    def __init__(self, bullets, at_once=False, **kw):
+    def __init__(self, bullets, id=None, at_once=False, geometry=None, color=None):
 
-        super().__init__()
+        super().__init__(id=id, geometry=geometry, color=color)
 
         self._bullets = bullets
         self._bullet_count = len(bullets)
@@ -58,10 +58,10 @@ class Bullets(widget.Widget):
             return 'done'
 
 
-    async def handle_cleanup(self, **_kw):
+    async def handle_cleanup(self, **kw):
 
         self._log.info('%s: nothing to cleanup, I guess', self)
-        return await super().handle_cleanup()
+        return await super().handle_cleanup(**kw)
 
 
 # ----------------------------------------------------------------------------
