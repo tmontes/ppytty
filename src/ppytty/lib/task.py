@@ -29,7 +29,8 @@ class Task(object):
 
     def __call__(self):
 
-        self._running = self.run()
+        if self._running is None:
+            self._running = self.run()
         return self
 
 

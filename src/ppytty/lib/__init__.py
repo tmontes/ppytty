@@ -5,6 +5,10 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
+from . task import Task
+from . thing import Thing
+from . widget import Widget
+
 from . slide_deck import SlideDeck
 from . slide import Slide, SlideTemplate
 from . text import Text
