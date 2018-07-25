@@ -5,13 +5,26 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from . task import Task
-from . serial import Serial
-from . parallel import Parallel
-from . utils import DelayReturn, KeyboardAction, Loop
-from . sequences import (
-    OuterSequenceTimed, OuterSequenceKeyboard,
-    InnerSequenceTimed, InnerSequenceKeyboard,
-)
+
+from ppytty.kernel import api
+
+from . import thing
+
+
+
+class Widget(thing.Thing):
+
+    async def handle_idle_next(self, **_kw):
+
+        self._log.info('%s: create window', self)
+        return 'done'
+
+
+    async def handle_cleanup(self, **_kw):
+
+        self._log.info('%s: destroy window (in deferred mode)', self)
+        return await super().handle_cleanup()
+
+
 
 # ----------------------------------------------------------------------------

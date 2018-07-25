@@ -2,17 +2,22 @@
 # ppytty
 # ----------------------------------------------------------------------------
 # Copyright (c) Tiago Montes.
-# See LICENSE for deatils.
+# See LICENSE for details.
 # ----------------------------------------------------------------------------
 
 
-from .. import tasks
+from ppytty.kernel import api
+from . import task
 
 
 
-class Widget(tasks.Task):
+class KeyReader(task.Task):
 
-    pass
+    async def run(self):
+
+        while True:
+            keyboard_bytes = await api.key_read()
+            await api.message_send(None, keyboard_bytes)
 
 
 # ----------------------------------------------------------------------------

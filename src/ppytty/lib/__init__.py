@@ -5,18 +5,13 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
-from . tasks import (
-    Task,
-    Parallel, Serial,
-    DelayReturn, KeyboardAction, Loop,
-    OuterSequenceKeyboard, OuterSequenceTimed,
-    InnerSequenceKeyboard, InnerSequenceTimed,
-)
+from . task import Task
+from . thing import Thing
+from . widget import Widget
 
-from . widgets import (
-    Widget,
-    Slide,
-    Label,
-)
+from . slide_deck import SlideDeck
+from . slide import Slide, SlideTemplate
+from . text import Text
+from . bullets import Bullets
 
 # ----------------------------------------------------------------------------
