@@ -75,7 +75,7 @@ class SlideDeck(task.Task):
                 else:
                     await self.navigate(action)
             elif sender is self._current_slide:
-                # slide responded to 'next' with 'ok'/'done'.
+                # slide responded to 'next' with 'running'/'done'.
                 self.update_navigation_from_response(message)
             else:
                 self._log.error('unexpected sender=%r, message=%r', sender, message)
@@ -115,7 +115,7 @@ class SlideDeck(task.Task):
     def update_navigation_from_response(self, response):
 
         self._slide_done = (response == 'done')
-        if response not in ('ok', 'done'):
+        if response not in ('running', 'done'):
             self._log.warning('unexpected navigation response: %r', response)
 
 

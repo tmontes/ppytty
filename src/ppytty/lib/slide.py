@@ -62,9 +62,9 @@ class Slide(widget.Widget):
 
         self._current_index = 0
         self._current_widget = self._widgets[0]
-        launch_response = await self.launch_widget(**context)
+        widget_state = await self.launch_widget(**context)
 
-        return launch_response if self.at_last_widget else 'ok'
+        return widget_state if self.at_last_widget else 'running'
 
 
     async def handle_running_next(self, **context):
@@ -77,8 +77,8 @@ class Slide(widget.Widget):
             if new_index < self._widget_count:
                 self._current_index = new_index
                 self._current_widget = self._widgets[new_index]
-                launch_response = await self.launch_widget(**context)
-                return launch_response if self.at_last_widget else 'ok'
+                widget_state = await self.launch_widget(**context)
+                return widget_state if self.at_last_widget else 'running'
             else:
                 # last widget done, should have returned 'done' before
                 self._log.warning('%s: should not be reached', self)
@@ -93,7 +93,7 @@ class Slide(widget.Widget):
                 # TODO: will the Thing message_wait loop mess with this?
                 self._log.warning('%r: unexpected sender=%r response=%r', self, sender, response)
             self.update_navigation_from_response(response)
-            return response if self.at_last_widget else 'ok'
+            return response if self.at_last_widget else 'running'
 
 
     async def launch_widget(self, **context):
@@ -101,17 +101,17 @@ class Slide(widget.Widget):
         widget_to_launch = self._current_widget
 
         self._log.info('%r: launching %r', self, widget_to_launch)
-        response = await widget_to_launch.launch(till_done=False, **context)
+        widget_state = await widget_to_launch.launch(**context)
         self._launched_widgets.append(widget_to_launch)
-        self.update_navigation_from_response(response)
+        self.update_navigation_from_response(widget_state)
         self._log.info('%r: launched %r done=%r', self, widget_to_launch, self._widget_done)
-        return response
+        return widget_state
 
 
     def update_navigation_from_response(self, response):
 
         self._widget_done = (response == 'done')
-        if response not in ('ok', 'done'):
+        if response not in ('running', 'done'):
             self._log.warning('%s: unexpected navigation response: %r', self, response)
 
 
