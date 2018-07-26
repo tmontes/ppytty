@@ -43,7 +43,7 @@ class Bullets(widget.Widget):
         self._current_index = 0
         bullet = self._bullets[0]
         self._log.warning('%s: bullet=%r context=%r', self, bullet, context)
-        return 'done' if self.at_last_bullet else 'ok'
+        return 'done' if self.at_last_bullet else 'running'
 
 
     async def handle_running_next(self, **context):
@@ -53,7 +53,7 @@ class Bullets(widget.Widget):
             bullet = self._bullets[new_index]
             self._current_index = new_index
             self._log.warning('%s: bullet=%r context=%r', self, bullet, context)
-            return 'done' if self.at_last_bullet else 'ok'
+            return 'done' if self.at_last_bullet else 'running'
         else:
             return 'done'
 

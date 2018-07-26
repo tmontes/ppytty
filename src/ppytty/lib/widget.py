@@ -17,7 +17,7 @@ class Widget(thing.Thing):
 
     def __init__(self, id=None, geometry=None, color=None):
 
-        super().__init__(id=id)
+        super().__init__(id=id, initial_state='idle')
 
         self._geometry = geometry or visual.geometry_full()
         self._color = color or visual.color()
@@ -49,7 +49,7 @@ class Widget(thing.Thing):
         await api.window_destroy(self._window, **window_destroy_args)
         self._log.debug('%s: destroyed window %r', self, window_destroy_args)
 
-        return await super().handle_cleanup()
+        self.im_done()
 
 
 

@@ -14,49 +14,50 @@ from . import task
 
 class Thing(task.Task):
 
-    # Things have a simple lifecycle:
-    # - They start in the 'idle' state.
+    # Things track state and process messages:
+    # - State is defined by a string.
     # - They loop waiting for request messages.
     # - Messages are handled via method lookup:
     #   - First a method named "handle_{state}_{request}" is looked up.
     #   - If not found, "handle_{request}" is tried.
     #   - If not found, "default_handler" is used.
-    # - Successfully handled request messages must be responded to with 'ok'.
-    # - Successful handling of a request while 'idle', changes the state to 'running'.
-    # - One particular message is handled successfully: 'cleanup'.
-    # - Once responded to, the thing (as a Task) terminates.
+    # - Handlers should return a string:
+    #   - This updates the state...
+    #   - ...which is sent back to message senders.
 
-    def __init__(self, id=None):
+    def __init__(self, id=None, initial_state=None):
 
         super().__init__(id=id)
 
-        # One of 'idle', 'running', or 'completed'.
-        self._state = 'idle'
+        self._initial_state = initial_state
+        self._state = self._initial_state
+
+        self._done = False
 
 
     def reset(self):
 
         super().reset()
-        self._state = 'idle'
+        self._state = self._initial_state
+        self._done = False
 
 
     async def run(self):
 
         self._log.info('%r: started', self)
 
-        while self._state != 'completed':
+        while not self._done:
             sender, message = await api.message_wait()
             self._log.debug('%s: got message: %r', self, message)
             request, request_args = message
             handler = self.get_handler(request)
             try:
-                response = await handler(**request_args)
+                new_state = await handler(**request_args)
             except Exception:
                 self._log.error('handler exception', exc_info=True)
-                response = 'fail'
-            if self._state == 'idle' and response == 'ok':
-                self._state = 'running'
-            await api.message_send(sender, response)
+            else:
+                self._state = new_state
+            await api.message_send(sender, new_state)
 
         self._log.info('%r: done', self)
 
@@ -74,13 +75,7 @@ class Thing(task.Task):
 
     def im_done(self):
 
-        self._state = 'completed'
-
-
-    async def handle_cleanup(self, **_kw):
-
-        self.im_done()
-        return 'ok'
+        self._done = True
 
 
     async def default_handler(self, **_kw):
@@ -91,30 +86,30 @@ class Thing(task.Task):
     # ------------------------------------------------------------------------
     # To be used by others to launch me/clean me up.
 
-    async def launch(self, till_done=False, **kw):
+    async def launch(self, message, until_state=None, **kw):
 
         await api.task_spawn(self)
-        message = ('next', kw)
+        message = (message, kw)
         done = False
         while not done:
             await api.message_send(self, message)
-            sender, response = await api.message_wait()
+            sender, reached_state = await api.message_wait()
             if sender is not self:
-                self.log_unexpected_sender(sender, response)
-            if not till_done or response == 'done':
+                self.log_unexpected_sender(sender, reached_state)
+            if until_state is None or until_state == reached_state:
                 done = True
-        return response
+        return reached_state
 
 
-    async def cleanup(self, **kw):
+    async def cleanup(self, message, **kw):
 
-        message = ('cleanup', kw)
+        message = (message, kw)
         await api.message_send(self, message)
-        sender, response = await api.message_wait()
+        sender, cleanup_response = await api.message_wait()
         if sender is not self:
-            self.log_unexpected_sender(sender, response)
-        if response != 'ok':
-            self._log.warning('%r: non-ok response for cleanup request', self)
+            self.log_unexpected_sender(sender, cleanup_response)
+        if cleanup_response is not None:
+            self._log.warning('%r: unexpected cleanup response: %r', self, cleanup_response)
         completed, _, _ = await api.task_wait()
         if completed is not self:
             self._log.warning('%r: unexpected child terminated: %r', self, completed)
