@@ -48,13 +48,13 @@ class Slide(widget.Widget):
 
     async def handle_idle_next(self, **context):
 
-        await super().handle_idle_next()
+        await super().handle_idle_next(render=False)
 
         context['slide_title'] = self._title
 
         self._log.info('%r: launching template widgets', self)
         for widget in self._template.widgets:
-            await widget.launch(till_done=True, **context)
+            await widget.launch(till_done=True, terminal_render=False, **context)
         self._log.info('%r: launched template widgets', self)
 
         if not self._widget_count:
@@ -62,7 +62,9 @@ class Slide(widget.Widget):
 
         self._current_index = 0
         self._current_widget = self._widgets[0]
-        widget_state = await self.launch_widget(**context)
+        widget_state = await self.launch_widget(terminal_render=False, **context)
+
+        await self.render()
 
         return widget_state if self.at_last_widget else 'running'
 

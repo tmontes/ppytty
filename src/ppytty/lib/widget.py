@@ -32,23 +32,29 @@ class Widget(thing.Thing):
         self._window = None
 
 
-    async def handle_idle_next(self, **hints):
+    @property
+    def window(self):
 
-        geometry = self._geometry
-        if 'geometry' in hints:
-            geometry.update(hints['geometry'])
+        return self._window
 
-        color = self._color
-        if 'color' in hints:
-            color.update(hints['color'])
 
-        import random; color['bg'] = random.randint(1, 255)
+    async def handle_idle_next(self, geometry=None, color=None, render=True,
+                               terminal_render=True):
 
-        window = await api.window_create(**geometry, **color)
-        # TODO: maybe avoid rendering now, let the sub-class do that?
-        await api.window_render(window)
-        self._log.debug('%s: created window: %r', self, window)
-        self._window = window
+        win_geometry = self._geometry
+        if geometry:
+            win_geometry.update(geometry)
+
+        win_color = self._color
+        if color:
+            win_color.update(color)
+
+        import random; win_color['bg'] = random.randint(1, 255)
+
+        self._window = await api.window_create(**win_geometry, **win_color)
+        if render:
+            await api.window_render(self._window, terminal_render=terminal_render)
+
         return 'done'
 
 
@@ -61,7 +67,7 @@ class Widget(thing.Thing):
 
 
     # ------------------------------------------------------------------------
-    # To be used by others to launch me/clean me up.
+    # To be used by others to launch me/render me/clean me up.
 
     async def launch(self, till_done=False, **kw):
 
@@ -76,6 +82,12 @@ class Widget(thing.Thing):
             if not till_done or reached_state == 'done':
                 done = True
         return reached_state
+
+
+    async def render(self, render=True, **window_render_args):
+
+        if render:
+            await api.window_render(self._window, **window_render_args)
 
 
     async def cleanup(self, **kw):

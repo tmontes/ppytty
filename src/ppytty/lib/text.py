@@ -21,17 +21,19 @@ class Text(widget.Widget):
         self._text = text
 
 
-    async def handle_idle_next(self, **kw):
+    async def handle_idle_next(self, geometry=None, color=None, render=True,
+                               terminal_render=True, **context):
 
-        await super().handle_idle_next()
-        self._log.warning('%s: text=%r kw=%r', self, self._text, kw)
+        await super().handle_idle_next(geometry=geometry, color=color, render=False)
+        self._log.warning('%s: text=%r context=%r', self, self._text, context)
+        await self.render(render=render, terminal_render=terminal_render)
         return 'done'
 
 
-    async def handle_cleanup(self, **kw):
+    async def handle_cleanup(self, **window_destroy_args):
 
         self._log.info('%s: nothing to cleanup, I guess', self)
-        return await super().handle_cleanup(**kw)
+        return await super().handle_cleanup(**window_destroy_args)
 
 
 # ----------------------------------------------------------------------------
