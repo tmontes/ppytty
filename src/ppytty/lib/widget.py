@@ -25,13 +25,39 @@ class Widget(thing.Thing):
     # - They should cleanup and stop when they get a 'cleanup' message.
     #   - ...successful cleanup handlers should return None.
 
-    def __init__(self, id=None, geometry=None, color=None):
+    def __init__(self, id=None, geometry=None, color=None, padding=None):
 
         super().__init__(id=id, initial_state='idle')
 
         self._geometry = geometry or {}
         # self._color = color or _color.default()
+
+        # Clockwise, from top, inspired by CSS.
+        self._pad_top = 0
+        self._pad_right = 0
+        self._pad_bottom = 0
+        self._pad_left = 0
+        self._set_padding(padding)
+
         self._window = None
+
+
+    def _set_padding(self, padding):
+
+        if isinstance(padding, (tuple, list)):
+            pad_count = len(padding)
+            if pad_count == 4:
+                self._pad_top, self._pad_right, self._pad_bottom, self._pad_left = padding
+            elif pad_count == 2:
+                pad_vertical, pad_horizontal = padding
+                self._pad_top = self._pad_bottom = pad_vertical
+                self._pad_right = self._pad_left = pad_horizontal
+            else:
+                raise ValueError(f'bad padding sequence length: {padding!r}')
+        elif isinstance(padding, int):
+            self._pad_top = self._pad_right = self._pad_bottom = self._pad_left = padding
+        elif padding:
+            raise ValueError(f'padding must be int or 2/4-tuple/list of ints: {padding!r}')
 
 
     @property
