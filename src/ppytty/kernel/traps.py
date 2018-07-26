@@ -119,7 +119,7 @@ def window_create(task, x, y, w, h, dx, dy, dw, dh, bg):
 
 
 @handler_for(Trap.WINDOW_DESTROY)
-def window_destroy(task, window, terminal_render, just_clear_buffer):
+def window_destroy(task, window, terminal_render, clear_buffer):
 
     if not window in state.task_windows[task]:
         state.trap_will_throw(task, exceptions.TrapException('no such window'))
@@ -130,13 +130,13 @@ def window_destroy(task, window, terminal_render, just_clear_buffer):
     state.all_windows.remove(window)
     state.cleanup_focusable_window_process(window)
 
-    # The `terminal_render` and `just_clear_buffer` flags are simple rendering
-    # optimizations to allow for all existing windows to be destroyed without
+    # The `terminal_render` and `clear_buffer` flags support a rendering
+    # optimization that allows for all existing windows to be destroyed without
     # affecting the terminal output:
-    # - The first N-1 windows call destroy with `terminal_render` set to False.
-    # - The last should set `just_clear_buffer` to True.
+    # - All windows should call destroy with `terminal_render` set to False.
+    # - The last should also set `clear_buffer` to True.
     # This way, the next created and rendered window will:
-    # - Be rendered on to clear terminal buffer (as it should).
+    # - Be rendered on to clear terminal buffer, as it should.
     # - Update the output TTY in one go.
 
     if terminal_render is True:
@@ -145,7 +145,7 @@ def window_destroy(task, window, terminal_render, just_clear_buffer):
         # - If completely within another window, just re-render that window.
         # - Just clear needed terminal lines and rerender overlapping windows.
         common.rerender_all_windows()
-    elif just_clear_buffer is True:
+    elif clear_buffer is True:
         state.terminal.clear()
 
     state.runnable_tasks.append(task)

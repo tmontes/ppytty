@@ -120,23 +120,26 @@ class Slide(widget.Widget):
         # Cleanup strategy:
         # - My widgets are cleaned up in such a way that their window
         #   destruction is not rendered to the output TTY.
-        # - My window (inherited from Widget) is destroyed in just_clear_buffer
-        #   mode; this means the output terminal buffer is cleared but not
-        #   rendered. It will be up to the next slide's window render to update
-        #   the output TTY in one go.
+        # - My window (inherited from Widget) is destroyed with clear_buffer
+        #   activated as well; this means the output terminal's buffer is
+        #   cleared but not rendered. It will be up to the next slide's window
+        #   render to update the output TTY in one go.
+
+        window_destroy_args = dict(terminal_render=False)
 
         self._log.info('%s: cleaning up widgets', self)
         while self._launched_widgets:
             widget = self._launched_widgets.pop()
-            await widget.cleanup(terminal_render=False)
+            await widget.cleanup(**window_destroy_args)
         self._log.info('%s: cleaned up widgets', self)
 
         self._log.info('%r: cleaning up template widgets', self)
         for widget in self._template.widgets:
-            await widget.cleanup(terminal_render=False)
+            await widget.cleanup(**window_destroy_args)
         self._log.info('%r: cleaned up template widgets', self)
 
-        return await super().handle_cleanup(just_clear_buffer=True)
+        window_destroy_args['clear_buffer'] = True
+        return await super().handle_cleanup(**window_destroy_args)
 
 
 # ----------------------------------------------------------------------------

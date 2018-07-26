@@ -46,16 +46,16 @@ def window_create(x, y, w, h, dx=0, dy=0, dw=0, dh=0, bg=None):
 
 
 @types.coroutine
-def window_destroy(window, terminal_render=True, just_clear_buffer=False):
+def window_destroy(window, terminal_render=True, clear_buffer=False):
     """
     Destroys `window`. If `terminal_render` is True, the output terminal will be
-    updated to reflect its destruction. If `just_clear_buffer` is True, the
-    output terminal buffer will be cleared, but not rendered to the actual
-    output TTY.
+    updated to reflect its destruction; otherwise, if `clear_buffer` is True,
+    the output terminal buffer will be cleared. In any case, if `terminal_render`
+    is False, no rendering occurs and the output TTY is not affected.
 
     Raises TrapException if `window` is not a caller task created window.
     """
-    yield Trap.WINDOW_DESTROY, window, terminal_render, just_clear_buffer
+    yield Trap.WINDOW_DESTROY, window, terminal_render, clear_buffer
 
 
 
