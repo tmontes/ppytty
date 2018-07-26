@@ -6,10 +6,12 @@
 # ----------------------------------------------------------------------------
 
 
+import collections
+
 from ppytty.kernel import api
 
 from . import thing
-from . import visual
+from . import geometry as g
 
 
 
@@ -27,8 +29,8 @@ class Widget(thing.Thing):
 
         super().__init__(id=id, initial_state='idle')
 
-        self._geometry = geometry or visual.geometry_full()
-        self._color = color or visual.color()
+        self._geometry = geometry or {}
+        # self._color = color or _color.default()
         self._window = None
 
 
@@ -38,18 +40,23 @@ class Widget(thing.Thing):
         return self._window
 
 
+    # Used when no valid geometry is available from context or self.
+    _fallback_geometry = g.full()
+
     async def handle_idle_next(self, geometry=None, color=None, render=True,
                                terminal_render=True):
 
-        win_geometry = self._geometry
-        if geometry:
-            win_geometry.update(geometry)
+        win_geometry = collections.ChainMap(
+            self._geometry,
+            geometry or {},
+            self._fallback_geometry,
+        )
 
-        win_color = self._color
-        if color:
-            win_color.update(color)
+        # win_color = self._color
+        # if color:
+        #     win_color.update(color)
 
-        import random; win_color['bg'] = random.randint(1, 255)
+        import random; win_color = dict(bg=random.randint(1, 255))
 
         self._window = await api.window_create(**win_geometry, **win_color)
         if render:

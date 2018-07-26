@@ -9,6 +9,7 @@
 from ppytty.kernel import api
 
 from . import widget
+from . import geometry as g
 
 
 
@@ -16,20 +17,27 @@ class SlideTemplate(object):
 
     def __init__(self, widgets=None):
 
-        self.widgets = widgets if widgets is not None else ()
+        self.widgets = widgets if widgets else ()
+
+
+    def geometry(self, widget_index, widget_count):
+
+        return None
 
 
 
 class Slide(widget.Widget):
 
-    def __init__(self, title, template=SlideTemplate(), widgets=None, **kw):
+    def __init__(self, title, template=SlideTemplate(), widgets=None,
+                 geometry=None, **kw):
 
-        super().__init__(id=title)
+        geometry = geometry or g.full()
+        super().__init__(id=title, geometry=geometry)
 
         self._title = title
         self._template = template
 
-        self._widgets = widgets if widgets is not None else ()
+        self._widgets = widgets if widgets else ()
         self._widget_count = len(widgets)
         self._current_index = None
         self._current_widget = None
@@ -62,6 +70,7 @@ class Slide(widget.Widget):
 
         self._current_index = 0
         self._current_widget = self._widgets[0]
+        context['geometry'] = self._template.geometry(0, self._widget_count)
         widget_state = await self.launch_widget(terminal_render=False, **context)
 
         await self.render()
@@ -79,6 +88,7 @@ class Slide(widget.Widget):
             if new_index < self._widget_count:
                 self._current_index = new_index
                 self._current_widget = self._widgets[new_index]
+                context['geometry'] = self._template.geometry(new_index, self._widget_count)
                 widget_state = await self.launch_widget(**context)
                 return widget_state if self.at_last_widget else 'running'
             else:
