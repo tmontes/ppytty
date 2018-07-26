@@ -101,13 +101,13 @@ class SlideDeck(task.Task):
 
         if slide_to_cleanup is not None:
             self._log.info('cleaning up %r', slide_to_cleanup)
-            await slide_to_cleanup.cleanup('cleanup')
+            await slide_to_cleanup.cleanup()
             self._log.info('cleaned up %r', slide_to_cleanup)
 
         slide_to_launch = self._current_slide
 
         self._log.info('launching %r', slide_to_launch)
-        response = await slide_to_launch.launch(message='next', **self.context)
+        response = await slide_to_launch.launch(**self.context)
         self.update_navigation_from_response(response)
         self._log.info('launched %r done=%r', slide_to_launch, self._slide_done)
 

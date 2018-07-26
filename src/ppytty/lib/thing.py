@@ -83,42 +83,4 @@ class Thing(task.Task):
         raise NotImplementedError()
 
 
-    # ------------------------------------------------------------------------
-    # To be used by others to launch me/clean me up.
-
-    async def launch(self, message, until_state=None, **kw):
-
-        await api.task_spawn(self)
-        message = (message, kw)
-        done = False
-        while not done:
-            await api.message_send(self, message)
-            sender, reached_state = await api.message_wait()
-            if sender is not self:
-                self.log_unexpected_sender(sender, reached_state)
-            if until_state is None or until_state == reached_state:
-                done = True
-        return reached_state
-
-
-    async def cleanup(self, message, **kw):
-
-        message = (message, kw)
-        await api.message_send(self, message)
-        sender, cleanup_response = await api.message_wait()
-        if sender is not self:
-            self.log_unexpected_sender(sender, cleanup_response)
-        if cleanup_response is not None:
-            self._log.warning('%r: unexpected cleanup response: %r', self, cleanup_response)
-        completed, _, _ = await api.task_wait()
-        if completed is not self:
-            self._log.warning('%r: unexpected child terminated: %r', self, completed)
-        self.reset()
-
-
-    def log_unexpected_sender(self, sender, response):
-
-        self._log.warning('%s: unexpected sender=%r response=%r', self, sender, response)
-
-
 # ----------------------------------------------------------------------------

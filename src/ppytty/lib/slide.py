@@ -54,7 +54,7 @@ class Slide(widget.Widget):
 
         self._log.info('%r: launching template widgets', self)
         for widget in self._template.widgets:
-            await widget.launch('next', until_state='done', **context)
+            await widget.launch(till_done=True, **context)
         self._log.info('%r: launched template widgets', self)
 
         if not self._widget_count:
@@ -101,7 +101,7 @@ class Slide(widget.Widget):
         widget_to_launch = self._current_widget
 
         self._log.info('%r: launching %r', self, widget_to_launch)
-        widget_state = await widget_to_launch.launch('next', **context)
+        widget_state = await widget_to_launch.launch(**context)
         self._launched_widgets.append(widget_to_launch)
         self.update_navigation_from_response(widget_state)
         self._log.info('%r: launched %r done=%r', self, widget_to_launch, self._widget_done)
@@ -128,12 +128,12 @@ class Slide(widget.Widget):
         self._log.info('%s: cleaning up widgets', self)
         while self._launched_widgets:
             widget = self._launched_widgets.pop()
-            await widget.cleanup('cleanup', terminal_render=False)
+            await widget.cleanup(terminal_render=False)
         self._log.info('%s: cleaned up widgets', self)
 
         self._log.info('%r: cleaning up template widgets', self)
         for widget in self._template.widgets:
-            await widget.cleanup('cleanup', terminal_render=False)
+            await widget.cleanup(terminal_render=False)
         self._log.info('%r: cleaned up template widgets', self)
 
         return await super().handle_cleanup(just_clear_buffer=True)
