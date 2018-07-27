@@ -29,7 +29,7 @@ class SlideTemplate(object):
 class Slide(widget.Widget):
 
     def __init__(self, title, template=SlideTemplate(), widgets=None,
-                 geometry=None, **kw):
+                 geometry=None):
 
         geometry = geometry or g.full()
         super().__init__(id=title, geometry=geometry)
