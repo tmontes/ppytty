@@ -12,7 +12,7 @@ from . import widget
 
 
 
-class Bullets(widget.Widget):
+class Bullets(widget.WindowWidget):
 
     def __init__(self, bullets, id=None, at_once=False, geometry=None, color=None):
 

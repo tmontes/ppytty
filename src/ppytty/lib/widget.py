@@ -17,7 +17,7 @@ from . import geometry as g
 
 class Widget(thing.Thing):
 
-    # Widget have states and are controlled via messages sent to them.
+    # Widgets have states and are controlled via messages sent to them.
     # - They start in the 'idle' state.
     # - They move forward when they get a 'next' message:
     #   - ...returning 'running' if they can handle more "next" messages.
@@ -25,9 +25,76 @@ class Widget(thing.Thing):
     # - They should cleanup and stop when they get a 'cleanup' message.
     #   - ...successful cleanup handlers should return None.
 
-    def __init__(self, id=None, geometry=None, color=None, padding=None):
+    def __init__(self, id=None):
 
         super().__init__(id=id, initial_state='idle')
+
+
+    async def handle_idle_next(self):
+
+        return 'done'
+
+
+    async def handle_cleanup(self):
+
+        self.im_done()
+
+
+    # ------------------------------------------------------------------------
+    # To be used by others to launch me/clean me up.
+
+    async def launch(self, till_done=False, **kw):
+
+        await api.task_spawn(self)
+        message = ('next', kw)
+        done = False
+        while not done:
+            await api.message_send(self, message)
+            sender, reached_state = await api.message_wait()
+            if sender is not self:
+                self.log_unexpected_sender(sender, reached_state)
+            if not till_done or reached_state == 'done':
+                done = True
+        return reached_state
+
+
+    async def cleanup(self, **kw):
+
+        message = ('cleanup', kw)
+        await api.message_send(self, message)
+        sender, cleanup_response = await api.message_wait()
+        if sender is not self:
+            self.log_unexpected_sender(sender, cleanup_response)
+        if cleanup_response is not None:
+            self._log.warning('%r: unexpected cleanup response: %r', self, cleanup_response)
+        completed, _, _ = await api.task_wait()
+        if completed is not self:
+            self._log.warning('%r: unexpected child terminated: %r', self, completed)
+        self.reset()
+
+
+    def log_unexpected_sender(self, sender, response):
+
+        self._log.warning('%s: unexpected sender=%r response=%r', self, sender, response)
+
+
+
+
+class WindowWidget(Widget):
+
+    # WindowWidgets are Widgets with windows.
+    # They have a slightly more rich life-cycle:
+    # - When launched they create a window:
+    #   - Geometry will be set by self, if any...
+    #   - ...falling back to launch provided geometry info.
+    #   - The window will be/not be rendered per launch provided info.
+    #   - ...if rendered, render options are obtained from launch info.
+    # - When cleaned up the window is destroyed:
+    #   - ...the window destruction arguments are obtained from cleanup info.
+
+    def __init__(self, id=None, geometry=None, color=None, padding=None):
+
+        super().__init__(id=id)
 
         self._geometry = geometry or {}
         # self._color = color or _color.default()
@@ -72,6 +139,8 @@ class Widget(thing.Thing):
     async def handle_idle_next(self, geometry=None, color=None, render=True,
                                terminal_render=True):
 
+        await super().handle_idle_next()
+
         win_geometry = collections.ChainMap(
             self._geometry,
             geometry or {},
@@ -96,51 +165,16 @@ class Widget(thing.Thing):
         await api.window_destroy(self._window, **window_destroy_args)
         self._log.debug('%s: destroyed window %r', self, window_destroy_args)
 
-        self.im_done()
+        await super().handle_cleanup()
 
 
     # ------------------------------------------------------------------------
-    # To be used by others to launch me/render me/clean me up.
-
-    async def launch(self, till_done=False, **kw):
-
-        await api.task_spawn(self)
-        message = ('next', kw)
-        done = False
-        while not done:
-            await api.message_send(self, message)
-            sender, reached_state = await api.message_wait()
-            if sender is not self:
-                self.log_unexpected_sender(sender, reached_state)
-            if not till_done or reached_state == 'done':
-                done = True
-        return reached_state
-
+    # To be used by others to render me.
 
     async def render(self, render=True, **window_render_args):
 
         if render:
             await api.window_render(self._window, **window_render_args)
-
-
-    async def cleanup(self, **kw):
-
-        message = ('cleanup', kw)
-        await api.message_send(self, message)
-        sender, cleanup_response = await api.message_wait()
-        if sender is not self:
-            self.log_unexpected_sender(sender, cleanup_response)
-        if cleanup_response is not None:
-            self._log.warning('%r: unexpected cleanup response: %r', self, cleanup_response)
-        completed, _, _ = await api.task_wait()
-        if completed is not self:
-            self._log.warning('%r: unexpected child terminated: %r', self, completed)
-        self.reset()
-
-
-    def log_unexpected_sender(self, sender, response):
-
-        self._log.warning('%s: unexpected sender=%r response=%r', self, sender, response)
 
 
 # ----------------------------------------------------------------------------

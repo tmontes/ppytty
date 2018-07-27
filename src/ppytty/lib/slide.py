@@ -26,7 +26,7 @@ class SlideTemplate(object):
 
 
 
-class Slide(widget.Widget):
+class Slide(widget.WindowWidget):
 
     def __init__(self, title, template=SlideTemplate(), widgets=None,
                  geometry=None):
