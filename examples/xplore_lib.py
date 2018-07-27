@@ -1,5 +1,8 @@
 
-from ppytty import SlideDeck, Slide, SlideTemplate, Text, Bullets, geometry
+from ppytty import (
+    SlideDeck, Slide, SlideTemplate, Text, Bullets, geometry, WidgetCleaner,
+    Widget
+)
 
 
 class MySlideTemplate(SlideTemplate):
@@ -54,18 +57,23 @@ long_welcome_text = """
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae magna eget quam euismod bibendum eget mattis enim. Sed eu elementum nunc. Vestibulum aliquam consectetur semper. Phasellus viverra luctus nisl ut pulvinar. Duis lobortis vulputate mauris. In nec luctus eros. Ut tristique purus eu nunc porttitor, quis placerat nulla malesuada. Vivamus ante turpis, convallis et ex in, posuere maximus turpis. In mattis in dui ac fermentum.
 """
 
+welcome_text_widget = Text((
+        'welcome text',
+        'text widgets handle multiple paragraphs',
+        long_welcome_text,
+    ),
+    text_align=Text.Align.CENTER,
+    paragraph_spacing=1,
+    padding=(1, 2),
+)
+
+
 ppytty_task = SlideDeck([
     MySlide(title='Welcome', widgets=[
-        Text((
-                'welcome text',
-                'text widgets handle multiple paragraphs',
-                long_welcome_text,
-            ),
-            text_align=Text.Align.CENTER,
-            paragraph_spacing=1,
-            padding=(1, 2),
-        ),
+        welcome_text_widget,
         Bullets(['welcome bullet 1', 'welcome bullet 2'], at_once=True),
+        WidgetCleaner(welcome_text_widget),
+#        Widget(id='dummy-widget'),
     ]),
     MySlide(title='[content]', widgets=[
         Text('content text #1'),

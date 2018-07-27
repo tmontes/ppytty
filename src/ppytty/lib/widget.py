@@ -30,12 +30,12 @@ class Widget(thing.Thing):
         super().__init__(id=id, initial_state='idle')
 
 
-    async def handle_idle_next(self):
+    async def handle_idle_next(self, **kw):
 
         return 'done'
 
 
-    async def handle_cleanup(self):
+    async def handle_cleanup(self, **kw):
 
         self.im_done()
 
@@ -75,7 +75,7 @@ class Widget(thing.Thing):
 
     def log_unexpected_sender(self, sender, response):
 
-        self._log.warning('%s: unexpected sender=%r response=%r', self, sender, response)
+        self._log.warning('%r: unexpected sender=%r response=%r', self, sender, response)
 
 
 
@@ -175,6 +175,54 @@ class WindowWidget(Widget):
 
         if render:
             await api.window_render(self._window, **window_render_args)
+
+
+
+class WidgetCleaner(Widget):
+
+    """
+    WidgetCleaner class.
+
+    Wraps a Widget and has a very simple life-cycle: once 'next'ed, it cleans
+    up the wrapped Widget and is 'done'. On cleanup, it tries to cleanup the
+    wrapped Widget if it hasn't been cleaned up yet.
+    """
+
+    def __init__(self, widget, id=None):
+
+        super().__init__(id=id)
+
+        self._widget = widget
+
+
+    async def handle_idle_next(self, **kw):
+
+        await super().handle_idle_next()
+
+        self._log.warning('%r: handle_idle_next, ignoring kw=%r', self, kw)
+
+        # TODO
+
+        # Cannot cleanup self._widget myself, otherwise I'll hang waiting
+        # for child termination when self._widget, that successfully terminates,
+        # is not my child!!!
+
+        # Solution: Must somehow tell the slide to do that.
+        # - Can we message the parent?... (probably not, needs thinking)
+        # - How can we return something indicating please cleanup self._widget?
+        #   (whatever we return will be processed by our driver but, up to now
+        #   all we can return the simple 'done', 'running' strings...)
+
+        # This needs thought!
+
+        return 'cleanup-widget'
+
+
+    async def handle_cleanup(self, **kw):
+
+        # TODO: Is this needed?
+        self._log.warning('%r: handle_cleanup (nothing to do?), ignoring kw=%r', self, kw)
+        return await self.handle_cleanup()
 
 
 # ----------------------------------------------------------------------------
