@@ -20,9 +20,13 @@ class Widget(thing.Thing):
     # Widgets have states and are controlled via messages sent to them.
     # - They start in the 'idle' state.
     # - They move forward when they get a 'next' message:
-    #   - ...returning 'running' if they can handle more "next" messages.
-    #   - ...or 'done' when they cannot.
-    # - They should cleanup and stop when they get a 'cleanup' message.
+    #   - Returning 'running' if the Widget can handle more 'next' messages...
+    #   - ...or 'done' if the Widget cannot.
+    # - Widgets may respond to the 'next' message with interim messages acting
+    #   as requests for the 'next' sender to complete particular actions.
+    #   Such interim requests must, however, be completed by returning one of
+    #   'running' or 'done', as commented above.
+    # - Widgets cleanup and stop when they get a 'cleanup' message.
     #   - ...successful cleanup handlers should return None.
 
     def __init__(self, id=None):
@@ -43,49 +47,50 @@ class Widget(thing.Thing):
     # ------------------------------------------------------------------------
     # To be used by others to launch me/move me forward/clean me up.
 
-    async def launch(self, till_done=False, **kw):
+    async def message_send_wait(self, message, until=('running', 'done'), request_handler=None):
+
+        await api.message_send(self, message)
+        while True:
+            sender, response = await api.message_wait()
+            if sender is not self:
+                self._log.warning('unexpected sender=%r response=%r', sender, response)
+            if response in until:
+                break
+            if request_handler:
+                await request_handler(response)
+            else:
+                self._log.warning('ignored response from %r: %r', sender, response)
+        return response
+
+
+    async def launch(self, till_done=False, request_handler=None, **kw):
 
         await api.task_spawn(self)
         message = ('next', kw)
-        done = False
-        while not done:
-            await api.message_send(self, message)
-            sender, reached_state = await api.message_wait()
-            if sender is not self:
-                self.log_unexpected_sender(sender, reached_state)
+        while True:
+            reached_state = await self.message_send_wait(message, request_handler=request_handler)
             if not till_done or reached_state == 'done':
-                done = True
+                break
         return reached_state
 
 
     async def forward(self, **kw):
 
         message = ('next', kw)
-        await api.message_send(self, message)
-        sender, reached_state = await api.message_wait()
-        if sender is not self:
-            self.log_unexpected_sender(sender, reached_state)
+        reached_state = await self.message_send_wait(message)
         return reached_state
 
 
     async def cleanup(self, **kw):
 
         message = ('cleanup', kw)
-        await api.message_send(self, message)
-        sender, cleanup_response = await api.message_wait()
-        if sender is not self:
-            self.log_unexpected_sender(sender, cleanup_response)
+        cleanup_response = await self.message_send_wait(message, until=(None,))
         if cleanup_response is not None:
             self._log.warning('%r: unexpected cleanup response: %r', self, cleanup_response)
         completed, _, _ = await api.task_wait()
         if completed is not self:
             self._log.warning('%r: unexpected child terminated: %r', self, completed)
         self.reset()
-
-
-    def log_unexpected_sender(self, sender, response):
-
-        self._log.warning('%r: unexpected sender=%r response=%r', self, sender, response)
 
 
 
@@ -193,9 +198,10 @@ class WidgetCleaner(Widget):
     """
     WidgetCleaner class.
 
-    Wraps a Widget and has a very simple life-cycle: once 'next'ed, it cleans
-    up the wrapped Widget and is 'done'. On cleanup, it tries to cleanup the
-    wrapped Widget if it hasn't been cleaned up yet.
+    References a Widget and has a very simple life-cycle: once 'next'ed, it asks
+    the parent to cleanup the referenced Widget and is 'done'; only the parent
+    or, more precisely, only whoever launched the referenced Widget, can properly
+    clean it up, since Widgets are Tasks and their termination must be waited on.
     """
 
     def __init__(self, widget, id=None):
@@ -205,34 +211,17 @@ class WidgetCleaner(Widget):
         self._widget = widget
 
 
-    async def handle_idle_next(self, **kw):
+    async def handle_idle_next(self, **_kw):
+
+        # When a Slide launches me I'll be passed several launch time arguments.
+        # I don't need them, but must accept them; thus **_kw.
 
         await super().handle_idle_next()
 
-        self._log.warning('%r: handle_idle_next, ignoring kw=%r', self, kw)
+        self._log.info('%r: asking parent to cleanup %r', self, self._widget)
+        await api.message_send(None, ('cleanup', self._widget))
 
-        # TODO
-
-        # Cannot cleanup self._widget myself, otherwise I'll hang waiting
-        # for child termination when self._widget, that successfully terminates,
-        # is not my child!!!
-
-        # Solution: Must somehow tell the slide to do that.
-        # - Can we message the parent?... (probably not, needs thinking)
-        # - How can we return something indicating please cleanup self._widget?
-        #   (whatever we return will be processed by our driver but, up to now
-        #   all we can return the simple 'done', 'running' strings...)
-
-        # This needs thought!
-
-        return 'cleanup-widget'
-
-
-    async def handle_cleanup(self, **kw):
-
-        # TODO: Is this needed?
-        self._log.warning('%r: handle_cleanup (nothing to do?), ignoring kw=%r', self, kw)
-        return await self.handle_cleanup()
+        return 'done'
 
 
 # ----------------------------------------------------------------------------

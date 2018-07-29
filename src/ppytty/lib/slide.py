@@ -47,6 +47,9 @@ class Slide(widget.WindowWidget):
 
         self._launched_widgets = []
 
+        # See WidgetCleaner
+        self._early_cleanup_widgets = []
+
 
     @property
     def at_last_widget(self):
@@ -97,8 +100,11 @@ class Slide(widget.WindowWidget):
                 return 'done'
         else:
             # move on with current widget
-            widget_state = await self._current_widget.forward(**context)
+            widget_to_forward = self._current_widget
+            self._log.info('%r: forwarding %r', self, widget_to_forward)
+            widget_state = await widget_to_forward.forward(**context)
             self.update_navigation_from_response(widget_state)
+            self._log.info('%r: forwarded %r done=%r', self, widget_to_forward, self._widget_done)
             return widget_state if self.at_last_widget else 'running'
 
 
@@ -107,10 +113,14 @@ class Slide(widget.WindowWidget):
         widget_to_launch = self._current_widget
 
         self._log.info('%r: launching %r', self, widget_to_launch)
-        widget_state = await widget_to_launch.launch(**context)
+        widget_state = await widget_to_launch.launch(
+            request_handler=self.launch_request_handler,
+            **context,
+        )
         self._launched_widgets.append(widget_to_launch)
         self.update_navigation_from_response(widget_state)
         self._log.info('%r: launched %r done=%r', self, widget_to_launch, self._widget_done)
+        await self.cleanup_pending_widgets()
         return widget_state
 
 
@@ -119,6 +129,28 @@ class Slide(widget.WindowWidget):
         self._widget_done = (response == 'done')
         if response not in ('running', 'done'):
             self._log.warning('%s: unexpected navigation response: %r', self, response)
+
+
+    async def launch_request_handler(self, request):
+
+        try:
+            request, widget = request
+            if request != 'cleanup':
+                raise ValueError()
+        except ValueError:
+            self._log.warning('%s: invalid widget launch request: %r', self, request)
+        else:
+            self._early_cleanup_widgets.append(widget)
+
+
+    async def cleanup_pending_widgets(self):
+
+        while self._early_cleanup_widgets:
+            widget = self._early_cleanup_widgets.pop()
+            self._log.info('%r: runtime widget cleanup %r', self, widget)
+            self._launched_widgets.remove(widget)
+            await widget.cleanup()
+            self._log.info('%r: runtime widget cleaned up %r', self, widget)
 
 
     async def handle_cleanup(self, **_kwargs):
