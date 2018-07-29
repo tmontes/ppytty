@@ -34,6 +34,11 @@ class Widget(thing.Thing):
         super().__init__(id=id, initial_state='idle')
 
 
+    def __invert__(self):
+
+        return WidgetCleaner(self)
+
+
     async def handle_idle_next(self, **kw):
 
         return 'done'
@@ -209,6 +214,11 @@ class WidgetCleaner(Widget):
         super().__init__(id=id)
 
         self._widget = widget
+
+
+    def __repr__(self):
+
+        return f'<{self.__class__.__name__} {self._widget!r}>'
 
 
     async def handle_idle_next(self, **_kw):
