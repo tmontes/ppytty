@@ -97,15 +97,9 @@ class Slide(widget.WindowWidget):
                 return 'done'
         else:
             # move on with current widget
-            destination = self._current_widget
-            message = ('next', context)
-            await api.message_send(destination, message)
-            sender, response = await api.message_wait()
-            if sender is not destination:
-                # TODO: will the Thing message_wait loop mess with this?
-                self._log.warning('%r: unexpected sender=%r response=%r', self, sender, response)
-            self.update_navigation_from_response(response)
-            return response if self.at_last_widget else 'running'
+            widget_state = await self._current_widget.forward(**context)
+            self.update_navigation_from_response(widget_state)
+            return widget_state if self.at_last_widget else 'running'
 
 
     async def launch_widget(self, **context):

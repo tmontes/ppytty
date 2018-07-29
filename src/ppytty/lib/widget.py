@@ -41,7 +41,7 @@ class Widget(thing.Thing):
 
 
     # ------------------------------------------------------------------------
-    # To be used by others to launch me/clean me up.
+    # To be used by others to launch me/move me forward/clean me up.
 
     async def launch(self, till_done=False, **kw):
 
@@ -55,6 +55,16 @@ class Widget(thing.Thing):
                 self.log_unexpected_sender(sender, reached_state)
             if not till_done or reached_state == 'done':
                 done = True
+        return reached_state
+
+
+    async def forward(self, **kw):
+
+        message = ('next', kw)
+        await api.message_send(self, message)
+        sender, reached_state = await api.message_wait()
+        if sender is not self:
+            self.log_unexpected_sender(sender, reached_state)
         return reached_state
 
 
