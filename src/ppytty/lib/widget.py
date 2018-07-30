@@ -234,4 +234,39 @@ class WidgetCleaner(Widget):
         return 'done'
 
 
+
+class WidgetGroup(Widget):
+
+    """
+    WidgetGroup class.
+
+    Once 'next'ed it asks the parent to launch its referenced widgets and
+    becomes 'done'.
+    """
+
+    def __init__(self, widgets, id=None):
+
+        super().__init__(id=id)
+
+        self._widgets = widgets
+
+
+    def __repr__(self):
+
+        return f'<{self.__class__.__name__} {self._widgets!r}>'
+
+
+    async def handle_idle_next(self, **_kw):
+
+        # When a Slide launches me I'll be passed several launch time arguments.
+        # I don't need them, but must accept them; thus **_kw.
+
+        await super().handle_idle_next()
+
+        self._log.info('%r: asking parent to launch %r', self, self._widgets)
+        await api.message_send(None, ('launch', self._widgets))
+
+        return 'done'
+
+
 # ----------------------------------------------------------------------------

@@ -47,8 +47,8 @@ class Slide(widget.WindowWidget):
 
         self._launched_widgets = []
 
-        # See WidgetCleaner
-        self._early_cleanup_widgets = []
+        # See WidgetCleaner / WidgetGroup
+        self._widget_launchtime_requests = []
 
 
     @property
@@ -120,7 +120,7 @@ class Slide(widget.WindowWidget):
         self._launched_widgets.append(widget_to_launch)
         self.update_navigation_from_response(widget_state)
         self._log.info('%r: launched %r done=%r', self, widget_to_launch, self._widget_done)
-        await self.cleanup_pending_widgets()
+        await self.complete_launchtime_requests()
         return widget_state
 
 
@@ -133,24 +133,27 @@ class Slide(widget.WindowWidget):
 
     async def launch_request_handler(self, request):
 
-        try:
-            request, widget = request
-            if request != 'cleanup':
-                raise ValueError()
-        except ValueError:
-            self._log.warning('%s: invalid widget launch request: %r', self, request)
-        else:
-            self._early_cleanup_widgets.append(widget)
+        self._widget_launchtime_requests.append(request)
 
 
-    async def cleanup_pending_widgets(self):
+    async def complete_launchtime_requests(self):
 
-        while self._early_cleanup_widgets:
-            widget = self._early_cleanup_widgets.pop()
-            self._log.info('%r: runtime widget cleanup %r', self, widget)
-            self._launched_widgets.remove(widget)
-            await widget.cleanup()
-            self._log.info('%r: runtime widget cleaned up %r', self, widget)
+        while self._widget_launchtime_requests:
+            request = self._widget_launchtime_requests.pop()
+            try:
+                action, arg = request
+            except ValueError:
+                self._log.warning('%r: invalid launch time request: %r', self, request)
+                continue
+            self._log.warning('%r: TODO: %r of %r', self, action, arg)
+
+            # if widget not in self._launched_widgets:
+            #     self._log.warning('%r: cannot cleanup unlaunched widget %r', self, widget)
+            #     continue
+            # self._log.info('%r: runtime widget cleanup %r', self, widget)
+            # self._launched_widgets.remove(widget)
+            # await widget.cleanup()
+            # self._log.info('%r: runtime widget cleaned up %r', self, widget)
 
 
     async def handle_cleanup(self, **_kwargs):

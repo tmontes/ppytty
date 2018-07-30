@@ -1,6 +1,6 @@
 
 from ppytty import (
-    SlideDeck, Slide, SlideTemplate, Text, Bullets, geometry
+    SlideDeck, Slide, SlideTemplate, Text, Bullets, geometry, WidgetGroup
 )
 
 
@@ -69,8 +69,10 @@ welcome_text_widget = Text((
 
 ppytty_task = SlideDeck([
     MySlide(title='Welcome', widgets=[
-        welcome_text_widget,
-        Bullets(['welcome bullet 1', 'welcome bullet 2'], at_once=True),
+        WidgetGroup([
+            welcome_text_widget,
+            Bullets(['welcome bullet 1', 'welcome bullet 2'], at_once=True),
+        ]),
         ~welcome_text_widget,
     ]),
     MySlide(title='[content]', widgets=[
