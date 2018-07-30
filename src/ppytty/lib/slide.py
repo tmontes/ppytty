@@ -31,14 +31,15 @@ class SlideTemplate(object):
 
 class Slide(widget.WindowWidget):
 
-    def __init__(self, title, template=SlideTemplate(), widgets=None,
-                 geometry=None):
+    template = SlideTemplate()
+
+    def __init__(self, title, template=None, widgets=None, geometry=None):
 
         geometry = geometry or g.full()
         super().__init__(id=title, geometry=geometry)
 
         self._title = title
-        self._template = template
+        self._template = template or self.template
 
         self._widget_steps = []
         self._widget_step_count = 0
