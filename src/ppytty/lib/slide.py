@@ -43,7 +43,7 @@ class Slide(widget.WindowWidget):
 
         self._widget_steps = []
         self._widget_step_count = 0
-        self._widget_count = 0
+        self._window_widget_count = 0
         self._init_widget_steps(widgets or ())
 
         self._current_step_index = None
@@ -57,7 +57,7 @@ class Slide(widget.WindowWidget):
         self._template_slot_index = None
 
         self._template_geometry = functools.partial(self._template.geometry,
-                                                    widget_count=self._widget_count)
+                                                    widget_count=self._window_widget_count)
 
         self._launched_widgets = []
 
@@ -74,16 +74,16 @@ class Slide(widget.WindowWidget):
                         raise ValueError(f'{sub_w!r} in {w!r} must be a Widget')
                     if isinstance(sub_w, widget.WidgetsLauncher):
                         raise ValueError(f'unsupported {sub_w!r} in {w!r}')
-                    if not isinstance(sub_w, widget.WidgetsCleaner):
-                        self._widget_count += 1
+                    if isinstance(sub_w, widget.WindowWidget):
+                        self._window_widget_count += 1
                 self._widget_steps.append(widget.WidgetsLauncher(*w))
                 continue
             elif not isinstance(w, widget.Widget):
                 raise ValueError(f'{w!r} must be a Widget')
             elif isinstance(w, widget.WidgetsLauncher):
                 raise ValueError(f'use a list/tuple instead of {w!r}')
-            elif not isinstance(w, widget.WidgetsCleaner):
-                self._widget_count += 1
+            elif isinstance(w, widget.WindowWidget):
+                self._window_widget_count += 1
             self._widget_steps.append(w)
 
         self._widget_step_count = len(self._widget_steps)
@@ -106,7 +106,7 @@ class Slide(widget.WindowWidget):
             await widget.launch(till_done=True, terminal_render=False, **context)
         self._log.info('%r: launched template widgets', self)
 
-        if not self._widget_count:
+        if not self._widget_step_count:
             return 'done'
 
         self._current_step_index = 0
@@ -130,7 +130,8 @@ class Slide(widget.WindowWidget):
             if new_step < self._widget_step_count:
                 self._current_step_index = new_step
                 self._current_widget_step = self._widget_steps[new_step]
-                self._template_slot_index += 1
+                if isinstance(self._current_widget_step, widget.WindowWidget):
+                    self._template_slot_index += 1
                 context['geometry'] = self._template_geometry(self._template_slot_index)
                 widget_state = await self.launch_widget(**context)
                 return widget_state if self.at_last_step else 'running'
@@ -189,10 +190,10 @@ class Slide(widget.WindowWidget):
                 continue
             if action == 'launch':
                 for widget_to_launch in action_args:
+                    if isinstance(widget_to_launch, widget.WindowWidget):
+                        self._template_slot_index += 1
                     context['geometry'] = self._template_geometry(self._template_slot_index)
-                    self._template_slot_index += 1
                     await self.launch_widget(widget=widget_to_launch, till_done=True, **context)
-                self._template_slot_index -= 1
             elif action == 'cleanup':
                 for widget_to_cleanup in action_args:
                     if widget_to_cleanup not in self._launched_widgets:
@@ -200,6 +201,12 @@ class Slide(widget.WindowWidget):
                         continue
                     self._launched_widgets.remove(widget_to_cleanup)
                     await widget_to_cleanup.cleanup()
+            elif action == 'message':
+                destination, message = action_args
+                await api.message_send(destination, message)
+                responder, response = await api.message_wait()
+                if responder is not destination:
+                    self._log.warning('%r: unexpected responder=%r, response=%r', self, responder, response)
             else:
                 self._log.warning('%r: invalid %r launch time action: %r', self, requester_widget, action)
 

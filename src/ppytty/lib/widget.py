@@ -39,6 +39,11 @@ class Widget(thing.Thing):
         return WidgetsCleaner(self)
 
 
+    def request(self, request, **request_args):
+
+        return WidgetRequester(self, request, **request_args)
+
+
     async def handle_idle_next(self, **kw):
 
         return 'done'
@@ -267,6 +272,42 @@ class WidgetsLauncher(Widget):
 
         self._log.info('%r: asking parent to launch %r', self, self._widgets)
         await api.message_send(None, ('launch', self._widgets))
+
+        return 'done'
+
+
+
+class WidgetRequester(Widget):
+
+    """
+    WidgetRequester class.
+
+    Once 'next'ed asks the parent to cleanup its wrapped/referenced widgets and
+    becomes 'done'.
+    """
+
+    def __init__(self, widget, request, **request_args):
+
+        super().__init__()
+
+        self._widget = widget
+        self._message = (request, request_args)
+
+
+    def __repr__(self):
+
+        return f'<{self.__class__.__name__} {self._widget!r} {self._message!r}>'
+
+
+    async def handle_idle_next(self, **_kw):
+
+        # When a Slide launches me I'll be passed several launch time arguments.
+        # I don't need them, but must accept them; thus **_kw.
+
+        await super().handle_idle_next()
+
+        self._log.info('%r: asking parent to request %r from %r', self, self._message, self._widget)
+        await api.message_send(None, ('message', (self._widget, self._message)))
 
         return 'done'
 
