@@ -1,5 +1,6 @@
 
 from ppytty import SlideDeck, Slide, SlideTemplate, Text, Bullets, geometry
+from ppytty.kernel import api
 
 
 class MySlideTemplate(SlideTemplate):
@@ -45,42 +46,80 @@ Slide.template = MySlideTemplate(widgets=[
 
 
 
-welcome_text_widget = Text((
+# ------------------------------------------------------------------------------
+# Slide #1
+
+text_widget = Text([
         'welcome text',
         'text widgets handle multiple paragraphs',
         """
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae magna eget quam euismod bibendum eget mattis enim. Sed eu elementum nunc. Vestibulum aliquam consectetur semper. Phasellus viverra luctus nisl ut pulvinar. Duis lobortis vulputate mauris. In nec luctus eros. Ut tristique purus eu nunc porttitor, quis placerat nulla malesuada. Vivamus ante turpis, convallis et ex in, posuere maximus turpis. In mattis in dui ac fermentum.
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae
+        magna eget quam euismod bibendum eget mattis enim. Sed eu elementum
+        nunc. Vestibulum aliquam consectetur semper. Phasellus viverra luctus
+        nisl ut pulvinar. Duis lobortis vulputate mauris. In nec luctus eros.
+        Ut tristique purus eu nunc porttitor, quis placerat nulla malesuada.
+        Vivamus ante turpis, convallis et ex in, posuere maximus turpis.
+        In mattis in dui ac fermentum.
         """,
-    ),
+    ],
     text_align=Text.Align.CENTER,
     paragraph_spacing=1,
     padding=(1, 2),
 )
 
-welcome_bullet_widget = Bullets([
+bullet_widget = Bullets([
     'welcome bullet 1',
     'welcome bullet 2',
 ])
 
-
-ppytty_task = SlideDeck([
-    Slide(title='Welcome', widgets=[
-        welcome_text_widget,
-        [
-            welcome_bullet_widget,
-            ~welcome_text_widget,
-        ],
-        ~welcome_bullet_widget,
-    ]),
-    Slide(title='[content]', widgets=[
-        Text('content text #1'),
-        Bullets(['bullet 1', 'bullet 2']),
-        Text('content text #3'),
-    ]),
-    Slide(title='Thanks!', widgets=[
-        # Overriding template suggested geometry: go big!
-        Text('by bye text', geometry=dict(x=0.1, y=0.2, w=0.8, h=0.8, dh=-2)),
-    ]),
+welcome_slide = Slide(title='Welcome', widgets=[
+    text_widget,
+    [bullet_widget, ~text_widget],
+    ~bullet_widget,
 ])
 
+
+
+# ------------------------------------------------------------------------------
+# Slide #2
+
+class MovableText(Text):
+
+    async def handle_move(self, **kw):
+
+        for _ in range(10):
+            self.window.move(dx=-1)
+            await self.render()
+            await api.sleep(0.02)
+        return 'done'
+
+
+text = MovableText('content text #1')
+
+content_slide = Slide(title='[content]', widgets=[
+    text,
+    text.request('move'),
+    Bullets(['bullet 1', 'bullet 2']),
+    Text('content text #3'),
+])
+
+
+
+# ------------------------------------------------------------------------------
+# Slide #3
+
+thanks_slide = Slide(title='Thanks!', widgets=[
+    # Overriding template suggested geometry: go big!
+    Text('by bye text', geometry=dict(x=0.1, y=0.2, w=0.8, h=0.8, dh=-2)),
+])
+
+
+# ------------------------------------------------------------------------------
+# The SlideDeck
+
+ppytty_task = SlideDeck([
+    welcome_slide,
+    content_slide,
+    thanks_slide,
+])
 
