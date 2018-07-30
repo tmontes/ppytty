@@ -6,6 +6,9 @@
 # ----------------------------------------------------------------------------
 
 
+import collections
+import functools
+
 from ppytty.kernel import api
 
 from . import widget
@@ -48,7 +51,7 @@ class Slide(widget.WindowWidget):
         self._launched_widgets = []
 
         # See WidgetCleaner / WidgetGroup
-        self._widget_launchtime_requests = []
+        self._widget_launchtime_requests = collections.defaultdict(list)
 
 
     @property
@@ -114,13 +117,13 @@ class Slide(widget.WindowWidget):
 
         self._log.info('%r: launching %r', self, widget_to_launch)
         widget_state = await widget_to_launch.launch(
-            request_handler=self.launch_request_handler,
+            request_handler=functools.partial(self.launch_request_handler, widget_to_launch),
             **context,
         )
         self._launched_widgets.append(widget_to_launch)
         self.update_navigation_from_response(widget_state)
         self._log.info('%r: launched %r done=%r', self, widget_to_launch, self._widget_done)
-        await self.complete_launchtime_requests()
+        await self.complete_launchtime_requests(widget_to_launch)
         return widget_state
 
 
@@ -131,21 +134,22 @@ class Slide(widget.WindowWidget):
             self._log.warning('%s: unexpected navigation response: %r', self, response)
 
 
-    async def launch_request_handler(self, request):
+    async def launch_request_handler(self, widget, request):
 
-        self._widget_launchtime_requests.append(request)
+        self._widget_launchtime_requests[widget].append(request)
 
 
-    async def complete_launchtime_requests(self):
+    async def complete_launchtime_requests(self, widget):
 
-        while self._widget_launchtime_requests:
-            request = self._widget_launchtime_requests.pop()
+        widget_launchtime_requests = self._widget_launchtime_requests[widget]
+        while widget_launchtime_requests:
+            request = widget_launchtime_requests.pop()
             try:
                 action, arg = request
             except ValueError:
-                self._log.warning('%r: invalid launch time request: %r', self, request)
+                self._log.warning('%r: invalid %r launch time request: %r', self, widget, request)
                 continue
-            self._log.warning('%r: TODO: %r of %r', self, action, arg)
+            self._log.warning('%r: TODO from %r: %r of %r', self, widget, action, arg)
 
             # if widget not in self._launched_widgets:
             #     self._log.warning('%r: cannot cleanup unlaunched widget %r', self, widget)
@@ -154,6 +158,8 @@ class Slide(widget.WindowWidget):
             # self._launched_widgets.remove(widget)
             # await widget.cleanup()
             # self._log.info('%r: runtime widget cleaned up %r', self, widget)
+
+        del self._widget_launchtime_requests[widget]
 
 
     async def handle_cleanup(self, **_kwargs):
