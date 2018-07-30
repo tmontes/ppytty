@@ -16,7 +16,7 @@ from . import widget
 
 
 
-class Text(widget.Widget):
+class Text(widget.WindowWidget):
 
     class Align(enum.Enum):
 

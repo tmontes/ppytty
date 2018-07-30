@@ -7,7 +7,7 @@
 
 from . task import Task
 from . thing import Thing
-from . widget import Widget
+from . widget import Widget, WindowWidget, WidgetsCleaner, WidgetsLauncher
 
 from . slide_deck import SlideDeck
 from . slide import Slide, SlideTemplate
