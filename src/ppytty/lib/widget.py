@@ -36,7 +36,7 @@ class Widget(thing.Thing):
 
     def __invert__(self):
 
-        return WidgetCleaner(self)
+        return WidgetsCleaner(self)
 
 
     async def handle_idle_next(self, **kw):
@@ -198,27 +198,29 @@ class WindowWidget(Widget):
 
 
 
-class WidgetCleaner(Widget):
+class WidgetsCleaner(Widget):
 
     """
-    WidgetCleaner class.
+    WidgetsCleaner class.
 
-    References a Widget and has a very simple life-cycle: once 'next'ed, it asks
-    the parent to cleanup the referenced Widget and is 'done'; only the parent
-    or, more precisely, only whoever launched the referenced Widget, can properly
-    clean it up, since Widgets are Tasks and their termination must be waited on.
+    Once 'next'ed asks the parent to cleanup its wrapped/referenced widgets and
+    becomes 'done'.
     """
 
-    def __init__(self, widget, id=None):
+    # Only the parent (or, more precisely, only whoever launched the Widgets)
+    # can properly clean them up. Motive: Widgets are Tasks, their termination
+    # must be waited on by whomever spawned them.
 
-        super().__init__(id=id)
+    def __init__(self, *widgets):
 
-        self._widget = widget
+        super().__init__()
+
+        self._widgets = widgets
 
 
     def __repr__(self):
 
-        return f'<{self.__class__.__name__} {self._widget!r}>'
+        return f'<{self.__class__.__name__} {self._widgets!r}>'
 
 
     async def handle_idle_next(self, **_kw):
@@ -228,25 +230,25 @@ class WidgetCleaner(Widget):
 
         await super().handle_idle_next()
 
-        self._log.info('%r: asking parent to cleanup %r', self, self._widget)
-        await api.message_send(None, ('cleanup', self._widget))
+        self._log.info('%r: asking parent to cleanup %r', self, self._widgets)
+        await api.message_send(None, ('cleanup', self._widgets))
 
         return 'done'
 
 
 
-class WidgetGroup(Widget):
+class WidgetsLauncher(Widget):
 
     """
-    WidgetGroup class.
+    WidgetsLauncher class.
 
-    Once 'next'ed it asks the parent to launch its referenced widgets and
+    Once 'next'ed asks the parent to launch its wrapped/referenced widgets and
     becomes 'done'.
     """
 
-    def __init__(self, widgets, id=None):
+    def __init__(self, *widgets):
 
-        super().__init__(id=id)
+        super().__init__()
 
         self._widgets = widgets
 

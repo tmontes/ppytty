@@ -45,8 +45,15 @@ class Slide(widget.WindowWidget):
         self._current_index = None
         self._current_widget = None
 
-        # False if we can tell it to go 'next'. True otherwise.
+        # False if self._current_widget accepts 'next'; True otherwise.
         self._widget_done = None
+
+        # Tracks template Widget slots, consumed (increased) as Widgets are
+        # launched.
+        self._template_slot_index = None
+
+        self._template_geometry = functools.partial(self._template.geometry,
+                                                    widget_count=self._widget_count)
 
         self._launched_widgets = []
 
@@ -76,7 +83,8 @@ class Slide(widget.WindowWidget):
 
         self._current_index = 0
         self._current_widget = self._widgets[0]
-        context['geometry'] = self._template.geometry(0, self._widget_count)
+        self._template_slot_index = 0
+        context['geometry'] = self._template_geometry(self._template_slot_index)
         widget_state = await self.launch_widget(terminal_render=False, **context)
 
         await self.render()
@@ -94,7 +102,8 @@ class Slide(widget.WindowWidget):
             if new_index < self._widget_count:
                 self._current_index = new_index
                 self._current_widget = self._widgets[new_index]
-                context['geometry'] = self._template.geometry(new_index, self._widget_count)
+                self._template_slot_index += 1
+                context['geometry'] = self._template_geometry(self._template_slot_index)
                 widget_state = await self.launch_widget(**context)
                 return widget_state if self.at_last_widget else 'running'
             else:
@@ -111,9 +120,9 @@ class Slide(widget.WindowWidget):
             return widget_state if self.at_last_widget else 'running'
 
 
-    async def launch_widget(self, **context):
+    async def launch_widget(self, widget=None, **context):
 
-        widget_to_launch = self._current_widget
+        widget_to_launch = widget or self._current_widget
 
         self._log.info('%r: launching %r', self, widget_to_launch)
         widget_state = await widget_to_launch.launch(
@@ -123,7 +132,7 @@ class Slide(widget.WindowWidget):
         self._launched_widgets.append(widget_to_launch)
         self.update_navigation_from_response(widget_state)
         self._log.info('%r: launched %r done=%r', self, widget_to_launch, self._widget_done)
-        await self.complete_launchtime_requests(widget_to_launch)
+        await self.complete_launchtime_requests(widget_to_launch, **context)
         return widget_state
 
 
@@ -139,27 +148,34 @@ class Slide(widget.WindowWidget):
         self._widget_launchtime_requests[widget].append(request)
 
 
-    async def complete_launchtime_requests(self, widget):
+    async def complete_launchtime_requests(self, requester_widget, **context):
 
-        widget_launchtime_requests = self._widget_launchtime_requests[widget]
+        widget_launchtime_requests = self._widget_launchtime_requests[requester_widget]
+
         while widget_launchtime_requests:
             request = widget_launchtime_requests.pop()
             try:
-                action, arg = request
+                action, action_args = request
             except ValueError:
-                self._log.warning('%r: invalid %r launch time request: %r', self, widget, request)
+                self._log.warning('%r: invalid %r launch time request: %r', self, requester_widget, request)
                 continue
-            self._log.warning('%r: TODO from %r: %r of %r', self, widget, action, arg)
+            if action == 'launch':
+                for widget_to_launch in action_args:
+                    context['geometry'] = self._template_geometry(self._template_slot_index)
+                    self._template_slot_index += 1
+                    await self.launch_widget(widget=widget_to_launch, till_done=True, **context)
+                self._template_slot_index -= 1
+            elif action == 'cleanup':
+                for widget_to_cleanup in action_args:
+                    if widget_to_cleanup not in self._launched_widgets:
+                        self._log.warning('%r: cannot cleanup unlaunched widget %r', self, widget_to_cleanup)
+                        continue
+                    self._launched_widgets.remove(widget_to_cleanup)
+                    await widget_to_cleanup.cleanup()
+            else:
+                self._log.warning('%r: invalid %r launch time action: %r', self, requester_widget, action)
 
-            # if widget not in self._launched_widgets:
-            #     self._log.warning('%r: cannot cleanup unlaunched widget %r', self, widget)
-            #     continue
-            # self._log.info('%r: runtime widget cleanup %r', self, widget)
-            # self._launched_widgets.remove(widget)
-            # await widget.cleanup()
-            # self._log.info('%r: runtime widget cleaned up %r', self, widget)
-
-        del self._widget_launchtime_requests[widget]
+        del self._widget_launchtime_requests[requester_widget]
 
 
     async def handle_cleanup(self, **_kwargs):
