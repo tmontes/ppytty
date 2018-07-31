@@ -117,6 +117,8 @@ class WindowWidget(Widget):
     # - When cleaned up the window is destroyed:
     #   - ...the window destruction arguments are obtained from cleanup info.
 
+    padding = 0
+
     def __init__(self, id=None, geometry=None, color=None, padding=None):
 
         super().__init__(id=id)
@@ -125,11 +127,11 @@ class WindowWidget(Widget):
         # self._color = color or _color.default()
 
         # Clockwise, from top, inspired by CSS.
-        self._pad_top = 0
-        self._pad_right = 0
-        self._pad_bottom = 0
-        self._pad_left = 0
-        self._set_padding(padding)
+        self._pad_top = None
+        self._pad_right = None
+        self._pad_bottom = None
+        self._pad_left = None
+        self._set_padding(padding or self.padding)
 
         self._window = None
 
