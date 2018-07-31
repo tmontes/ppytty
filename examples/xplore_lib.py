@@ -1,4 +1,6 @@
 
+import textwrap
+
 from ppytty import SlideDeck, Slide, SlideTemplate, Text, Bullets, geometry
 from ppytty.kernel import api
 
@@ -45,6 +47,8 @@ Slide.template = MySlideTemplate(widgets=[
 ])
 
 
+Text.padding = (1, 2)
+
 
 # ------------------------------------------------------------------------------
 # Slide #1
@@ -52,7 +56,7 @@ Slide.template = MySlideTemplate(widgets=[
 text_widget = Text([
         'welcome text',
         'text widgets handle multiple paragraphs',
-        """
+        textwrap.dedent("""
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae
         magna eget quam euismod bibendum eget mattis enim. Sed eu elementum
         nunc. Vestibulum aliquam consectetur semper. Phasellus viverra luctus
@@ -60,11 +64,10 @@ text_widget = Text([
         Ut tristique purus eu nunc porttitor, quis placerat nulla malesuada.
         Vivamus ante turpis, convallis et ex in, posuere maximus turpis.
         In mattis in dui ac fermentum.
-        """,
+        """),
     ],
     text_align=Text.Align.CENTER,
     paragraph_spacing=1,
-    padding=(1, 2),
 )
 
 bullet_widget = Bullets([
