@@ -173,7 +173,8 @@ def _do_window_render(window, full=False, terminal_render=True):
     #   (due to moving or resizing)
     # - If there is any uncovered geometry:
     #   - Erase it in the destination terminal.
-    #   - Re-render all windows below `window` overlapping with that geometry.
+    #   - Re-render all windows below `window` starting with the first that
+    #     overlaps with that geometry.
     # - Then render the actual `window`.
     # - Finally, re-render all windows on top of `window`, skipping:
     #   - The ones that do not overlap with it...
@@ -195,10 +196,12 @@ def _do_window_render(window, full=False, terminal_render=True):
     if uncovered:
         state_terminal.window.erase_geometry(*uncovered)
         # Re-render windows below `window`, as needed.
+        render_remaining = False
         for w in state_all_windows[:window_index]:
-            if not w.overlaps_geometry(*uncovered):
+            if not w.overlaps_geometry(*uncovered) and not render_remaining:
                 continue
             state_terminal_feed(w.render(full=True))
+            render_remaining = True
         # Uncovered means move/resize: a full render is needed.
         full = True
 
