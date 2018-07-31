@@ -97,7 +97,7 @@ class Slide(widget.WindowWidget):
 
     async def handle_idle_next(self, **context):
 
-        await super().handle_idle_next(render=False)
+        await super().handle_idle_next(terminal_render=False)
 
         context['slide_title'] = self._title
 
@@ -113,9 +113,7 @@ class Slide(widget.WindowWidget):
         self._current_widget_step = self._widget_steps[0]
         self._template_slot_index = 0
         context['geometry'] = self._template_geometry(self._template_slot_index)
-        widget_state = await self.launch_widget(terminal_render=False, **context)
-
-        await self.render()
+        widget_state = await self.launch_widget(**context)
 
         return widget_state if self.at_last_step else 'running'
 
