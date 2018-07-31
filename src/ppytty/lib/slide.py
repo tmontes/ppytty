@@ -187,18 +187,22 @@ class Slide(widget.WindowWidget):
                 self._log.warning('%r: invalid %r launch time request: %r', self, requester_widget, request)
                 continue
             if action == 'launch':
-                for widget_to_launch in action_args:
+                last_widget_index = len(action_args)-1
+                for i, widget_to_launch in enumerate(action_args):
                     if isinstance(widget_to_launch, widget.WindowWidget):
                         self._template_slot_index += 1
                     context['geometry'] = self._template_geometry(self._template_slot_index)
-                    await self.launch_widget(widget=widget_to_launch, till_done=True, **context)
+                    terminal_render = (last_widget_index == i)
+                    await self.launch_widget(widget=widget_to_launch, till_done=True,
+                                             terminal_render=terminal_render, **context)
             elif action == 'cleanup':
-                for widget_to_cleanup in action_args:
+                widgets_to_cleanup, window_destroy_args = action_args
+                for widget_to_cleanup in widgets_to_cleanup:
                     if widget_to_cleanup not in self._launched_widgets:
                         self._log.warning('%r: cannot cleanup unlaunched widget %r', self, widget_to_cleanup)
                         continue
                     self._launched_widgets.remove(widget_to_cleanup)
-                    await widget_to_cleanup.cleanup()
+                    await widget_to_cleanup.cleanup(**window_destroy_args)
             elif action == 'message':
                 destination, message = action_args
                 await api.message_send(destination, message)

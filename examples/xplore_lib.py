@@ -74,6 +74,11 @@ bullet_widget = Bullets([
 
 welcome_slide = Slide(title='Welcome', widgets=[
     text_widget,
+    # Limitation
+    # ----------
+    # Fails rendering properly ~text_widget comes before bullet_widget. The
+    # commit that leads to this is 0753e337ec99ccfb2c867a9fd9dd4c7c61154007
+    # which optimizes the rendering of "multi-widget-cleanup" actions.
     [bullet_widget, ~text_widget],
     ~bullet_widget,
 ])

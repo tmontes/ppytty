@@ -228,7 +228,8 @@ class WidgetsCleaner(Widget):
         return f'<{self.__class__.__name__} {self._widgets!r}>'
 
 
-    async def handle_idle_next(self, **_kw):
+    async def handle_idle_next(self, terminal_render=True, clear_buffer=False,
+                               **_kw):
 
         # When a Slide launches me I'll be passed several launch time arguments.
         # I don't need them, but must accept them; thus **_kw.
@@ -236,7 +237,11 @@ class WidgetsCleaner(Widget):
         await super().handle_idle_next()
 
         self._log.info('%r: asking parent to cleanup %r', self, self._widgets)
-        await api.message_send(None, ('cleanup', self._widgets))
+        window_destroy_args = dict(
+            terminal_render=terminal_render,
+            clear_buffer=clear_buffer,
+        )
+        await api.message_send(None, ('cleanup', (self._widgets, window_destroy_args)))
 
         return 'done'
 
