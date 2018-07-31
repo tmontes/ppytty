@@ -49,14 +49,14 @@ class Bullets(widget.WindowWidget):
         return 'done' if self.at_last_bullet else 'running'
 
 
-    async def handle_running_next(self, **context):
+    async def handle_running_next(self, terminal_render=True, **context):
 
         new_index = self._current_index + 1
         if new_index < self._bullet_count:
             bullet = self._bullets[new_index]
             self._current_index = new_index
             self._log.warning('%s: bullet=%r context=%r', self, bullet, context)
-            await self.render()
+            await self.render(terminal_render=terminal_render)
             return 'done' if self.at_last_bullet else 'running'
         else:
             return 'done'
