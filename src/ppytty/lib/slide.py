@@ -221,10 +221,24 @@ class Slide(widget.WindowWidget):
 
     async def handle_launchtime_message(self, destination, message, **context):
 
-        await api.message_send(destination, message)
-        responder, response = await api.message_wait()
-        if responder is not destination:
-            self._log.warning('%r: unexpected responder=%r, response=%r', self, responder, response)
+        async def messenger_task():
+            await api.message_send(destination, message)
+            responder, response = await api.message_wait()
+            if responder is not destination:
+                self._log.warning('%r: unexpected messenger_task responder=%r,'
+                                  ' response=%r', self, responder, response)
+
+        # Send/wait message on a child task to avoid conflicts with the Slide's
+        # own message sending/waiting (recall: Slide is a Widget, which is a
+        # Thing, which runs a core message waiting/sending loop).
+
+        await api.task_spawn(messenger_task)
+        completed, success, result = await api.task_wait()
+
+        if completed is not messenger_task or not success or result:
+            self._log.warning('%r: unexpected messenger_task completion: '
+                              'completed=%r success=%r result=%r', self,
+                              completed, success, result)
 
 
     async def handle_cleanup(self, **_kwargs):
