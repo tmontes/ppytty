@@ -186,33 +186,59 @@ class Slide(widget.WindowWidget):
             except ValueError:
                 self._log.warning('%r: invalid %r launch time request: %r', self, requester_widget, request)
                 continue
-            if action == 'launch':
-                last_widget_index = len(action_args)-1
-                for i, widget_to_launch in enumerate(action_args):
-                    if isinstance(widget_to_launch, widget.WindowWidget):
-                        self._template_slot_index += 1
-                    context['geometry'] = self._template_geometry(self._template_slot_index)
-                    terminal_render = (last_widget_index == i)
-                    await self.launch_widget(widget=widget_to_launch, till_done=True,
-                                             terminal_render=terminal_render, **context)
-            elif action == 'cleanup':
-                widgets_to_cleanup, window_destroy_args = action_args
-                for widget_to_cleanup in widgets_to_cleanup:
-                    if widget_to_cleanup not in self._launched_widgets:
-                        self._log.warning('%r: cannot cleanup unlaunched widget %r', self, widget_to_cleanup)
-                        continue
-                    self._launched_widgets.remove(widget_to_cleanup)
-                    await widget_to_cleanup.cleanup(**window_destroy_args)
-            elif action == 'message':
-                destination, message = action_args
-                await api.message_send(destination, message)
-                responder, response = await api.message_wait()
-                if responder is not destination:
-                    self._log.warning('%r: unexpected responder=%r, response=%r', self, responder, response)
+            launchtime_handler_name = f'handle_launchtime_{action}'
+            try:
+                launchtime_handler = getattr(self, launchtime_handler_name)
+            except AttributeError:
+                self._log.warning('%r: unhandled %r launch time action: %r', self, requester_widget, action)
             else:
-                self._log.warning('%r: invalid %r launch time action: %r', self, requester_widget, action)
+                await launchtime_handler(*action_args, **context)
 
         del self._widget_launchtime_requests[requester_widget]
+
+
+    async def handle_launchtime_launch(self, *widgets_to_launch, **context):
+
+        last_widget_index = len(widgets_to_launch)-1
+        for i, widget_to_launch in enumerate(widgets_to_launch):
+            if isinstance(widget_to_launch, widget.WindowWidget):
+                self._template_slot_index += 1
+            context['geometry'] = self._template_geometry(self._template_slot_index)
+            terminal_render = (last_widget_index == i)
+            await self.launch_widget(widget=widget_to_launch, till_done=True,
+                                        terminal_render=terminal_render, **context)
+
+
+    async def handle_launchtime_cleanup(self, widgets_to_cleanup, window_destroy_args, **_context):
+
+        for widget_to_cleanup in widgets_to_cleanup:
+            if widget_to_cleanup not in self._launched_widgets:
+                self._log.warning('%r: cannot cleanup unlaunched widget %r', self, widget_to_cleanup)
+                continue
+            self._launched_widgets.remove(widget_to_cleanup)
+            await widget_to_cleanup.cleanup(**window_destroy_args)
+
+
+    async def handle_launchtime_message(self, destination, message, **context):
+
+        async def messenger_task():
+            await api.message_send(destination, message)
+            responder, response = await api.message_wait()
+            if responder is not destination:
+                self._log.warning('%r: unexpected messenger_task responder=%r,'
+                                  ' response=%r', self, responder, response)
+
+        # Send/wait message on a child task to avoid conflicts with the Slide's
+        # own message sending/waiting (recall: Slide is a Widget, which is a
+        # Thing, which runs a core message waiting/sending loop).
+
+        await api.task_spawn(messenger_task)
+        completed, success, result = await api.task_wait()
+
+        if completed is not messenger_task or not success or result:
+            self._log.warning('%r: unexpected messenger_task completion: '
+                              'completed=%r success=%r result=%r', self,
+                              completed, success, result)
 
 
     async def handle_cleanup(self, **_kwargs):

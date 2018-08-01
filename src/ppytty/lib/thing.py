@@ -32,7 +32,14 @@ class Thing(task.Task):
         self._initial_state = initial_state
         self._state = self._initial_state
 
+        self._last_sender = None
         self._done = False
+
+
+    @property
+    def controller(self):
+
+        return self._last_sender
 
 
     def reset(self):
@@ -47,7 +54,7 @@ class Thing(task.Task):
         self._log.info('%r: started', self)
 
         while not self._done:
-            sender, message = await api.message_wait()
+            self._last_sender, message = await api.message_wait()
             self._log.debug('%s: got message: %r', self, message)
             request, request_args = message
             handler = self.get_handler(request)
@@ -57,7 +64,7 @@ class Thing(task.Task):
                 self._log.error('handler exception', exc_info=True)
             else:
                 self._state = new_state
-            await api.message_send(sender, new_state)
+            await api.message_send(self._last_sender, new_state)
 
         self._log.info('%r: done', self)
 
