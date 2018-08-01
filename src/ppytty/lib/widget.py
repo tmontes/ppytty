@@ -210,13 +210,12 @@ class WidgetsCleaner(Widget):
     """
     WidgetsCleaner class.
 
-    Once 'next'ed asks the parent to cleanup its wrapped/referenced widgets and
-    becomes 'done'.
+    Once 'next'ed asks the controller task to cleanup its wrapped/referenced
+    widgets and becomes 'done'.
     """
 
-    # Only the parent (or, more precisely, only whoever launched the Widgets)
-    # can properly clean them up. Motive: Widgets are Tasks, their termination
-    # must be waited on by whomever spawned them.
+    # Only the whoever launched the Widgets can properly clean them up: Widgets
+    # are Tasks, their termination must be waited on by their parent.
 
     def __init__(self, *widgets):
 
@@ -238,12 +237,12 @@ class WidgetsCleaner(Widget):
 
         await super().handle_idle_next()
 
-        self._log.info('%r: asking parent to cleanup %r', self, self._widgets)
+        self._log.info('%r: asking controller to cleanup %r', self, self._widgets)
         window_destroy_args = dict(
             terminal_render=terminal_render,
             clear_buffer=clear_buffer,
         )
-        await api.message_send(None, ('cleanup', (self._widgets, window_destroy_args)))
+        await api.message_send(self.controller, ('cleanup', (self._widgets, window_destroy_args)))
 
         return 'done'
 
@@ -254,8 +253,8 @@ class WidgetsLauncher(Widget):
     """
     WidgetsLauncher class.
 
-    Once 'next'ed asks the parent to launch its wrapped/referenced widgets and
-    becomes 'done'.
+    Once 'next'ed asks the controller task to launch its wrapped/referenced
+    widgets and becomes 'done'.
     """
 
     def __init__(self, *widgets):
@@ -277,8 +276,8 @@ class WidgetsLauncher(Widget):
 
         await super().handle_idle_next()
 
-        self._log.info('%r: asking parent to launch %r', self, self._widgets)
-        await api.message_send(None, ('launch', self._widgets))
+        self._log.info('%r: asking controller to launch %r', self, self._widgets)
+        await api.message_send(self.controller, ('launch', self._widgets))
 
         return 'done'
 
@@ -289,8 +288,8 @@ class WidgetRequester(Widget):
     """
     WidgetRequester class.
 
-    Once 'next'ed asks the parent to cleanup its wrapped/referenced widgets and
-    becomes 'done'.
+    Once 'next'ed asks the controller task to cleanup its wrapped/referenced
+    widgets and becomes 'done'.
     """
 
     def __init__(self, widget, request, **request_args):
@@ -313,8 +312,8 @@ class WidgetRequester(Widget):
 
         await super().handle_idle_next()
 
-        self._log.info('%r: asking parent to request %r from %r', self, self._message, self._widget)
-        await api.message_send(None, ('message', (self._widget, self._message)))
+        self._log.info('%r: asking controller to request %r from %r', self, self._message, self._widget)
+        await api.message_send(self.controller, ('message', (self._widget, self._message)))
 
         return 'done'
 
