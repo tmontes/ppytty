@@ -12,26 +12,14 @@ import functools
 from ppytty.kernel import api
 
 from . import widget
+from . import slide_template
 from . import geometry as g
-
-
-
-class SlideTemplate(object):
-
-    def __init__(self, widgets=None):
-
-        self.widgets = widgets if widgets else ()
-
-
-    def geometry(self, widget_index, widget_count):
-
-        return None
 
 
 
 class Slide(widget.WindowWidget):
 
-    template = SlideTemplate()
+    template = slide_template.SlideTemplate()
 
     def __init__(self, title, template=None, widgets=None, geometry=None):
 
