@@ -31,7 +31,7 @@ class Slide(widget.WindowWidget):
 
         self._widget_steps = []
         self._widget_step_count = 0
-        self._no_geometry_widget_count = 0
+        self._windowed_widgets = []
         self._init_widget_steps(widgets or ())
 
         self._current_step_index = None
@@ -39,6 +39,9 @@ class Slide(widget.WindowWidget):
 
         # False if self._current_widget_step accepts 'next'; True otherwise.
         self._widget_step_done = None
+
+        # Should fail loudly if not usable with my windowed_widgets.
+        self._template.validate(self)
 
         self._launched_widgets = []
 
@@ -48,9 +51,6 @@ class Slide(widget.WindowWidget):
 
     def _init_widget_steps(self, widgets_arg):
 
-        def needs_geometry(w):
-            return isinstance(w, widget.WindowWidget) and not w.geometry
-
         for w in widgets_arg:
             if isinstance(w, (list, tuple)):
                 for sub_w in w:
@@ -58,16 +58,16 @@ class Slide(widget.WindowWidget):
                         raise ValueError(f'{sub_w!r} in {w!r} must be a Widget')
                     if isinstance(sub_w, widget.WidgetsLauncher):
                         raise ValueError(f'unsupported {sub_w!r} in {w!r}')
-                    if needs_geometry(sub_w):
-                        self._no_geometry_widget_count += 1
+                    if isinstance(sub_w, widget.WindowWidget):
+                        self._windowed_widgets.append(sub_w)
                 self._widget_steps.append(widget.WidgetsLauncher(*w))
                 continue
             elif not isinstance(w, widget.Widget):
                 raise ValueError(f'{w!r} must be a Widget')
             elif isinstance(w, widget.WidgetsLauncher):
                 raise ValueError(f'use a list/tuple instead of {w!r}')
-            elif needs_geometry(w):
-                self._no_geometry_widget_count += 1
+            elif isinstance(w, widget.WindowWidget):
+                self._windowed_widgets.append(w)
             self._widget_steps.append(w)
 
         self._widget_step_count = len(self._widget_steps)
@@ -80,9 +80,9 @@ class Slide(widget.WindowWidget):
 
 
     @property
-    def no_geometry_widget_count(self):
+    def windowed_widgets(self):
 
-        return self._no_geometry_widget_count
+        return self._windowed_widgets
 
 
     async def handle_idle_next(self, **context):
@@ -99,7 +99,7 @@ class Slide(widget.WindowWidget):
         if not self._widget_step_count:
             return 'done'
 
-        self._template.initialize(self)
+        self._template.reset_widget_slots()
 
         self._current_step_index = 0
         self._current_widget_step = self._widget_steps[0]

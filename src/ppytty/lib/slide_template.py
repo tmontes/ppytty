@@ -26,15 +26,13 @@ class SlideTemplate(object):
         self.widgets = widgets or self.widgets
         self.widget_slots = widget_slots or self.widget_slots
 
-        if not all(w.geometry for w in self.widgets):
-            raise ValueError(f'{self} widgets with no geometry.')
-
         if not isinstance(self.widget_slots, dict):
             self.widget_slots = {
                 i: ws for i, ws in enumerate(self.widget_slots)
             }
 
-        self._available_widget_slots = None
+        self._referenced_slot_names = None
+        self._available_slot_names = None
         self._slide = None
 
 
@@ -44,15 +42,47 @@ class SlideTemplate(object):
         return f'<{self.__class__.__name__} {me}>'
 
 
-    def initialize(self, slide):
+    def validate(self, slide):
 
-        slot_delta = slide.no_geometry_widget_count - len(self.widget_slots)
+        # Template widgets must have geometry.
+
+        if not all(w.geometry for w in self.widgets):
+            raise ValueError(f'{self} widgets with no geometry.')
+
+        # All slide.windowed_widgets must referece valid slots, if any.
+
+        self._referenced_slot_names = {
+            w.template_slot for w in slide.windowed_widgets if w.template_slot
+        }
+
+        invalid_wslot_names = self._referenced_slot_names - self.widget_slots.keys()
+        if invalid_wslot_names:
+            raise ValueError(f'Widgets in {slide!r} reference non-existing '
+                             f'template slots: {", ".join(invalid_wslot_names)}')
+
+        # There are enough widget_slots for all slide.windowed_widgets not
+        # referencing template slots and not having geometry.
+
+        no_geometry_widgets = [
+            w for w in slide.windowed_widgets
+            if not w.template_slot and not w.geometry
+        ]
+        slot_delta = len(no_geometry_widgets) - len(self.widget_slots)
         if slot_delta > 0:
             raise ValueError(f'{slot_delta} widgets with no geometry in {slide!r} '
                              f'for the existing widget slots in {self!r}')
 
         self._slide = slide
-        self._available_widget_slots = collections.deque(self.widget_slots)
+
+
+    def reset_widget_slots(self):
+
+        # Set the available slots to all unreferenced ones.
+
+        self._available_slot_names = collections.deque(
+            slot_name for slot_name in self.widget_slots
+            if slot_name not in self._referenced_slot_names
+        )
 
 
     def next_widget_slot(self, slot_name=None):
@@ -60,8 +90,8 @@ class SlideTemplate(object):
         slot = None
 
         if slot_name is None:
-            if self._available_widget_slots:
-                slot_name = self._available_widget_slots.popleft()
+            if self._available_slot_names:
+                slot_name = self._available_slot_names.popleft()
                 slot = self.widget_slots[slot_name]
             else:
                 log.error('%r: exauhsted template widget slots', self._slide)
@@ -69,10 +99,6 @@ class SlideTemplate(object):
             log.error('%r: no %r template widget slot', self._slide, slot_name)
         else:
             slot = self.widget_slots[slot_name]
-            try:
-                self._available_widget_slots.remove(slot_name)
-            except ValueError:
-                log.warning('%r: template slot %r in use?', self._slide, slot_name)
 
         return slot
 

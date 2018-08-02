@@ -169,6 +169,12 @@ class WindowWidget(Widget):
 
 
     @property
+    def template_slot(self):
+
+        return self._template_slot
+
+
+    @property
     def geometry(self):
 
         return self._geometry

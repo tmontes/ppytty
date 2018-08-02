@@ -78,14 +78,12 @@ text_widget = Text([
     ],
     text_align=Text.Align.CENTER,
     paragraph_spacing=1,
-    template_slot='top',
 )
 
 bullet_widget = Bullets([
     'welcome bullet 1',
     'welcome bullet 2',
     ],
-    template_slot='bottom',
 )
 
 welcome_slide = Slide(title='Welcome', widgets=[
@@ -115,7 +113,7 @@ class MovableText(Text):
         return 'done'
 
 
-text = MovableText('content text #1')
+text = MovableText('content text #1', template_slot='mid')
 
 content_slide = Slide(title='[content]', widgets=[
     text,
