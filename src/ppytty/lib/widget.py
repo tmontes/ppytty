@@ -6,8 +6,6 @@
 # ----------------------------------------------------------------------------
 
 
-import collections
-
 from ppytty.kernel import api
 
 from . import thing
@@ -170,24 +168,23 @@ class WindowWidget(Widget):
 
 
     @property
+    def geometry(self):
+
+        return self._geometry
+
+
+    @property
     def window(self):
 
         return self._window
 
 
-    # Used when no valid geometry is available from context or self.
-    _fallback_geometry = g.full()
-
-    async def handle_idle_next(self, geometry=None, color=None, render=True,
-                               terminal_render=True):
+    async def handle_idle_next(self, widget_slot_callable=None, render=True,
+                               terminal_render=True, **kw):
 
         await super().handle_idle_next()
 
-        win_geometry = collections.ChainMap(
-            self._geometry,
-            geometry or {},
-            self._fallback_geometry,
-        )
+        win_geometry = self._geometry or widget_slot_callable()
 
         # win_color = self._color
         # if color:

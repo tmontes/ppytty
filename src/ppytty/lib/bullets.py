@@ -31,10 +31,10 @@ class Bullets(widget.WindowWidget):
         return self._current_index == self._bullet_count - 1
 
 
-    async def handle_idle_next(self, geometry=None, color=None, render=True,
+    async def handle_idle_next(self, widget_slot_callable=None, render=True,
                                terminal_render=True, **context):
 
-        await super().handle_idle_next(geometry=geometry, color=color, render=False)
+        await super().handle_idle_next(widget_slot_callable=widget_slot_callable, render=False)
 
         if self._at_once:
             for bullet in self._bullets:
