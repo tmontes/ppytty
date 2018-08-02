@@ -33,9 +33,10 @@ class Text(widget.WindowWidget):
 
     def __init__(self, text, text_align=Align.LEFT, paragraph_spacing=0,
                  truncate_with=' (...)', use_context=False, id=None,
-                 geometry=None, color=None, padding=None):
+                 template_slot=None, geometry=None, color=None, padding=None):
 
-        super().__init__(id=id, geometry=geometry, color=color, padding=padding)
+        super().__init__(id=id, template_slot=template_slot, geometry=geometry,
+                         color=color, padding=padding)
 
         self._paragraphs = text if isinstance(text, (list, tuple)) else (text,)
         self._text_align_callable = self._TEXT_ALIGN_CALLABLE[text_align]
@@ -78,10 +79,10 @@ class Text(widget.WindowWidget):
         self._painted = True
 
 
-    async def handle_idle_next(self, widget_slot_callable=None, render=True,
+    async def handle_idle_next(self, template_slot_callable=None, render=True,
                                terminal_render=True, **context):
 
-        await super().handle_idle_next(widget_slot_callable=widget_slot_callable, render=False)
+        await super().handle_idle_next(template_slot_callable=template_slot_callable, render=False)
 
         self._context = context
         self.fill_window_contents(self.window)

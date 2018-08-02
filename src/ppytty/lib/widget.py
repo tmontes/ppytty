@@ -132,10 +132,11 @@ class WindowWidget(Widget):
 
     padding = 0
 
-    def __init__(self, id=None, geometry=None, color=None, padding=None):
+    def __init__(self, id=None, template_slot=None, geometry=None, color=None, padding=None):
 
         super().__init__(id=id)
 
+        self._template_slot = template_slot
         self._geometry = geometry or {}
         # self._color = color or _color.default()
 
@@ -179,12 +180,12 @@ class WindowWidget(Widget):
         return self._window
 
 
-    async def handle_idle_next(self, widget_slot_callable=None, render=True,
+    async def handle_idle_next(self, template_slot_callable=None, render=True,
                                terminal_render=True, **kw):
 
         await super().handle_idle_next()
 
-        win_geometry = self._geometry or widget_slot_callable()
+        win_geometry = self._geometry or template_slot_callable(self._template_slot)
 
         # win_color = self._color
         # if color:

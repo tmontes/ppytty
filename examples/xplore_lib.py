@@ -50,11 +50,11 @@ SlideTemplate.widgets = [
     ),
 ]
 
-SlideTemplate.widget_slots = [
-    geometry.horizontal_bar(height=8, margin=6, dx=10, dw=-20),
-    geometry.horizontal_bar(height=6, margin=15, dx=10, dw=-20),
-    geometry.horizontal_bar(height=5, margin=22, dx=10, dw=-20),
-]
+SlideTemplate.widget_slots = {
+    'top': geometry.horizontal_bar(height=8, margin=6, dx=10, dw=-20),
+    'mid': geometry.horizontal_bar(height=6, margin=15, dx=10, dw=-20),
+    'bottom': geometry.horizontal_bar(height=5, margin=22, dx=10, dw=-20),
+}
 
 
 Text.padding = (1, 2)
@@ -78,12 +78,15 @@ text_widget = Text([
     ],
     text_align=Text.Align.CENTER,
     paragraph_spacing=1,
+    template_slot='top',
 )
 
 bullet_widget = Bullets([
     'welcome bullet 1',
     'welcome bullet 2',
-])
+    ],
+    template_slot='bottom',
+)
 
 welcome_slide = Slide(title='Welcome', widgets=[
     text_widget,

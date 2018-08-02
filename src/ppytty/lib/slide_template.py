@@ -69,7 +69,10 @@ class SlideTemplate(object):
             log.error('%r: no %r template widget slot', self._slide, slot_name)
         else:
             slot = self.widget_slots[slot_name]
-            self._available_widget_slots.remove(slot_name)
+            try:
+                self._available_widget_slots.remove(slot_name)
+            except ValueError:
+                log.warning('%r: template slot %r in use?', self._slide, slot_name)
 
         return slot
 

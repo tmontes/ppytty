@@ -141,7 +141,7 @@ class Slide(widget.WindowWidget):
         self._log.info('%r: launching %r', self, widget_to_launch)
         widget_state = await widget_to_launch.launch(
             request_handler=functools.partial(self.launch_request_handler, widget_to_launch),
-            widget_slot_callable=self._template.next_widget_slot,
+            template_slot_callable=self._template.next_widget_slot,
             **context,
         )
         self._launched_widgets.append(widget_to_launch)
