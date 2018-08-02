@@ -7,28 +7,32 @@ from ppytty.kernel import api
 
 class MySlideTemplate(SlideTemplate):
 
-    _GEOMETRIES = {
-        1: {
-            0: dict(x=0.4, y=0.4, w=0.2, h=0.2),
-        },
-        2: {
-            0: dict(x=0.2, y=0.3, w=0.6, h=0.3, dy=-1),
-            1: dict(x=0.2, y=0.6, w=0.6, h=0.3, dy=-1),
-        },
-        3: {
-            0: dict(x=0.3, y=0.25, w=0.4, h=0.2, dy=+1),
-            1: dict(x=0.3, y=0.45, w=0.4, h=0.2, dy=+1),
-            2: dict(x=0.3, y=0.65, w=0.4, h=0.2, dy=+1),
-        }
-    }
+    pass
 
-    def geometry(self, widget_index, widget_count):
+    # _GEOMETRIES = {
+    #     1: {
+    #         0: dict(x=0.4, y=0.4, w=0.2, h=0.2),
+    #     },
+    #     2: {
+    #         0: dict(x=0.2, y=0.3, w=0.6, h=0.3, dy=-1),
+    #         1: dict(x=0.2, y=0.6, w=0.6, h=0.3, dy=-1),
+    #     },
+    #     3: {
+    #         0: dict(x=0.3, y=0.25, w=0.4, h=0.2, dy=+1),
+    #         1: dict(x=0.3, y=0.45, w=0.4, h=0.2, dy=+1),
+    #         2: dict(x=0.3, y=0.65, w=0.4, h=0.2, dy=+1),
+    #     }
+    # }
 
-        return self._GEOMETRIES.get(widget_count, {}).get(widget_index)
+    # def geometry(self, widget_index, widget_count):
+
+    #     return self._GEOMETRIES.get(widget_count, {}).get(widget_index)
 
 
 
-Slide.template = MySlideTemplate(widgets=[
+# Slide.template = MySlideTemplate(widgets=[
+
+SlideTemplate.widgets = [
     Text(
         ("EXPLORING ppytty's LIB", '{slide_title}'),
         id='top-template-bar',
@@ -44,7 +48,13 @@ Slide.template = MySlideTemplate(widgets=[
         geometry=geometry.horizontal_bar(height=1, from_top=False),
         padding=(0, 2),
     ),
-])
+]
+
+SlideTemplate.widget_slots = {
+    'top': geometry.horizontal_bar(height=8, margin=6, dx=10, dw=-20),
+    'mid': geometry.horizontal_bar(height=6, margin=15, dx=10, dw=-20),
+    'bottom': geometry.horizontal_bar(height=5, margin=22, dx=10, dw=-20),
+}
 
 
 Text.padding = (1, 2)
@@ -73,7 +83,8 @@ text_widget = Text([
 bullet_widget = Bullets([
     'welcome bullet 1',
     'welcome bullet 2',
-])
+    ],
+)
 
 welcome_slide = Slide(title='Welcome', widgets=[
     text_widget,
@@ -102,7 +113,7 @@ class MovableText(Text):
         return 'done'
 
 
-text = MovableText('content text #1')
+text = MovableText('content text #1', template_slot='mid')
 
 content_slide = Slide(title='[content]', widgets=[
     text,
@@ -118,7 +129,7 @@ content_slide = Slide(title='[content]', widgets=[
 
 thanks_slide = Slide(title='Thanks!', widgets=[
     # Overriding template suggested geometry: go big!
-    Text('by bye text', geometry=dict(x=0.1, y=0.2, w=0.8, h=0.8, dh=-2)),
+    Text('by bye text', geometry=dict(x=0.1, y=0.2, w=0.8, h=0.8, dh=-3)),
 ])
 
 

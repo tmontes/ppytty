@@ -10,7 +10,8 @@ from . thing import Thing
 from . widget import Widget, WindowWidget
 
 from . slide_deck import SlideDeck
-from . slide import Slide, SlideTemplate
+from . slide_template import SlideTemplate
+from . slide import Slide
 from . text import Text
 from . bullets import Bullets
 

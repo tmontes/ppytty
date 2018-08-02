@@ -14,9 +14,11 @@ from . import widget
 
 class Bullets(widget.WindowWidget):
 
-    def __init__(self, bullets, id=None, at_once=False, geometry=None, color=None):
+    def __init__(self, bullets, id=None, at_once=False, template_slot=None,
+                 geometry=None, color=None):
 
-        super().__init__(id=id, geometry=geometry, color=color)
+        super().__init__(id=id, template_slot=template_slot, geometry=geometry,
+                         color=color)
 
         self._bullets = bullets
         self._bullet_count = len(bullets)
@@ -31,10 +33,10 @@ class Bullets(widget.WindowWidget):
         return self._current_index == self._bullet_count - 1
 
 
-    async def handle_idle_next(self, geometry=None, color=None, render=True,
+    async def handle_idle_next(self, template_slot_callable=None, render=True,
                                terminal_render=True, **context):
 
-        await super().handle_idle_next(geometry=geometry, color=color, render=False)
+        await super().handle_idle_next(template_slot_callable=template_slot_callable, render=False)
 
         if self._at_once:
             for bullet in self._bullets:
