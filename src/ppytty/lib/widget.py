@@ -110,6 +110,8 @@ class Widget(thing.Thing):
         cleanup_response = await self.message_send_wait(message, until=(None,))
         if cleanup_response is not None:
             self._log.warning('%r: unexpected cleanup response: %r', self, cleanup_response)
+        # Synchronize Task termination: send it the message it's waiting for.
+        await api.message_send(self, None)
         completed, _, _ = await api.task_wait()
         if completed is not self:
             self._log.warning('%r: unexpected child terminated: %r', self, completed)
