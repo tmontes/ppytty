@@ -14,7 +14,7 @@ from . import task
 
 class Thing(task.Task):
 
-    # Things track state and process messages:
+    # Things are Tasks that track state and process messages:
     # - State is defined by a string.
     # - They loop waiting for request messages.
     # - Messages are handled via method lookup:
@@ -24,6 +24,9 @@ class Thing(task.Task):
     # - Handlers should return a string:
     #   - This updates the state...
     #   - ...which is sent back to message senders.
+    # - They terminate once:
+    #   - The `im_done` method is called and...
+    #   - ...they receive a message, to support termination synchronization.
 
     def __init__(self, id=None, initial_state=None):
 
@@ -65,6 +68,11 @@ class Thing(task.Task):
             else:
                 self._state = new_state
             await api.message_send(self._last_sender, new_state)
+
+        # Synchronize Task termination: wait for a message that should be `None`.
+        _, message = await api.message_wait()
+        if message is not None:
+            self._log.warning('%r: unexpected exit confirmation: %r', self, message)
 
         self._log.info('%r: done', self)
 
