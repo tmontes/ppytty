@@ -43,8 +43,8 @@ class Bullets(widget.WindowWidget):
         self._items = items
         self._depth = self._tree_depth(items)
 
-        self._bullets = self._per_level_values('bullets', bullets, (str, types.FunctionType))
-        self._at_once = self._per_level_values('at_once', at_once, bool)
+        self._bullets = self._per_level_bullets(bullets)
+        self._at_once = self._per_level_at_once(at_once)
 
         self._steps = self._compute_steps(items, self._at_once[0])
         self._log.debug('%r: steps=%r', self, self._steps)
@@ -68,12 +68,12 @@ class Bullets(widget.WindowWidget):
             raise ValueError(f'Unsupported value in Bullets items: {items!r}')
 
 
-    def _per_level_values(self, name, value, types):
+    def _per_level_values(self, name, value, valid_value):
 
-        if isinstance(value, types):
+        if valid_value(value):
             return [value] * self._depth
         elif isinstance(value, (list, tuple)):
-            if any(not isinstance(v, types) for v in value):
+            if any(not valid_value(v) for v in value):
                 raise ValueError(f'Unsupported bullets {name} values: {value!r}')
             result = value[:self._depth]
             while len(result) < self._depth:
@@ -83,14 +83,40 @@ class Bullets(widget.WindowWidget):
             raise ValueError(f'Unsupported Bullets {name} value: {value!r}')
 
 
-    def _compute_steps(self, items, at_once, level=0):
+    def _per_level_bullets(self, bullets):
+
+        valid_value = lambda v: isinstance(v, str) or callable(v)
+        return self._per_level_values('bullets', bullets, valid_value)
+
+    def _per_level_at_once(self, at_once):
+
+        valid_value = lambda v: isinstance(v, bool)
+        return self._per_level_values('at_once', at_once, valid_value)
+
+
+    def _compute_steps(self, items, at_once, spacing=0, level=0):
 
         # Returns a list of steps where each step is a list of (level, text)
         # tuples to be displayed; computed based on the items hierarchy and
         # the respective level's at_once. If a given level's at_once is True,
         # all sub level's at_once are forced to True as well.
 
+        def level_bullets():
+            level_bullet = self._bullets[level]
+            bullets = []
+            bullets_width = 0
+            item_number = 1
+            for item in items:
+                if isinstance(item, (list, tuple)):
+                    continue
+                bullet = level_bullet(item_number) if callable(level_bullet) else level_bullet
+                item_number += 1
+                bullets_width = max(bullets_width, len(bullet))
+                bullets.append(bullet)
+            return iter(bullets), bullets_width
+
         steps = []
+        bullets_iter, bullets_width = level_bullets()
         if at_once:
             single_step = []
             for item in items:
@@ -98,20 +124,24 @@ class Bullets(widget.WindowWidget):
                     sub_level = level+1
                     if not self._at_once[sub_level]:
                         self._log.warning('%r: Ignored level %r at_once=False', self, sub_level)
-                    sub_steps = self._compute_steps(item, at_once, sub_level)
+                    sub_steps = self._compute_steps(item, at_once, spacing+bullets_width, sub_level)
                     single_step.extend(sub_steps[0])
                 else:
-                    single_step.append((level, item))
+                    the_bullet = next(bullets_iter)
+                    left_fill = ' '*(spacing + bullets_width - len(the_bullet))
+                    single_step.append((left_fill + the_bullet, item))
             steps.append(single_step)
         else:
             for item in items:
                 if isinstance(item, (list, tuple)):
                     sub_level = level+1
                     at_once = self._at_once[sub_level]
-                    sub_steps = self._compute_steps(item, at_once, sub_level)
+                    sub_steps = self._compute_steps(item, at_once, spacing+bullets_width, sub_level)
                     steps.extend(sub_steps)
                 else:
-                    steps.append([(level, item)])
+                    the_bullet = next(bullets_iter)
+                    left_fill = ' '*(spacing + bullets_width - len(the_bullet))
+                    steps.append([(left_fill + the_bullet, item)])
 
         return steps
 
@@ -131,8 +161,7 @@ class Bullets(widget.WindowWidget):
 
         available_height = window.height - self._pad_top - self._pad_bottom
 
-        for level, text in step:
-            bullet = self._bullets[level]
+        for bullet, text in step:
             window.print(bullet + text, x=self._pad_left, y=self._current_y)
             self._current_y += 1
             available_height -= 1
