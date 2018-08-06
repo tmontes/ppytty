@@ -16,7 +16,7 @@ from . import widget
 
 class Bullets(widget.WindowWidget):
 
-    def __init__(self, items, bullets='-', space_h=None, space_v=0,
+    def __init__(self, items, bullets='- ', space_h=None, space_v=0,
                  at_once=False, id=None, template_slot=None, geometry=None,
                  color=None):
 
@@ -51,6 +51,8 @@ class Bullets(widget.WindowWidget):
 
         self._step_count = len(self._steps)
         self._current_step_index = None
+
+        self._current_y = None
 
 
     def _tree_depth(self, items):
@@ -120,15 +122,33 @@ class Bullets(widget.WindowWidget):
         return self._current_step_index == self._step_count - 1
 
 
+    def paint_window_contents(self, window, step=None):
+
+        if step is None:
+            # TODO: Need to clear and repaint up to self._current_step_index.
+            self._log.warning('%r: no step to paint', self)
+            return
+
+        available_height = window.height - self._pad_top - self._pad_bottom
+
+        for level, text in step:
+            bullet = self._bullets[level]
+            window.print(bullet + text, x=self._pad_left, y=self._current_y)
+            self._current_y += 1
+            available_height -= 1
+
+
     async def handle_idle_next(self, template_slot_callable=None, render=True,
                                terminal_render=True, **context):
 
         await super().handle_idle_next(template_slot_callable=template_slot_callable, render=False)
 
+        self._current_y = self._pad_top
         self._current_step_index = 0
-        step = self._steps[0]
-        for level, text in step:
-            self._log.warning('%s: level=%r text=%r context=%r', self, level, text, context)
+
+        self.paint_window_contents(self.window, self._steps[0])
+        self.window.add_resize_callback(self.paint_window_contents)
+
         await self.render(render=render, terminal_render=terminal_render)
         return 'done' if self.at_last_step else 'running'
 
@@ -137,10 +157,8 @@ class Bullets(widget.WindowWidget):
 
         new_index = self._current_step_index + 1
         if new_index < self._step_count:
-            step = self._steps[new_index]
             self._current_step_index = new_index
-            for level, text in step:
-                self._log.warning('%s: level=%r text=%r context=%r', self, level, text, context)
+            self.paint_window_contents(self.window, self._steps[new_index])
             await self.render(terminal_render=terminal_render)
             return 'done' if self.at_last_step else 'running'
         else:
