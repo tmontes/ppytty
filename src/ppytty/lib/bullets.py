@@ -6,6 +6,8 @@
 # ----------------------------------------------------------------------------
 
 
+import types
+
 from ppytty.kernel import api
 
 from . import widget
@@ -14,23 +16,108 @@ from . import widget
 
 class Bullets(widget.WindowWidget):
 
-    def __init__(self, bullets, id=None, at_once=False, template_slot=None,
-                 geometry=None, color=None):
+    def __init__(self, items, bullets='-', space_h=None, space_v=0,
+                 at_once=False, id=None, template_slot=None, geometry=None,
+                 color=None):
+
+        """
+        Bullets
+
+        `items`:    list/tuple of items; each item must be either a string,
+                    representing a single bullet item, or a list/tuple of items,
+                    representing sub-items.
+        `bullets`:  string/callable.
+        `space_h`:  None or int.
+        `space_v`:  int.
+        `at_once`:  bool.
+
+        Arguments other than `items` support being passed a list/tuple to
+        indicate the appropriate value for the given hierarchy level; example,
+        passing ('*', '-') in `bullets` will use '*' to represent top-level
+        bullets and '-' for the second (and remaining) levels.
+        """
 
         super().__init__(id=id, template_slot=template_slot, geometry=geometry,
                          color=color)
 
-        self._bullets = bullets
-        self._bullet_count = len(bullets)
+        self._items = items
+        self._depth = self._tree_depth(items)
 
-        self._at_once = at_once
-        self._current_index = None
+        self._bullets = self._per_level_values('bullets', bullets, (str, types.FunctionType))
+        self._at_once = self._per_level_values('at_once', at_once, bool)
+
+        self._steps = self._compute_steps(items, self._at_once[0])
+        self._log.debug('%r: steps=%r', self, self._steps)
+
+        self._step_count = len(self._steps)
+        self._current_step_index = None
+
+
+    def _tree_depth(self, items):
+
+        if isinstance(items, (list, tuple)):
+            if not items:
+                raise ValueError('Unsupported empty items in Bullets.')
+            else:
+                return 1 + max(self._tree_depth(i) for i in items)
+        elif isinstance(items, str):
+            return 0
+        else:
+            raise ValueError(f'Unsupported value in Bullets items: {items!r}')
+
+
+    def _per_level_values(self, name, value, types):
+
+        if isinstance(value, types):
+            return [value] * self._depth
+        elif isinstance(value, (list, tuple)):
+            if any(not isinstance(v, types) for v in value):
+                raise ValueError(f'Unsupported bullets {name} values: {value!r}')
+            result = value[:self._depth]
+            while len(result) < self._depth:
+                result.append(result[-1])
+            return result
+        else:
+            raise ValueError(f'Unsupported Bullets {name} value: {value!r}')
+
+
+    def _compute_steps(self, items, at_once, level=0):
+
+        # Returns a list of steps where each step is a list of (level, text)
+        # tuples to be displayed; computed based on the items hierarchy and
+        # the respective level's at_once. If a given level's at_once is True,
+        # all sub level's at_once are forced to True as well.
+
+        steps = []
+        if at_once:
+            single_step = []
+            for item in items:
+                if isinstance(item, (list, tuple)):
+                    sub_level = level+1
+                    if not self._at_once[sub_level]:
+                        self._log.warning('%r: Ignored level %r at_once=False', self, sub_level)
+                    sub_steps = self._compute_steps(item, at_once, sub_level)
+                    single_step.extend(sub_steps[0])
+                else:
+                    single_step.append((level, item))
+            steps.append(single_step)
+        else:
+            for item in items:
+                if isinstance(item, (list, tuple)):
+                    sub_level = level+1
+                    at_once = self._at_once[sub_level]
+                    sub_steps = self._compute_steps(item, at_once, sub_level)
+                    steps.extend(sub_steps)
+                else:
+                    steps.append([(level, item)])
+
+        return steps
 
 
     @property
-    def at_last_bullet(self):
+    def at_last_step(self):
 
-        return self._current_index == self._bullet_count - 1
+        return self._current_step_index == self._step_count - 1
 
 
     async def handle_idle_next(self, template_slot_callable=None, render=True,
@@ -38,28 +125,24 @@ class Bullets(widget.WindowWidget):
 
         await super().handle_idle_next(template_slot_callable=template_slot_callable, render=False)
 
-        if self._at_once:
-            for bullet in self._bullets:
-                self._log.warning('%s: bullet=%r context=%r', self, bullet, context)
-            await self.render(render=render, terminal_render=terminal_render)
-            return 'done'
-
-        self._current_index = 0
-        bullet = self._bullets[0]
-        self._log.warning('%s: bullet=%r context=%r', self, bullet, context)
+        self._current_step_index = 0
+        step = self._steps[0]
+        for level, text in step:
+            self._log.warning('%s: level=%r text=%r context=%r', self, level, text, context)
         await self.render(render=render, terminal_render=terminal_render)
-        return 'done' if self.at_last_bullet else 'running'
+        return 'done' if self.at_last_step else 'running'
 
 
     async def handle_running_next(self, terminal_render=True, **context):
 
-        new_index = self._current_index + 1
-        if new_index < self._bullet_count:
-            bullet = self._bullets[new_index]
-            self._current_index = new_index
-            self._log.warning('%s: bullet=%r context=%r', self, bullet, context)
+        new_index = self._current_step_index + 1
+        if new_index < self._step_count:
+            step = self._steps[new_index]
+            self._current_step_index = new_index
+            for level, text in step:
+                self._log.warning('%s: level=%r text=%r context=%r', self, level, text, context)
             await self.render(terminal_render=terminal_render)
-            return 'done' if self.at_last_bullet else 'running'
+            return 'done' if self.at_last_step else 'running'
         else:
             return 'done'
 
