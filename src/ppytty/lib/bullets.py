@@ -160,11 +160,17 @@ class Bullets(widget.WindowWidget):
                     if not self._at_once[sub_level]:
                         self._log.warning('%r: Ignored level %r at_once=False', self, sub_level)
                     sub_steps = self._compute_steps(item, at_once, left_pad+bullets_width, sub_level)
+                    if single_step and sub_steps and sub_steps[0][-1][-1] > spacing:
+                        # Previous outer level spacing too short: fix it.
+                        single_step[-1][-1] = sub_steps[0][-1][-1]
                     single_step.extend(sub_steps[0])
                 else:
+                    if single_step and single_step[-1][-1] < spacing:
+                        # Previous inner level spacing too short: fix it.
+                        single_step[-1][-1] = spacing
                     the_bullet = next(bullets_iter)
                     left_fill = ' '*(left_pad + bullets_width - len(the_bullet))
-                    single_step.append((left_fill + the_bullet, item, spacing))
+                    single_step.append([left_fill + the_bullet, item, spacing])
             steps.append(single_step)
         else:
             for item in items:
@@ -172,11 +178,17 @@ class Bullets(widget.WindowWidget):
                     sub_level = level+1
                     at_once = self._at_once[sub_level]
                     sub_steps = self._compute_steps(item, at_once, left_pad+bullets_width, sub_level)
+                    if steps and sub_steps and sub_steps[0][-1][-1] > spacing:
+                        # Previous outer level spacing too short: fix it.
+                        steps[-1][-1][-1] = sub_steps[0][-1][-1]
                     steps.extend(sub_steps)
                 else:
+                    if steps and steps[-1][-1][-1] < spacing:
+                        # Previous inner level spacing too short: fix it.
+                        steps[-1][-1][-1] = spacing
                     the_bullet = next(bullets_iter)
                     left_fill = ' '*(left_pad + bullets_width - len(the_bullet))
-                    steps.append([(left_fill + the_bullet, item, spacing)])
+                    steps.append([[left_fill + the_bullet, item, spacing]])
 
         return steps
 

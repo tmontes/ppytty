@@ -123,7 +123,7 @@ bullets_no_spacing = Bullets(items=bullet_items, at_once=True)
 bullets_spacing_outer = Bullets(items=bullet_items, at_once=True, spacing=(1, 0))
 bullets_spacing_inner = Bullets(items=bullet_items, at_once=True, spacing=(0, 1))
 
-bullet_item_spacing = Slide(title='Post Item/Item-group Spacing', widgets=[[
+bullet_item_spacing = Slide(title='Item Spacing', widgets=[[
     bullets_no_spacing,
     bullets_spacing_outer,
     bullets_spacing_inner,
