@@ -21,7 +21,7 @@ SlideTemplate.widget_slots = {
 
 
 # ------------------------------------------------------------------------------
-# Slide #1
+# Slide | Bullet Delivery Variations
 
 bullet_items = [
     'Colours',
@@ -43,7 +43,7 @@ bullet_delivery = Slide(title='Bullet Delivery', widgets=[
 
 
 # ------------------------------------------------------------------------------
-# Slide #2
+# Slide | Bullet Types
 
 bullet_items = [
     'Colours',
@@ -80,6 +80,6 @@ bullet_types = Slide(title='Bullet Types', widgets=[
 # The SlideDeck
 
 ppytty_task = SlideDeck([
-    bullet_delivery,
     bullet_types,
+    bullet_delivery,
 ])
