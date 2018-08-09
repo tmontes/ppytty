@@ -27,16 +27,16 @@ class Bullets(widget.WindowWidget):
 
     @staticmethod
     @_bullet_provider
-    def numbers(start=1, prefix='', suffix='. '):
+    def numbers(start=1, fmt='d', prefix='', suffix='. '):
 
-        return lambda n: f'{prefix}{n + start}{suffix}'
+        return lambda n: f'{prefix}{n + start:{fmt}}{suffix}'
 
 
     @staticmethod
     @_bullet_provider
-    def letters(start='a', prefix='', suffix='. '):
+    def letters(start='a', fmt='s', prefix='', suffix='. '):
 
-        return lambda n: prefix + chr(n + ord(start)) + suffix
+        return lambda n: prefix + format(chr(n + ord(start)), fmt) + suffix
 
 
     def __init__(self, items, bullets='- ', space_h=None, space_v=0,

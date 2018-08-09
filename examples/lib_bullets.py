@@ -63,8 +63,8 @@ bullet_items = [
 default_bullets = Bullets(items=bullet_items, at_once=True)
 custom_bullets = Bullets(items=bullet_items, at_once=True, bullets=('* ', '> '))
 callable_bullets = Bullets(items=bullet_items, at_once=True, bullets=(
-                            Bullets.numbers,
-                            Bullets.letters(start='a', prefix='(', suffix=') '),
+                            Bullets.numbers(fmt='b'), # Binary, why not?!... :)
+                            Bullets.letters,
                             ),
                            )
 
