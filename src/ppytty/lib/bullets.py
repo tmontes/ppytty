@@ -39,9 +39,9 @@ class Bullets(widget.WindowWidget):
         return lambda n: prefix + format(chr(n + ord(start)), fmt) + suffix
 
 
-    def __init__(self, items, bullets='- ', truncate_with='... ', space_v=0,
+    def __init__(self, items, bullets='- ', truncate_with='... ', spacing=0,
                  at_once=False, id=None, template_slot=None, geometry=None,
-                 color=None):
+                 color=None, padding=None):
 
         """
         Bullets
@@ -50,7 +50,7 @@ class Bullets(widget.WindowWidget):
                     representing a single bullet item, or a list/tuple of items,
                     representing sub-items.
         `bullets`:  string/callable.
-        `space_v`:  int.
+        `spacing`:  int.
         `at_once`:  bool.
 
         Arguments other than `items` support being passed a list/tuple to
@@ -60,7 +60,7 @@ class Bullets(widget.WindowWidget):
         """
 
         super().__init__(id=id, template_slot=template_slot, geometry=geometry,
-                         color=color)
+                         color=color, padding=padding)
 
         self._items = items
         self._depth = self._tree_depth(items)
@@ -68,6 +68,7 @@ class Bullets(widget.WindowWidget):
         self._bullets = self._per_level_bullets(bullets)
         self._truncate_with = truncate_with
         self._truncate_width_len = len(truncate_with)
+        self._spacing = self._per_level_spacing(spacing)
         self._at_once = self._per_level_at_once(at_once)
 
         self._steps = self._compute_steps(items, self._at_once[0])
@@ -112,15 +113,21 @@ class Bullets(widget.WindowWidget):
         valid_value = lambda v: isinstance(v, str) or callable(v)
         return self._per_level_values('bullets', bullets, valid_value)
 
+    def _per_level_spacing(self, spacing):
+
+        valid_value = lambda v: isinstance(v, int)
+        return self._per_level_values('spacing', spacing, valid_value)
+
+
     def _per_level_at_once(self, at_once):
 
         valid_value = lambda v: isinstance(v, bool)
         return self._per_level_values('at_once', at_once, valid_value)
 
 
-    def _compute_steps(self, items, at_once, spacing=0, level=0):
+    def _compute_steps(self, items, at_once, left_pad=0, level=0):
 
-        # Returns a list of steps where each step is a list of (level, text)
+        # Returns a list of steps where each is a list of (bullet, text, spacing)
         # tuples to be displayed; computed based on the items hierarchy and
         # the respective level's at_once. If a given level's at_once is True,
         # all sub level's at_once are forced to True as well.
@@ -144,6 +151,7 @@ class Bullets(widget.WindowWidget):
 
         steps = []
         bullets_iter, bullets_width = level_bullets()
+        spacing = self._spacing[level]
         if at_once:
             single_step = []
             for item in items:
@@ -151,24 +159,36 @@ class Bullets(widget.WindowWidget):
                     sub_level = level+1
                     if not self._at_once[sub_level]:
                         self._log.warning('%r: Ignored level %r at_once=False', self, sub_level)
-                    sub_steps = self._compute_steps(item, at_once, spacing+bullets_width, sub_level)
+                    sub_steps = self._compute_steps(item, at_once, left_pad+bullets_width, sub_level)
+                    if single_step and sub_steps and sub_steps[0][-1][-1] > spacing:
+                        # Previous outer level spacing too short: fix it.
+                        single_step[-1][-1] = sub_steps[0][-1][-1]
                     single_step.extend(sub_steps[0])
                 else:
+                    if single_step and single_step[-1][-1] < spacing:
+                        # Previous inner level spacing too short: fix it.
+                        single_step[-1][-1] = spacing
                     the_bullet = next(bullets_iter)
-                    left_fill = ' '*(spacing + bullets_width - len(the_bullet))
-                    single_step.append((left_fill + the_bullet, item))
+                    left_fill = ' '*(left_pad + bullets_width - len(the_bullet))
+                    single_step.append([left_fill + the_bullet, item, spacing])
             steps.append(single_step)
         else:
             for item in items:
                 if isinstance(item, (list, tuple)):
                     sub_level = level+1
                     at_once = self._at_once[sub_level]
-                    sub_steps = self._compute_steps(item, at_once, spacing+bullets_width, sub_level)
+                    sub_steps = self._compute_steps(item, at_once, left_pad+bullets_width, sub_level)
+                    if steps and sub_steps and sub_steps[0][-1][-1] > spacing:
+                        # Previous outer level spacing too short: fix it.
+                        steps[-1][-1][-1] = sub_steps[0][-1][-1]
                     steps.extend(sub_steps)
                 else:
+                    if steps and steps[-1][-1][-1] < spacing:
+                        # Previous inner level spacing too short: fix it.
+                        steps[-1][-1][-1] = spacing
                     the_bullet = next(bullets_iter)
-                    left_fill = ' '*(spacing + bullets_width - len(the_bullet))
-                    steps.append([(left_fill + the_bullet, item)])
+                    left_fill = ' '*(left_pad + bullets_width - len(the_bullet))
+                    steps.append([[left_fill + the_bullet, item, spacing]])
 
         return steps
 
@@ -181,10 +201,12 @@ class Bullets(widget.WindowWidget):
 
     def _step_lines(self, step, available_width):
 
-        for bullet, text in step:
+        for bullet, text, spacing in step:
             lines = textwrap.wrap(text, width=available_width-len(bullet))
+            last_line_number = len(lines) - 1
             for line_number, line in enumerate(lines):
-                yield line_number, bullet, line
+                line_spacing = spacing if line_number == last_line_number else 0
+                yield line_number, bullet, line, line_spacing
 
 
     def paint_window_contents(self, window, step=None):
@@ -197,18 +219,19 @@ class Bullets(widget.WindowWidget):
         available_width = window.width - self._pad_left - self._pad_right
         available_height = window.height - self._current_y - self._pad_bottom
 
-        for line_number, bullet, line in self._step_lines(step, available_width):
-            if not available_height:
+        for line_number, bullet, line, spacing in self._step_lines(step, available_width):
+            if available_height <= 0:
                 if self._truncate_width_len > available_width:
                     line = self._truncate_with[:available_width]
                 else:
                     line = self._truncate_with * (available_width // self._truncate_width_len)
-                window.print(line, x=self._pad_left, y=self._current_y-1)
+                window.print(line, x=self._pad_left, y=window.height-self._pad_bottom-1)
                 break
             prefix = ' ' * len(bullet) if line_number else bullet
             window.print(prefix + line, x=self._pad_left, y=self._current_y)
-            self._current_y += 1
-            available_height -= 1
+            delta_y = 1 + spacing
+            self._current_y += delta_y
+            available_height -= delta_y
 
 
     async def handle_idle_next(self, template_slot_callable=None, render=True,

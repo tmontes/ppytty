@@ -103,9 +103,39 @@ bullet_item_wrapping = Slide(title='Bullet Item Text Wrapping', widgets=[[
 
 
 # ------------------------------------------------------------------------------
+# Slide | Post item/item-group spacing.
+
+bullet_items = [
+    'Item A',
+    'Item B', [
+        'Sub 1',
+        'Sub 2',
+        'Sub 3',
+    ],
+    'Item C', [
+        'Sub 1 which is actually pretty long.',
+        'Sub 2 is also pretty long and forces wrapping...',
+    ],
+    'Pretty much done!'
+]
+
+bullets_no_spacing = Bullets(items=bullet_items, at_once=True)
+bullets_spacing_outer = Bullets(items=bullet_items, at_once=True, spacing=(1, 0))
+bullets_spacing_inner = Bullets(items=bullet_items, at_once=True, spacing=(0, 1))
+
+bullet_item_spacing = Slide(title='Item Spacing', widgets=[[
+    bullets_no_spacing,
+    bullets_spacing_outer,
+    bullets_spacing_inner,
+]])
+
+
+
+# ------------------------------------------------------------------------------
 # The SlideDeck
 
 ppytty_task = SlideDeck([
+    bullet_item_spacing,
     bullet_item_wrapping,
     bullet_types,
     bullet_delivery,
