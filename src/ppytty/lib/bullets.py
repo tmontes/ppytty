@@ -6,7 +6,7 @@
 # ----------------------------------------------------------------------------
 
 
-import types
+import textwrap
 
 from ppytty.kernel import api
 
@@ -39,7 +39,7 @@ class Bullets(widget.WindowWidget):
         return lambda n: prefix + format(chr(n + ord(start)), fmt) + suffix
 
 
-    def __init__(self, items, bullets='- ', space_h=None, space_v=0,
+    def __init__(self, items, bullets='- ', truncate_with='... ', space_v=0,
                  at_once=False, id=None, template_slot=None, geometry=None,
                  color=None):
 
@@ -50,7 +50,6 @@ class Bullets(widget.WindowWidget):
                     representing a single bullet item, or a list/tuple of items,
                     representing sub-items.
         `bullets`:  string/callable.
-        `space_h`:  None or int.
         `space_v`:  int.
         `at_once`:  bool.
 
@@ -67,6 +66,8 @@ class Bullets(widget.WindowWidget):
         self._depth = self._tree_depth(items)
 
         self._bullets = self._per_level_bullets(bullets)
+        self._truncate_with = truncate_with
+        self._truncate_width_len = len(truncate_with)
         self._at_once = self._per_level_at_once(at_once)
 
         self._steps = self._compute_steps(items, self._at_once[0])
@@ -178,6 +179,14 @@ class Bullets(widget.WindowWidget):
         return self._current_step_index == self._step_count - 1
 
 
+    def _step_lines(self, step, available_width):
+
+        for bullet, text in step:
+            lines = textwrap.wrap(text, width=available_width-len(bullet))
+            for line_number, line in enumerate(lines):
+                yield line_number, bullet, line
+
+
     def paint_window_contents(self, window, step=None):
 
         if step is None:
@@ -185,10 +194,19 @@ class Bullets(widget.WindowWidget):
             self._log.warning('%r: no step to paint', self)
             return
 
-        available_height = window.height - self._pad_top - self._pad_bottom
+        available_width = window.width - self._pad_left - self._pad_right
+        available_height = window.height - self._current_y - self._pad_bottom
 
-        for bullet, text in step:
-            window.print(bullet + text, x=self._pad_left, y=self._current_y)
+        for line_number, bullet, line in self._step_lines(step, available_width):
+            if not available_height:
+                if self._truncate_width_len > available_width:
+                    line = self._truncate_with[:available_width]
+                else:
+                    line = self._truncate_with * (available_width // self._truncate_width_len)
+                window.print(line, x=self._pad_left, y=self._current_y-1)
+                break
+            prefix = ' ' * len(bullet) if line_number else bullet
+            window.print(prefix + line, x=self._pad_left, y=self._current_y)
             self._current_y += 1
             available_height -= 1
 

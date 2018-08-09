@@ -68,11 +68,37 @@ callable_bullets = Bullets(items=bullet_items, at_once=True, bullets=(
                             ),
                            )
 
-bullet_types = Slide(title='Bullet Types', widgets=[
+bullet_types = Slide(title='Bullet Types', widgets=[[
     default_bullets,
     custom_bullets,
     callable_bullets,
-])
+]])
+
+
+
+# ------------------------------------------------------------------------------
+# Slide | Properly wrap long item text.
+
+bullet_items = [
+    'Short item text.',
+    'Long item: The quick brown fox jumped over the lazy dog.',
+    'Sub items here:', [
+        'Short sub A',
+        'Short sub B',
+        'Much longer sub C, which needs to wrap too.',
+    ],
+    'Pretty much done!'
+]
+
+bullets_with_long_items = Bullets(items=bullet_items, at_once=True)
+too_many_bullets = Bullets(items=[f'Item {n}' for n in range(20)], at_once=True)
+too_many_too_long = Bullets(items=bullet_items*3, at_once=True)
+
+bullet_item_wrapping = Slide(title='Bullet Item Text Wrapping', widgets=[[
+    bullets_with_long_items,
+    too_many_bullets,
+    too_many_too_long
+]])
 
 
 
@@ -80,6 +106,7 @@ bullet_types = Slide(title='Bullet Types', widgets=[
 # The SlideDeck
 
 ppytty_task = SlideDeck([
+    bullet_item_wrapping,
     bullet_types,
     bullet_delivery,
 ])
