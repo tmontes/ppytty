@@ -68,11 +68,11 @@ callable_bullets = Bullets(items=bullet_items, at_once=True, bullets=(
                             ),
                            )
 
-bullet_types = Slide(title='Bullet Types', widgets=[
+bullet_types = Slide(title='Bullet Types', widgets=[[
     default_bullets,
     custom_bullets,
     callable_bullets,
-])
+]])
 
 
 
@@ -91,10 +91,14 @@ bullet_items = [
 ]
 
 bullets_with_long_items = Bullets(items=bullet_items, at_once=True)
+too_many_bullets = Bullets(items=[f'Item {n}' for n in range(20)], at_once=True)
+too_many_too_long = Bullets(items=bullet_items*3, at_once=True)
 
-bullet_item_wrapping = Slide(title='Bullet Item Text Wrapping', widgets=[
+bullet_item_wrapping = Slide(title='Bullet Item Text Wrapping', widgets=[[
     bullets_with_long_items,
-])
+    too_many_bullets,
+    too_many_too_long
+]])
 
 
 
