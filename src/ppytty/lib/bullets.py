@@ -199,6 +199,17 @@ class Bullets(widget.WindowWidget):
         return self._current_step_index == self._step_count - 1
 
 
+    def paint_window_contents(self, window, step=None):
+
+        if step:
+            self._paint_step(window, step)
+        else:
+            window.clear()
+            self._current_y = self._pad_top
+            for step in self._steps[:self._current_step_index+1]:
+                self._paint_step(window, step)
+
+
     def _step_lines(self, step, available_width):
 
         for bullet, text, spacing in step:
@@ -209,12 +220,7 @@ class Bullets(widget.WindowWidget):
                 yield line_number, bullet, line, line_spacing
 
 
-    def paint_window_contents(self, window, step=None):
-
-        if step is None:
-            # TODO: Need to clear and repaint up to self._current_step_index.
-            self._log.warning('%r: no step to paint', self)
-            return
+    def _paint_step(self, window, step):
 
         available_width = window.width - self._pad_left - self._pad_right
         available_height = window.height - self._current_y - self._pad_bottom
