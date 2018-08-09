@@ -6,7 +6,7 @@
 # ----------------------------------------------------------------------------
 
 
-import types
+import textwrap
 
 from ppytty.kernel import api
 
@@ -185,12 +185,17 @@ class Bullets(widget.WindowWidget):
             self._log.warning('%r: no step to paint', self)
             return
 
+        available_width = window.width - self._pad_left - self._pad_right
         available_height = window.height - self._pad_top - self._pad_bottom
 
         for bullet, text in step:
-            window.print(bullet + text, x=self._pad_left, y=self._current_y)
-            self._current_y += 1
-            available_height -= 1
+            bullet_length = len(bullet)
+            lines = textwrap.wrap(text, width=available_width-bullet_length)
+            for line_number, line in enumerate(lines):
+                prefix = ' ' * bullet_length if line_number else bullet
+                window.print(prefix + line, x=self._pad_left, y=self._current_y)
+                self._current_y += 1
+                available_height -= 1
 
 
     async def handle_idle_next(self, template_slot_callable=None, render=True,

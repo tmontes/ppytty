@@ -77,9 +77,32 @@ bullet_types = Slide(title='Bullet Types', widgets=[
 
 
 # ------------------------------------------------------------------------------
+# Slide | Properly wrap long item text.
+
+bullet_items = [
+    'Short item text.',
+    'Long item: The quick brown fox jumped over the lazy dog.',
+    'Sub items here:', [
+        'Short sub A',
+        'Short sub B',
+        'Much longer sub C, which needs to wrap too.',
+    ],
+    'Pretty much done!'
+]
+
+bullets_with_long_items = Bullets(items=bullet_items, at_once=True)
+
+bullet_item_wrapping = Slide(title='Bullet Item Text Wrapping', widgets=[
+    bullets_with_long_items,
+])
+
+
+
+# ------------------------------------------------------------------------------
 # The SlideDeck
 
 ppytty_task = SlideDeck([
+    bullet_item_wrapping,
     bullet_types,
     bullet_delivery,
 ])
