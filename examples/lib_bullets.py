@@ -62,11 +62,11 @@ bullet_items = [
 
 default_bullets = Bullets(items=bullet_items, at_once=True)
 custom_bullets = Bullets(items=bullet_items, at_once=True, bullets=('* ', '> '))
-
-arabic_bullets = lambda n: f'{n}. '
-letter_bullets = lambda n: chr(n - 1 + ord('a')) + '. '
-
-callable_bullets = Bullets(items=bullet_items, at_once=True, bullets=(arabic_bullets, letter_bullets))
+callable_bullets = Bullets(items=bullet_items, at_once=True, bullets=(
+                            Bullets.numbers,
+                            Bullets.letters(start='a', prefix='(', suffix=') '),
+                            ),
+                           )
 
 bullet_types = Slide(title='Bullet Types', widgets=[
     default_bullets,

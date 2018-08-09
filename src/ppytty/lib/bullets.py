@@ -14,7 +14,30 @@ from . import widget
 
 
 
+_BULLET_PROVIDER_METHODS = []
+
+def _bullet_provider(method):
+
+    _BULLET_PROVIDER_METHODS.append(method)
+    return method
+
+
+
 class Bullets(widget.WindowWidget):
+
+    @staticmethod
+    @_bullet_provider
+    def numbers(start=1, prefix='', suffix='. '):
+
+        return lambda n: f'{prefix}{n - 1 + start}{suffix}'
+
+
+    @staticmethod
+    @_bullet_provider
+    def letters(start='a', prefix='', suffix='. '):
+
+        return lambda n: prefix + chr(n - 1 + ord(start)) + suffix
+
 
     def __init__(self, items, bullets='- ', space_h=None, space_v=0,
                  at_once=False, id=None, template_slot=None, geometry=None,
@@ -103,6 +126,9 @@ class Bullets(widget.WindowWidget):
 
         def level_bullets():
             level_bullet = self._bullets[level]
+            if level_bullet in _BULLET_PROVIDER_METHODS:
+                # Methods themselves passed as bullets; need to call them.
+                level_bullet = level_bullet()
             bullets = []
             bullets_width = 0
             item_number = 1
