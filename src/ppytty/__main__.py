@@ -17,6 +17,9 @@ from . import default
 
 
 
+log = logging.getLogger(__name__)
+
+
 def setup_logging(log_filename, log_level_specs):
 
     if not log_filename:
@@ -36,12 +39,12 @@ def setup_logging(log_filename, log_level_specs):
         logger_name, level = (left, right) if right else ('', left)
         try:
             level = getattr(logging, level.upper())
-        except AttributeError:
+        except AttributeError as e:
             msg = f'invalid log level {level!r}'
             if logger_name:
                 msg += f' for {logger_name!r}'
             msg += ': use one of [debug|info|warn|error]'
-            raise RuntimeError(msg)
+            raise RuntimeError(msg) from e
         logger = logging.getLogger(logger_name)
         logger.setLevel(level)
 
@@ -74,13 +77,13 @@ def task_from_args(args, task=default.TASK):
     try:
         script_globals = runpy.run_path(args.script)
     except Exception as e:
-        raise RuntimeError(f'failed running {args.script!r}: {e}')
+        raise RuntimeError(f'failed running {args.script!r}: {e}') from e
 
     TASK_NAME_IN_SCRIPT = 'ppytty_task'
     try:
         task = script_globals[TASK_NAME_IN_SCRIPT]
     except KeyError:
-        raise RuntimeError(f'no {TASK_NAME_IN_SCRIPT!r} global in {args.script!r}')
+        raise RuntimeError(f'no {TASK_NAME_IN_SCRIPT!r} global in {args.script!r}') from e
 
     return task
 
@@ -106,6 +109,7 @@ def main():
     try:
         task = task_from_args(args)
     except RuntimeError as e:
+        log.error('%s', e, exc_info=True)
         print(e)
         return -2
 
