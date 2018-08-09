@@ -29,14 +29,14 @@ class Bullets(widget.WindowWidget):
     @_bullet_provider
     def numbers(start=1, prefix='', suffix='. '):
 
-        return lambda n: f'{prefix}{n - 1 + start}{suffix}'
+        return lambda n: f'{prefix}{n + start}{suffix}'
 
 
     @staticmethod
     @_bullet_provider
     def letters(start='a', prefix='', suffix='. '):
 
-        return lambda n: prefix + chr(n - 1 + ord(start)) + suffix
+        return lambda n: prefix + chr(n + ord(start)) + suffix
 
 
     def __init__(self, items, bullets='- ', space_h=None, space_v=0,
@@ -131,7 +131,7 @@ class Bullets(widget.WindowWidget):
                 level_bullet = level_bullet()
             bullets = []
             bullets_width = 0
-            item_number = 1
+            item_number = 0
             for item in items:
                 if isinstance(item, (list, tuple)):
                     continue
