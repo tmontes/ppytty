@@ -6,7 +6,7 @@ Text.padding = Bullets.padding = (1, 2)
 
 SlideTemplate.widgets = [
     Text(text=[
-        'Bullets Widget Tests | {slide_title}',
+        'Bullets Widget Test {slide_number}/{slide_count} | {slide_title}',
     ],
     use_context=True,
     geometry=dict(x=0, y=0, w=1.0, h=3),
@@ -94,7 +94,7 @@ bullets_with_long_items = Bullets(items=bullet_items, at_once=True)
 too_many_bullets = Bullets(items=[f'Item {n}' for n in range(20)], at_once=True)
 too_many_too_long = Bullets(items=bullet_items*3, at_once=True)
 
-bullet_item_wrapping = Slide(title='Bullet Item Text Wrapping', widgets=[[
+bullet_item_wrapping = Slide(title='Item Text Wrapping', widgets=[[
     bullets_with_long_items,
     too_many_bullets,
     too_many_too_long
