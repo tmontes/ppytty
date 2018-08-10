@@ -14,5 +14,6 @@ from . slide_template import SlideTemplate
 from . slide import Slide
 from . text import Text
 from . bullets import Bullets
+from . code import Code
 
 # ----------------------------------------------------------------------------
