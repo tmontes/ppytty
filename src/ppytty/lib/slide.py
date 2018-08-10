@@ -97,6 +97,7 @@ class Slide(widget.WindowWidget):
         self._log.info('%r: launched template widgets', self)
 
         if not self._widget_step_count:
+            await self.render()
             return 'done'
 
         self._template.reset_widget_slots()
