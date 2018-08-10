@@ -20,8 +20,10 @@ from . import geometry as g
 class Slide(widget.WindowWidget):
 
     template = slide_template.SlideTemplate
+    ever_done = True
 
-    def __init__(self, title, template=None, widgets=None, geometry=None):
+    def __init__(self, title, template=None, widgets=None, ever_done=None,
+                 geometry=None):
 
         geometry = geometry or g.full()
         super().__init__(id=title, geometry=geometry)
@@ -33,6 +35,8 @@ class Slide(widget.WindowWidget):
         self._widget_step_count = 0
         self._windowed_widgets = []
         self._init_widget_steps(widgets or ())
+
+        self._ever_done = ever_done if ever_done is not None else self.ever_done
 
         self._current_step_index = None
         self._current_widget_step = None
@@ -74,9 +78,9 @@ class Slide(widget.WindowWidget):
 
 
     @property
-    def at_last_step(self):
+    def slide_done(self):
 
-        return self._current_step_index == self._widget_step_count-1
+        return self._ever_done and self._current_step_index == self._widget_step_count-1
 
 
     @property
@@ -97,7 +101,8 @@ class Slide(widget.WindowWidget):
         self._log.info('%r: launched template widgets', self)
 
         if not self._widget_step_count:
-            return 'done'
+            await self.render()
+            return 'done' if self._ever_done else 'running'
 
         self._template.reset_widget_slots()
 
@@ -105,7 +110,7 @@ class Slide(widget.WindowWidget):
         self._current_widget_step = self._widget_steps[0]
         widget_state = await self.launch_widget(**context)
 
-        return widget_state if self.at_last_step else 'running'
+        return widget_state if self.slide_done else 'running'
 
 
     async def handle_running_next(self, **context):
@@ -119,19 +124,21 @@ class Slide(widget.WindowWidget):
                 self._current_step_index = new_step
                 self._current_widget_step = self._widget_steps[new_step]
                 widget_state = await self.launch_widget(**context)
-                return widget_state if self.at_last_step else 'running'
+                return widget_state if self.slide_done else 'running'
             else:
-                # last widget done, should have returned 'done' before
-                self._log.warning('%s: should not be reached', self)
-                return 'done'
-        else:
+                # last widget done
+                return 'done' if self._ever_done else 'running'
+        elif self._current_widget_step:
             # move on with current widget
             widget_to_forward = self._current_widget_step
             self._log.info('%r: forwarding %r', self, widget_to_forward)
             widget_state = await widget_to_forward.forward(**context)
             self.update_navigation_from_response(widget_state)
             self._log.info('%r: forwarded %r done=%r', self, widget_to_forward, self._widget_step_done)
-            return widget_state if self.at_last_step else 'running'
+            return widget_state if self.slide_done else 'running'
+        else:
+            # no widgets
+            return 'done' if self._ever_done else 'running'
 
 
     async def launch_widget(self, widget=None, **context):
