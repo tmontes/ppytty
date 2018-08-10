@@ -267,10 +267,4 @@ class Bullets(widget.WindowWidget):
             return 'done'
 
 
-    async def handle_cleanup(self, **window_destroy_args):
-
-        self._log.info('%s: nothing to cleanup, I guess', self)
-        return await super().handle_cleanup(**window_destroy_args)
-
-
 # ----------------------------------------------------------------------------
