@@ -43,16 +43,19 @@ code_basic = Slide(title='Code from str/file', widgets=[[
 # Slide | Pygments styles builtin and custom
 
 
-from pygments import style, token
+try:
+    from pygments import style, token
 
-class CustomStyle(style.Style):
-    styles = {
-        token.Comment: '#208080',
-        token.Literal.String: '#40a040',
-        token.Keyword: '#0080f0',
-        token.Operator: '#f000f0',
-        token.Name.Function: '#f0a000',
-    }
+    class CustomStyle(style.Style):
+        styles = {
+            token.Comment: '#208080',
+            token.Literal.String: '#40a040',
+            token.Keyword: '#0080f0',
+            token.Operator: '#f000f0',
+            token.Name.Function: '#f0a000',
+        }
+except ImportError:
+    CustomStyle = object
 
 code_non_default_style = Code(code='# bw style\n'+code, pygm_style_name='bw')
 code_custom_style = Code(code='# custom style\n'+code, pygm_style=CustomStyle)
