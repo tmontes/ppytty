@@ -68,9 +68,32 @@ code_styles = Slide(title='Selected builtin / custom styles', widgets=[[
 
 
 # ------------------------------------------------------------------------------
+# Slide | Long-line handling
+
+code = r'''
+# This is a single-line, very long comment, that does not to fit in a single output line.
+def incredible_function(operation, *arguments, **options):
+    """
+    Returns a plus b.
+    """
+    return a + b
+'''
+
+code_long_lines_wrap = Code(code=code, wrap=True)
+code_long_lines_trunc = Code(code=code, wrap=False)
+
+code_long_lines = Slide(title='Long line wrapping/truncating', widgets=[[
+    code_long_lines_wrap,
+    code_long_lines_trunc,
+]])
+
+
+
+# ------------------------------------------------------------------------------
 # The SlideDeck
 
 ppytty_task = SlideDeck([
+    code_long_lines,
     code_styles,
     code_basic,
 ])
