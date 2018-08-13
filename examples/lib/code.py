@@ -129,9 +129,44 @@ code_long = Slide(title='Long code truncation', widgets=[[
 
 
 # ------------------------------------------------------------------------------
+# Slide | Line numbers and long-line handling
+
+code = r'''
+# This is a single-line, very long comment, that does not to fit in a single output line.
+def incredible_function(operation, *arguments, **options):
+    """
+    Returns a plus b.
+    """
+    return a + b
+
+
+def another_function():
+    """
+    Answer to the Ultimate Question of Life, the Universe, and Everything.
+    """
+    return 42
+
+'''
+
+code_long_lines_wrap_numbered = Code(code=code, wrap=True, padding=(1, 2, 1, 1),
+                                     line_numbers=True,
+                                     line_number_suffix=' \N{BOX DRAWINGS LIGHT VERTICAL} ')
+code_long_lines_trunc_numbered = Code(code=code, wrap=False, padding=(1, 2, 1, 1),
+                                      line_numbers=True, line_number_fmt='02x',
+                                      line_number_fg=248, line_number_bg=242)
+
+code_long_lines_numbered = Slide(title='Line numbers and long line wrap/truncate', widgets=[[
+    code_long_lines_wrap_numbered,
+    code_long_lines_trunc_numbered,
+]])
+
+
+
+# ------------------------------------------------------------------------------
 # The SlideDeck
 
 ppytty_task = SlideDeck([
+    code_long_lines_numbered,
     code_long,
     code_long_lines,
     code_styles,
