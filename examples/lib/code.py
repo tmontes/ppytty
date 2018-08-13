@@ -43,16 +43,19 @@ code_basic = Slide(title='Code from str/file', widgets=[[
 # Slide | Pygments styles builtin and custom
 
 
-from pygments import style, token
+try:
+    from pygments import style, token
 
-class CustomStyle(style.Style):
-    styles = {
-        token.Comment: '#208080',
-        token.Literal.String: '#40a040',
-        token.Keyword: '#0080f0',
-        token.Operator: '#f000f0',
-        token.Name.Function: '#f0a000',
-    }
+    class CustomStyle(style.Style):
+        styles = {
+            token.Comment: '#208080',
+            token.Literal.String: '#40a040',
+            token.Keyword: '#0080f0',
+            token.Operator: '#f000f0',
+            token.Name.Function: '#f0a000',
+        }
+except ImportError:
+    CustomStyle = object
 
 code_non_default_style = Code(code='# bw style\n'+code, pygm_style_name='bw')
 code_custom_style = Code(code='# custom style\n'+code, pygm_style=CustomStyle)
@@ -65,9 +68,32 @@ code_styles = Slide(title='Selected builtin / custom styles', widgets=[[
 
 
 # ------------------------------------------------------------------------------
+# Slide | Long-line handling
+
+code = r'''
+# This is a single-line, very long comment, that does not to fit in a single output line.
+def incredible_function(operation, *arguments, **options):
+    """
+    Returns a plus b.
+    """
+    return a + b
+'''
+
+code_long_lines_wrap = Code(code=code, wrap=True)
+code_long_lines_trunc = Code(code=code, wrap=False)
+
+code_long_lines = Slide(title='Long line wrapping/truncating', widgets=[[
+    code_long_lines_wrap,
+    code_long_lines_trunc,
+]])
+
+
+
+# ------------------------------------------------------------------------------
 # The SlideDeck
 
 ppytty_task = SlideDeck([
+    code_long_lines,
     code_styles,
     code_basic,
 ])

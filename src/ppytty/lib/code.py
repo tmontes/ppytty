@@ -12,13 +12,13 @@ try:
     from pygments import highlight as pygm_highlight
     from pygments.lexers import get_lexer_by_name as pygm_get_lexer_by_name
     from pygments.styles import get_style_by_name as pygm_get_style_by_name
-    from pygments.formatters import Terminal256Formatter as pygm_formatter
+    from pygments.formatters import Terminal256Formatter as pygm_Formatter
     from pygments.util import ClassNotFound as pygm_ClassNotFound
 except ImportError:
-    pygm_highlight = lambda code, lexer, formatter, outfile=None: code
+    pygm_highlight = lambda code, lexer, formatter, outfile=None: code.strip()
     pygm_get_lexer_by_name = lambda _alias, **options: None
     pygm_get_style_by_name = lambda _name: None
-    pygm_formatter = lambda **options: None
+    pygm_Formatter = lambda **options: None
     pygm_ClassNotFound = ValueError
     pygments_imported = False
 else:
@@ -31,6 +31,7 @@ from . import widget
 class Code(widget.WindowWidget):
 
     def __init__(self, code=None, file_name=None, file_encoding='utf-8',
+                 wrap=True, truncate_line_with='\N{HORIZONTAL ELLIPSIS}',
                  pygm_lexer_name='python3', pygm_style_name='paraiso-dark',
                  pygm_style=None, id=None, template_slot=None, geometry=None,
                  color=None, padding=None):
@@ -53,6 +54,10 @@ class Code(widget.WindowWidget):
         if not isinstance(self._code, str):
             raise ValueError(f'{self}: Code must be a string.')
 
+        self._wrap = wrap
+        self._truncate_line_with = truncate_line_with
+        self._truncate_line_len = len(truncate_line_with)
+
         if not pygments_imported:
             self._log.warning('%r: Install pygments for syntax highlighting.', self)
 
@@ -69,7 +74,7 @@ class Code(widget.WindowWidget):
                 msg = f'No pygments style named {pygm_style_name!r}'
                 raise ValueError(msg) from e
 
-        self._pygm_formatter = pygm_formatter(style=pygm_style)
+        self._pygm_formatter = pygm_Formatter(style=pygm_style)
 
         self._painted = False
 
@@ -80,12 +85,45 @@ class Code(widget.WindowWidget):
             window.clear()
 
         y = self._pad_top
-        available_width = window.width - self._pad_left - self._pad_right
-        available_height = window.height - self._pad_top - self._pad_bottom
 
-        highlighted_code = pygm_highlight(self._code, self._pygm_lexer, self._pygm_formatter)
-        for highlighted_line in highlighted_code.splitlines():
-            window.print(highlighted_line, x=self._pad_left, y=y)
+        pad_left = self._pad_left
+        pad_right = self._pad_right
+
+        available_height = window.height - y - self._pad_bottom
+        available_width = window.width - pad_left - pad_right
+
+        # Speed up repeated attribute access
+        max_x = window.width - pad_right
+        window_cursor = window.cursor
+        window_print = window.print
+        self_wrap = self._wrap
+        if not self_wrap:
+            truncate_line_with =  self._truncate_line_with
+            truncate_x = max_x - self._truncate_line_len
+
+        # Output strategy:
+        # - Split highlighted string into lines (the ANSI codes don't change that).
+        # - Divide each line into fits_for_sure + remaining, at available_width.
+        #   - Most probably even though fits_for_sure has up to available_width
+        #     characters, it will not fill the available horizontal space due to
+        #     the fact that it includes ANSI escape sequences.
+        #   - From there, we output one character at a time from remaining,
+        #     wrapping into a new line or truncating once the window cursor
+        #     reaches the maximum x defined by window geometry and padding.
+
+        hl_code = pygm_highlight(self._code, self._pygm_lexer, self._pygm_formatter)
+        for hl_line in hl_code.splitlines():
+            fits_for_sure, remaining = hl_line[:available_width], hl_line[available_width:]
+            window_print(fits_for_sure, x=pad_left, y=y)
+            for each in remaining:
+                if window_cursor.x < max_x:
+                    window_print(each)
+                elif self_wrap:
+                    y += 1
+                    available_height -= 1
+                    window_print(each, x=pad_left, y=y)
+                else:
+                    window_print(truncate_line_with, x=truncate_x, y=y)
             y += 1
             available_height -= 1
 
