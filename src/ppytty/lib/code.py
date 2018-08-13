@@ -15,7 +15,7 @@ try:
     from pygments.formatters import Terminal256Formatter as pygm_formatter
     from pygments.util import ClassNotFound as pygm_ClassNotFound
 except ImportError:
-    pygm_highlight = lambda code, lexer, formatter, outfile=None: code
+    pygm_highlight = lambda code, lexer, formatter, outfile=None: code.strip()
     pygm_get_lexer_by_name = lambda _alias, **options: None
     pygm_get_style_by_name = lambda _name: None
     pygm_formatter = lambda **options: None
