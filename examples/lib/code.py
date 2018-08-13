@@ -2,7 +2,7 @@
 from ppytty import SlideDeck, Slide, SlideTemplate, Text, Code
 
 
-Text.padding = (1, 2)
+Text.padding = Code.padding = (1, 2)
 
 SlideTemplate.widgets = [
     Text(
