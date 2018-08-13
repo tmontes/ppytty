@@ -12,13 +12,13 @@ try:
     from pygments import highlight as pygm_highlight
     from pygments.lexers import get_lexer_by_name as pygm_get_lexer_by_name
     from pygments.styles import get_style_by_name as pygm_get_style_by_name
-    from pygments.formatters import Terminal256Formatter as pygm_formatter
+    from pygments.formatters import Terminal256Formatter as pygm_Formatter
     from pygments.util import ClassNotFound as pygm_ClassNotFound
 except ImportError:
     pygm_highlight = lambda code, lexer, formatter, outfile=None: code.strip()
     pygm_get_lexer_by_name = lambda _alias, **options: None
     pygm_get_style_by_name = lambda _name: None
-    pygm_formatter = lambda **options: None
+    pygm_Formatter = lambda **options: None
     pygm_ClassNotFound = ValueError
     pygments_imported = False
 else:
@@ -69,7 +69,7 @@ class Code(widget.WindowWidget):
                 msg = f'No pygments style named {pygm_style_name!r}'
                 raise ValueError(msg) from e
 
-        self._pygm_formatter = pygm_formatter(style=pygm_style)
+        self._pygm_formatter = pygm_Formatter(style=pygm_style)
 
         self._painted = False
 
