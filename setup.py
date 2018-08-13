@@ -37,8 +37,15 @@ EXTRAS_REQUIRE = {
         "pylint",
         "coverage",
     ],
+    "full": [
+        "pygments",
+    ],
 }
-EXTRAS_REQUIRE["dev"] = EXTRAS_REQUIRE["tests"] + EXTRAS_REQUIRE["docs"]
+EXTRAS_REQUIRE["dev"] = [
+    dist
+    for dists in EXTRAS_REQUIRE.values()
+    for dist in dists
+]
 
 ###############################################################################
 
