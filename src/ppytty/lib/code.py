@@ -20,7 +20,7 @@ except ImportError:
     pygm_get_style_by_name = lambda _name: None
     pygm_formatter = lambda **options: None
     pygm_ClassNotFound = ValueError
-    pygm_imported = False
+    pygments_imported = False
 else:
     pygments_imported = True
 
