@@ -178,10 +178,14 @@ class Code(widget.WindowWidget):
             line_number += 1
 
         if not fit_available_height:
-            if self._truncate_code_len > available_width:
-                line = self._truncate_code_with[:available_width]
-            else:
-                line = self._truncate_code_with * (available_width // self._truncate_code_len)
+            truncate_code_with = self._truncate_code_with
+            truncate_code_len = self._truncate_code_len
+            line = truncate_code_with * (available_width // truncate_code_len + 1)
+            # If the output is truncated not only will we display the
+            # truncate_code_with string, but also -- importantly -- we reset
+            # the output formatting first; otherwise, any pending colorization
+            # might be extended to the truncation string and subsequent output
+            line = window.bt.normal + line[:available_width]
             window_print(line, x=pad_left, y=window.height-pad_bottom-1)
 
         if self._line_numbers:
