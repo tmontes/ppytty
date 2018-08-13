@@ -32,8 +32,8 @@ class Code(widget.WindowWidget):
 
     def __init__(self, code=None, file_name=None, file_encoding='utf-8',
                  pygm_lexer_name='python3', pygm_style_name='paraiso-dark',
-                 id=None, template_slot=None, geometry=None, color=None,
-                 padding=None):
+                 pygm_style=None, id=None, template_slot=None, geometry=None,
+                 color=None, padding=None):
 
         super().__init__(id=id, template_slot=template_slot, geometry=geometry,
                          color=color, padding=padding)
@@ -62,11 +62,12 @@ class Code(widget.WindowWidget):
             msg = f'No pygments lexer named {pygm_lexer_name!r}'
             raise ValueError(msg) from e
 
-        try:
-            pygm_style = pygm_get_style_by_name(pygm_style_name)
-        except pygm_ClassNotFound as e:
-            msg = f'No pygments style named {pygm_style_name!r}'
-            raise ValueError(msg) from e
+        if pygm_style is None:
+            try:
+                pygm_style = pygm_get_style_by_name(pygm_style_name)
+            except pygm_ClassNotFound as e:
+                msg = f'No pygments style named {pygm_style_name!r}'
+                raise ValueError(msg) from e
 
         self._pygm_formatter = pygm_formatter(style=pygm_style)
 
