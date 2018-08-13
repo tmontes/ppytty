@@ -5,6 +5,7 @@
 # See LICENSE for details.
 # ----------------------------------------------------------------------------
 
+import functools
 import os
 import sys
 
@@ -32,7 +33,9 @@ class Code(widget.WindowWidget):
 
     def __init__(self, code=None, file_name=None, file_encoding='utf-8',
                  wrap=True, truncate_line_with='\N{HORIZONTAL ELLIPSIS}',
-                 truncate_code_with='... ',
+                 truncate_code_with='... ', line_numbers=False, line_number_fmt='2d',
+                 line_number_prefix=' ', line_number_suffix=' ', line_number_fg=None,
+                 line_number_bg=None,
                  pygm_lexer_name='python3', pygm_style_name='paraiso-dark',
                  pygm_style=None, id=None, template_slot=None, geometry=None,
                  color=None, padding=None):
@@ -61,6 +64,13 @@ class Code(widget.WindowWidget):
         self._truncate_code_with = truncate_code_with
         self._truncate_code_len = len(truncate_code_with)
 
+        self._line_numbers = line_numbers
+        self._line_number_fmt = line_number_fmt
+        self._line_number_prefix = line_number_prefix
+        self._line_number_suffix = line_number_suffix
+        self._line_number_fg = line_number_fg
+        self._line_number_bg = line_number_bg
+
         if not pygments_imported:
             self._log.warning('%r: Install pygments for syntax highlighting.', self)
 
@@ -80,6 +90,12 @@ class Code(widget.WindowWidget):
         self._pygm_formatter = pygm_Formatter(style=pygm_style)
 
         self._painted = False
+
+
+    @functools.lru_cache(maxsize=None)
+    def _line_number_str(self, n):
+
+        return f'{self._line_number_prefix}{n:{self._line_number_fmt}}{self._line_number_suffix}'
 
 
     def paint_window_contents(self, window):
@@ -106,7 +122,7 @@ class Code(widget.WindowWidget):
             truncate_x = max_x - self._truncate_line_len
 
         # Output strategy:
-        # - Split highlighted string into lines (the ANSI codes don't change that).
+        # - Split highlighted code into lines (ANSI escapes don't change that).
         # - Divide each line into fits_for_sure + remaining, at available_width.
         #   - Most probably even though fits_for_sure has up to available_width
         #     characters, it will not fill the available horizontal space due to
@@ -114,15 +130,33 @@ class Code(widget.WindowWidget):
         #   - From there, we output one character at a time from remaining,
         #     wrapping into a new line or truncating once the window cursor
         #     reaches the maximum x defined by window geometry and padding.
+        # - Along the way, track in which window line each line_number is
+        #   displayed in the y_and_line_numbers list, to do a final pass in
+        #   printing the line numbers, if activated (important: line numbers
+        #   can only be printed last, otherwise they would either affect or be
+        #   affected by the code color formatting).
 
         fit_available_height = True
 
         hl_code = pygm_highlight(self._code, self._pygm_lexer, self._pygm_formatter)
-        for hl_line in hl_code.splitlines():
+        hl_lines = hl_code.splitlines()
+
+        line_number = 1
+        y_and_line_numbers = []
+
+        if self._line_numbers:
+            # Determine how much width displaying line numbers will consume.
+            max_line_number = line_number + len(hl_lines) - 1
+            line_number_width = len(self._line_number_str(max_line_number))
+            available_width -= line_number_width
+            pad_left += line_number_width
+
+        for hl_line in hl_lines:
             if not available_height:
                 fit_available_height = False
                 break
             fits_for_sure, remaining = hl_line[:available_width], hl_line[available_width:]
+            y_and_line_numbers.append((y, line_number))
             window_print(fits_for_sure, x=pad_left, y=y)
             for each in remaining:
                 if window_cursor.x < max_x:
@@ -133,6 +167,7 @@ class Code(widget.WindowWidget):
                     if not available_height:
                         fit_available_height = False
                         break
+                    y_and_line_numbers.append((y, None))
                     window_print(each, x=pad_left, y=y)
                 else:
                     window_print(truncate_line_with, x=truncate_x, y=y)
@@ -140,6 +175,7 @@ class Code(widget.WindowWidget):
                 break
             y += 1
             available_height -= 1
+            line_number += 1
 
         if not fit_available_height:
             if self._truncate_code_len > available_width:
@@ -147,6 +183,17 @@ class Code(widget.WindowWidget):
             else:
                 line = self._truncate_code_with * (available_width // self._truncate_code_len)
             window_print(line, x=pad_left, y=window.height-pad_bottom-1)
+
+        if self._line_numbers:
+            # Let's print the line numbers now.
+            fg = self._line_number_fg
+            bg = self._line_number_bg
+            blank_count = line_number_width - len(self._line_number_suffix)
+            wrap_str = ' ' * blank_count + self._line_number_suffix
+            pad_left -= line_number_width
+            for y, line_number in y_and_line_numbers:
+                line = self._line_number_str(line_number) if line_number else wrap_str
+                window_print(line, x=pad_left, y=y, fg=fg, bg=bg)
 
         self._painted = True
 
