@@ -90,9 +90,49 @@ code_long_lines = Slide(title='Long line wrapping/truncating', widgets=[[
 
 
 # ------------------------------------------------------------------------------
+# Slide | Long code truncation
+
+code = r'''
+my_long_dict = {
+    1: 1,
+    2: 1,
+    3: 1,
+    4: 1,
+    5: 1,
+    6: 1,
+    7: 1,
+    8: 1,
+    9: 1,
+    10: 1,
+    11: 1,
+    12: 1,
+    13: 1,
+    13: 1,
+    14: 1,
+    15: 'This is a very long string forcing the output window to do wrapping.',
+    16: 1,
+    17: 1,
+    18: 1,
+    19: 1,
+    20: 1,
+}
+'''
+
+code_long_truncate = Code(code=code, wrap=True)
+code_long_offset = Code(code=code, wrap=False)
+
+code_long = Slide(title='Long code truncation', widgets=[[
+    code_long_truncate,
+    code_long_offset,
+]])
+
+
+
+# ------------------------------------------------------------------------------
 # The SlideDeck
 
 ppytty_task = SlideDeck([
+    code_long,
     code_long_lines,
     code_styles,
     code_basic,

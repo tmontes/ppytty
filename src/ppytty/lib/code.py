@@ -32,6 +32,7 @@ class Code(widget.WindowWidget):
 
     def __init__(self, code=None, file_name=None, file_encoding='utf-8',
                  wrap=True, truncate_line_with='\N{HORIZONTAL ELLIPSIS}',
+                 truncate_code_with='... ',
                  pygm_lexer_name='python3', pygm_style_name='paraiso-dark',
                  pygm_style=None, id=None, template_slot=None, geometry=None,
                  color=None, padding=None):
@@ -57,6 +58,8 @@ class Code(widget.WindowWidget):
         self._wrap = wrap
         self._truncate_line_with = truncate_line_with
         self._truncate_line_len = len(truncate_line_with)
+        self._truncate_code_with = truncate_code_with
+        self._truncate_code_len = len(truncate_code_with)
 
         if not pygments_imported:
             self._log.warning('%r: Install pygments for syntax highlighting.', self)
@@ -88,8 +91,9 @@ class Code(widget.WindowWidget):
 
         pad_left = self._pad_left
         pad_right = self._pad_right
+        pad_bottom = self._pad_bottom
 
-        available_height = window.height - y - self._pad_bottom
+        available_height = window.height - y - pad_bottom
         available_width = window.width - pad_left - pad_right
 
         # Speed up repeated attribute access
@@ -111,8 +115,13 @@ class Code(widget.WindowWidget):
         #     wrapping into a new line or truncating once the window cursor
         #     reaches the maximum x defined by window geometry and padding.
 
+        fit_available_height = True
+
         hl_code = pygm_highlight(self._code, self._pygm_lexer, self._pygm_formatter)
         for hl_line in hl_code.splitlines():
+            if not available_height:
+                fit_available_height = False
+                break
             fits_for_sure, remaining = hl_line[:available_width], hl_line[available_width:]
             window_print(fits_for_sure, x=pad_left, y=y)
             for each in remaining:
@@ -121,11 +130,23 @@ class Code(widget.WindowWidget):
                 elif self_wrap:
                     y += 1
                     available_height -= 1
+                    if not available_height:
+                        fit_available_height = False
+                        break
                     window_print(each, x=pad_left, y=y)
                 else:
                     window_print(truncate_line_with, x=truncate_x, y=y)
+            if not fit_available_height:
+                break
             y += 1
             available_height -= 1
+
+        if not fit_available_height:
+            if self._truncate_code_len > available_width:
+                line = self._truncate_code_with[:available_width]
+            else:
+                line = self._truncate_code_with * (available_width // self._truncate_code_len)
+            window_print(line, x=pad_left, y=window.height-pad_bottom-1)
 
         self._painted = True
 
