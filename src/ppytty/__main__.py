@@ -82,7 +82,7 @@ def task_from_args(args, task=default.TASK):
     TASK_NAME_IN_SCRIPT = 'ppytty_task'
     try:
         task = script_globals[TASK_NAME_IN_SCRIPT]
-    except KeyError:
+    except KeyError as e:
         raise RuntimeError(f'no {TASK_NAME_IN_SCRIPT!r} global in {args.script!r}') from e
 
     return task
