@@ -35,7 +35,7 @@ class Code(widget.WindowWidget):
                  wrap=True, truncate_line_with='\N{HORIZONTAL ELLIPSIS}',
                  truncate_code_with='... ', line_numbers=False, line_number_fmt='2d',
                  line_number_prefix=' ', line_number_suffix=' ', line_number_fg=None,
-                 line_number_bg=None,
+                 line_number_bg=None, first_line=1,
                  pygm_lexer_name='python3', pygm_style_name='paraiso-dark',
                  pygm_style=None, id=None, template_slot=None, geometry=None,
                  color=None, padding=None):
@@ -62,7 +62,6 @@ class Code(widget.WindowWidget):
         self._truncate_line_with = truncate_line_with
         self._truncate_line_len = len(truncate_line_with)
         self._truncate_code_with = truncate_code_with
-        self._truncate_code_len = len(truncate_code_with)
 
         self._line_numbers = line_numbers
         self._line_number_fmt = line_number_fmt
@@ -70,6 +69,8 @@ class Code(widget.WindowWidget):
         self._line_number_suffix = line_number_suffix
         self._line_number_fg = line_number_fg
         self._line_number_bg = line_number_bg
+
+        self._first_line = first_line
 
         if not pygments_imported:
             self._log.warning('%r: Install pygments for syntax highlighting.', self)
@@ -96,6 +97,15 @@ class Code(widget.WindowWidget):
     def _line_number_str(self, n):
 
         return f'{self._line_number_prefix}{n:{self._line_number_fmt}}{self._line_number_suffix}'
+
+
+    @functools.lru_cache(maxsize=None)
+    def _truncate_code_str(self, available_width):
+
+        truncate_code_with = self._truncate_code_with
+        truncate_code_len = len(truncate_code_with)
+        line = truncate_code_with * (available_width // truncate_code_len + 1)
+        return line[:available_width]
 
 
     def paint_window_contents(self, window):
@@ -141,8 +151,7 @@ class Code(widget.WindowWidget):
         hl_code = pygm_highlight(self._code, self._pygm_lexer, self._pygm_formatter)
         hl_lines = hl_code.splitlines()
 
-        line_number = 1
-        y_and_line_numbers = []
+        line_number = self._first_line
 
         if self._line_numbers:
             # Determine how much width displaying line numbers will consume.
@@ -150,6 +159,13 @@ class Code(widget.WindowWidget):
             line_number_width = len(self._line_number_str(max_line_number))
             available_width -= line_number_width
             pad_left += line_number_width
+
+        if line_number > 1:
+            hl_lines = hl_lines[line_number-2:]
+            if self._truncate_code_with:
+                hl_lines.insert(0, self._truncate_code_str(available_width))
+                line_number -= 1
+        y_and_line_numbers = []
 
         for hl_line in hl_lines:
             if not available_height:
@@ -177,15 +193,12 @@ class Code(widget.WindowWidget):
             available_height -= 1
             line_number += 1
 
-        if not fit_available_height:
-            truncate_code_with = self._truncate_code_with
-            truncate_code_len = self._truncate_code_len
-            line = truncate_code_with * (available_width // truncate_code_len + 1)
+        if not fit_available_height and self._truncate_code_with:
             # If the output is truncated not only will we display the
-            # truncate_code_with string, but also -- importantly -- we reset
+            # truncate code string, but also -- importantly -- we reset
             # the output formatting first; otherwise, any pending colorization
             # might be extended to the truncation string and subsequent output
-            line = window.bt.normal + line[:available_width]
+            line = window.bt.normal + self._truncate_code_str(available_width)
             window_print(line, x=pad_left, y=window.height-pad_bottom-1)
 
         if self._line_numbers:
