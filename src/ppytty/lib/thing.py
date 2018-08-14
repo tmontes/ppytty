@@ -54,11 +54,11 @@ class Thing(task.Task):
 
     async def run(self):
 
-        self._log.info('%r: started', self)
+        self._log.info('started')
 
         while not self._done:
             self._last_sender, message = await api.message_wait()
-            self._log.debug('%s: got message: %r', self, message)
+            self._log.debug('got message: %r', message)
             request, request_args = message
             handler = self.get_handler(request)
             try:
@@ -72,9 +72,9 @@ class Thing(task.Task):
         # Synchronize Task termination: wait for a message that should be `None`.
         _, message = await api.message_wait()
         if message is not None:
-            self._log.warning('%r: unexpected exit confirmation: %r', self, message)
+            self._log.warning('unexpected exit confirmation: %r', message)
 
-        self._log.info('%r: done', self)
+        self._log.info('done')
 
 
     def get_handler(self, request):

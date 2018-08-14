@@ -95,10 +95,10 @@ class Slide(widget.WindowWidget):
 
         context['slide_title'] = self._title
 
-        self._log.info('%r: launching template widgets', self)
+        self._log.info('launching template widgets')
         for widget in self._template.widgets:
             await widget.launch(till_done=True, terminal_render=False, **context)
-        self._log.info('%r: launched template widgets', self)
+        self._log.info('launched template widgets')
 
         if not self._widget_step_count:
             await self.render()
@@ -131,10 +131,10 @@ class Slide(widget.WindowWidget):
         elif self._current_widget_step:
             # move on with current widget
             widget_to_forward = self._current_widget_step
-            self._log.info('%r: forwarding %r', self, widget_to_forward)
+            self._log.info('forwarding %r', widget_to_forward)
             widget_state = await widget_to_forward.forward(**context)
             self.update_navigation_from_response(widget_state)
-            self._log.info('%r: forwarded %r done=%r', self, widget_to_forward, self._widget_step_done)
+            self._log.info('forwarded %r done=%r', widget_to_forward, self._widget_step_done)
             return widget_state if self.slide_done else 'running'
         else:
             # no widgets
@@ -145,7 +145,7 @@ class Slide(widget.WindowWidget):
 
         widget_to_launch = widget or self._current_widget_step
 
-        self._log.info('%r: launching %r', self, widget_to_launch)
+        self._log.info('launching %r', widget_to_launch)
         widget_state = await widget_to_launch.launch(
             request_handler=functools.partial(self.launch_request_handler, widget_to_launch),
             template_slot_callable=self._template.next_widget_slot,
@@ -153,7 +153,7 @@ class Slide(widget.WindowWidget):
         )
         self._launched_widgets.append(widget_to_launch)
         self.update_navigation_from_response(widget_state)
-        self._log.info('%r: launched %r done=%r', self, widget_to_launch, self._widget_step_done)
+        self._log.info('launched %r done=%r', widget_to_launch, self._widget_step_done)
         await self.complete_launchtime_requests(widget_to_launch, **context)
         return widget_state
 
@@ -162,7 +162,7 @@ class Slide(widget.WindowWidget):
 
         self._widget_step_done = (response == 'done')
         if response not in ('running', 'done'):
-            self._log.warning('%s: unexpected navigation response: %r', self, response)
+            self._log.warning('unexpected navigation response: %r', response)
 
 
     async def launch_request_handler(self, widget, request):
@@ -179,13 +179,13 @@ class Slide(widget.WindowWidget):
             try:
                 action, action_args = request
             except ValueError:
-                self._log.warning('%r: invalid %r launch time request: %r', self, requester_widget, request)
+                self._log.warning('invalid %r launch time request: %r', requester_widget, request)
                 continue
             launchtime_handler_name = f'handle_launchtime_{action}'
             try:
                 launchtime_handler = getattr(self, launchtime_handler_name)
             except AttributeError:
-                self._log.warning('%r: unhandled %r launch time action: %r', self, requester_widget, action)
+                self._log.warning('unhandled %r launch time action: %r', requester_widget, action)
             else:
                 await launchtime_handler(*action_args, **context)
 
@@ -205,7 +205,7 @@ class Slide(widget.WindowWidget):
 
         for widget_to_cleanup in widgets_to_cleanup:
             if widget_to_cleanup not in self._launched_widgets:
-                self._log.warning('%r: cannot cleanup unlaunched widget %r', self, widget_to_cleanup)
+                self._log.warning('cannot cleanup unlaunched widget %r', widget_to_cleanup)
                 continue
             self._launched_widgets.remove(widget_to_cleanup)
             await widget_to_cleanup.cleanup(**window_destroy_args)
@@ -217,8 +217,8 @@ class Slide(widget.WindowWidget):
             await api.message_send(destination, message)
             responder, response = await api.message_wait()
             if responder is not destination:
-                self._log.warning('%r: unexpected messenger_task responder=%r,'
-                                  ' response=%r', self, responder, response)
+                self._log.warning('unexpected messenger_task responder=%r,'
+                                  ' response=%r', responder, response)
 
         # Send/wait message on a child task to avoid conflicts with the Slide's
         # own message sending/waiting (recall: Slide is a Widget, which is a
@@ -228,8 +228,8 @@ class Slide(widget.WindowWidget):
         completed, success, result = await api.task_wait()
 
         if completed is not messenger_task or not success or result:
-            self._log.warning('%r: unexpected messenger_task completion: '
-                              'completed=%r success=%r result=%r', self,
+            self._log.warning('unexpected messenger_task completion: '
+                              'completed=%r success=%r result=%r',
                               completed, success, result)
 
 
@@ -245,16 +245,16 @@ class Slide(widget.WindowWidget):
 
         window_destroy_args = dict(terminal_render=False)
 
-        self._log.info('%s: cleaning up widgets', self)
+        self._log.info('cleaning up widgets')
         while self._launched_widgets:
             widget = self._launched_widgets.pop()
             await widget.cleanup(**window_destroy_args)
-        self._log.info('%s: cleaned up widgets', self)
+        self._log.info('cleaned up widgets')
 
-        self._log.info('%r: cleaning up template widgets', self)
+        self._log.info('cleaning up template widgets')
         for widget in self._template.widgets:
             await widget.cleanup(**window_destroy_args)
-        self._log.info('%r: cleaned up template widgets', self)
+        self._log.info('cleaned up template widgets')
 
         window_destroy_args['clear_buffer'] = True
         return await super().handle_cleanup(**window_destroy_args)

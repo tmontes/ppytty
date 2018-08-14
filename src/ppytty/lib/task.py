@@ -16,10 +16,8 @@ class Task(object):
         self._id = id
         self._running = None
 
-        logger_name_parts = __name__.split('.')[:-1]
-        logger_name_parts.append(type(self).__qualname__)
-        self._log = logging.getLogger('.'.join(logger_name_parts))
-
+        logger_name = f'{type(self).__module__}.{self!r}'
+        self._log = logging.getLogger(logger_name)
 
     def __repr__(self):
 
