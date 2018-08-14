@@ -1,4 +1,6 @@
 
+import os
+
 from ppytty import SlideDeck, Slide, SlideTemplate, Text, Code
 
 
@@ -163,9 +165,27 @@ code_long_lines_numbered = Slide(title='Line numbers and long line wrap/truncate
 
 
 # ------------------------------------------------------------------------------
+# Slide | First line offset
+
+this_file = os.path.basename(__file__)
+
+code_first_line_offset_plain = Code(file_name=this_file, first_line=167)
+code_first_line_offset_numbered = Code(file_name=this_file,  first_line=167,
+                                       line_numbers=True, line_number_fmt='3d',
+                                       line_number_fg=248, line_number_bg=242)
+
+code_first_line_offset = Slide(title='First line offset', widgets=[[
+    code_first_line_offset_plain,
+    code_first_line_offset_numbered,
+]])
+
+
+
+# ------------------------------------------------------------------------------
 # The SlideDeck
 
 ppytty_task = SlideDeck([
+    code_first_line_offset,
     code_long_lines_numbered,
     code_long,
     code_long_lines,
