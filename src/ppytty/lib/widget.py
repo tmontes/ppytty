@@ -79,8 +79,8 @@ class Widget(thing.Thing):
         completed, success, result = await api.task_wait()
 
         if completed is not send_wait_task or not success:
-            self._log.warning('%r: unexpected send_wait_task completion: '
-                              'completed=%r success=%r result=%r', self,
+            self._log.warning('unexpected send_wait_task completion: '
+                              'completed=%r success=%r result=%r',
                               completed, success, result)
 
         return result
@@ -109,12 +109,12 @@ class Widget(thing.Thing):
         message = ('cleanup', kw)
         cleanup_response = await self.message_send_wait(message, until=(None,))
         if cleanup_response is not None:
-            self._log.warning('%r: unexpected cleanup response: %r', self, cleanup_response)
+            self._log.warning('unexpected cleanup response: %r', cleanup_response)
         # Synchronize Task termination: send it the message it's waiting for.
         await api.message_send(self, None)
         completed, _, _ = await api.task_wait()
         if completed is not self:
-            self._log.warning('%r: unexpected child terminated: %r', self, completed)
+            self._log.warning('unexpected child terminated: %r', completed)
         self.reset()
 
 
@@ -211,7 +211,7 @@ class WindowWidget(Widget):
     async def handle_cleanup(self, **window_destroy_args):
 
         await api.window_destroy(self._window, **window_destroy_args)
-        self._log.debug('%s: destroyed window %r', self, window_destroy_args)
+        self._log.debug('destroyed window %r', window_destroy_args)
 
         await super().handle_cleanup()
 
@@ -259,7 +259,7 @@ class WidgetsCleaner(Widget):
 
         await super().handle_idle_next()
 
-        self._log.info('%r: asking controller to cleanup %r', self, self._widgets)
+        self._log.info('asking controller to cleanup %r', self._widgets)
         window_destroy_args = dict(
             terminal_render=terminal_render,
             clear_buffer=clear_buffer,
@@ -299,7 +299,7 @@ class WidgetsLauncher(Widget):
 
         await super().handle_idle_next()
 
-        self._log.info('%r: asking controller to launch %r', self, self._widgets)
+        self._log.info('asking controller to launch %r', self._widgets)
         await api.message_send(self.controller, ('launch', self._widgets))
 
         return 'done'
@@ -336,7 +336,7 @@ class WidgetRequester(Widget):
 
         await super().handle_idle_next()
 
-        self._log.info('%r: asking controller to request %r from %r', self, self._message, self._widget)
+        self._log.info('asking controller to request %r from %r', self._message, self._widget)
         await api.message_send(self.controller, ('message', (self._widget, self._message)))
 
         return 'done'
