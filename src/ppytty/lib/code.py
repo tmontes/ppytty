@@ -73,7 +73,7 @@ class Code(widget.WindowWidget):
         self._first_line = first_line
 
         if not pygments_imported:
-            self._log.warning('%r: Install pygments for syntax highlighting.', self)
+            self._log.warning('Install pygments for syntax highlighting.')
 
         try:
             self._pygm_lexer = pygm_get_lexer_by_name(pygm_lexer_name)
