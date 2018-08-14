@@ -240,9 +240,10 @@ class WidgetsCleaner(Widget):
 
     def __init__(self, *widgets):
 
-        super().__init__()
-
         self._widgets = widgets
+
+        # super().__init__() calls self.__repr__(): set self._widgets first.
+        super().__init__()
 
 
     def __repr__(self):
@@ -280,9 +281,10 @@ class WidgetsLauncher(Widget):
 
     def __init__(self, *widgets):
 
-        super().__init__()
-
         self._widgets = widgets
+
+        # super().__init__() calls self.__repr__(): set self._widgets first.
+        super().__init__()
 
 
     def __repr__(self):
@@ -315,10 +317,11 @@ class WidgetRequester(Widget):
 
     def __init__(self, widget, request, **request_args):
 
-        super().__init__()
-
         self._widget = widget
         self._message = (request, request_args)
+
+        # super().__init__() calls self.__repr__(): set self attributes first.
+        super().__init__()
 
 
     def __repr__(self):
