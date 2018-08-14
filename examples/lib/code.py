@@ -169,7 +169,8 @@ code_long_lines_numbered = Slide(title='Line numbers and long line wrap/truncate
 
 this_file = os.path.basename(__file__)
 
-code_first_line_offset_plain = Code(file_name=this_file, first_line=167)
+code_first_line_offset_plain = Code(file_name=this_file, first_line=167,
+                                     truncate_code_with=None)
 code_first_line_offset_numbered = Code(file_name=this_file,  first_line=167,
                                        line_numbers=True, line_number_fmt='3d',
                                        line_number_fg=248, line_number_bg=242)
