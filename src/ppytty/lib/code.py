@@ -152,9 +152,6 @@ class Code(widget.WindowWidget):
         hl_lines = hl_code.splitlines()
 
         line_number = self._first_line
-        if line_number > 1:
-            hl_lines = hl_lines[line_number-2:]
-        y_and_line_numbers = []
 
         if self._line_numbers:
             # Determine how much width displaying line numbers will consume.
@@ -162,6 +159,13 @@ class Code(widget.WindowWidget):
             line_number_width = len(self._line_number_str(max_line_number))
             available_width -= line_number_width
             pad_left += line_number_width
+
+        if line_number > 1:
+            hl_lines = hl_lines[line_number-2:]
+            if self._truncate_code_with:
+                hl_lines.insert(0, self._truncate_code_str(available_width))
+                line_number -= 1
+        y_and_line_numbers = []
 
         for hl_line in hl_lines:
             if not available_height:
