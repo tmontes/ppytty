@@ -71,7 +71,7 @@ class Bullets(widget.WindowWidget):
         self._at_once = self._per_level_at_once(at_once)
 
         self._steps = self._compute_steps(items, self._at_once[0])
-        self._log.debug('%r: steps=%r', self, self._steps)
+        self._log.debug('steps=%r', self._steps)
 
         self._step_count = len(self._steps)
         self._current_step_index = None
@@ -157,7 +157,7 @@ class Bullets(widget.WindowWidget):
                 if isinstance(item, (list, tuple)):
                     sub_level = level+1
                     if not self._at_once[sub_level]:
-                        self._log.warning('%r: Ignored level %r at_once=False', self, sub_level)
+                        self._log.warning('Ignored level %r at_once=False', sub_level)
                     sub_steps = self._compute_steps(item, at_once, left_pad+bullets_width, sub_level)
                     if single_step and sub_steps and sub_steps[0][-1][-1] > spacing:
                         # Previous outer level spacing too short: fix it.
