@@ -67,7 +67,6 @@ class Bullets(widget.WindowWidget):
 
         self._bullets = self._per_level_bullets(bullets)
         self._truncate_with = truncate_with
-        self._truncate_width_len = len(truncate_with)
         self._spacing = self._per_level_spacing(spacing)
         self._at_once = self._per_level_at_once(at_once)
 
@@ -222,19 +221,20 @@ class Bullets(widget.WindowWidget):
 
     def _paint_step(self, window, step):
 
-        available_width = window.width - self._pad_left - self._pad_right
+        pad_left = self._pad_left
+        available_width = window.width - pad_left - self._pad_right
         available_height = window.height - self._current_y - self._pad_bottom
 
         for line_number, bullet, line, spacing in self._step_lines(step, available_width):
             if available_height <= 0:
-                if self._truncate_width_len > available_width:
-                    line = self._truncate_with[:available_width]
-                else:
-                    line = self._truncate_with * (available_width // self._truncate_width_len)
-                window.print(line, x=self._pad_left, y=window.height-self._pad_bottom-1)
+                truncate_with = self._truncate_with
+                truncate_with_len = len(truncate_with)
+                line = truncate_with * (available_width // truncate_with_len + 1)
+                bottom_y = window.height - self._pad_bottom - 1
+                window.print(line[:available_width], x=pad_left, y=bottom_y)
                 break
             prefix = ' ' * len(bullet) if line_number else bullet
-            window.print(prefix + line, x=self._pad_left, y=self._current_y)
+            window.print(prefix + line, x=pad_left, y=self._current_y)
             delta_y = 1 + spacing
             self._current_y += delta_y
             available_height -= delta_y
